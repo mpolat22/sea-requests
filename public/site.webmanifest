@@ -1,0 +1,21 @@
+{
+  "name": "Sea Requests",
+  "short_name": "Sea Requests",
+  "description": "Sea Requests connects maritime buyers and suppliers through supplier discovery, RFQs, orders, invoices, payment proof, and direct messaging.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f4f7fb",
+  "theme_color": "#102b4c",
+  "icons": [
+    {
+      "src": "/android-chrome-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/android-chrome-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
