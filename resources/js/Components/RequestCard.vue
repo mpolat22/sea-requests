@@ -178,6 +178,7 @@ const cardStatusTone = computed(() => {
     display: grid;
     gap: 14px;
     min-height: 100%;
+    min-width: 0;
     padding: 16px;
     border: 1px solid rgba(4, 21, 31, 0.08);
     border-radius: 10px;
@@ -233,6 +234,7 @@ const cardStatusTone = computed(() => {
     gap: 8px;
     background: rgba(248, 250, 252, 0.95);
     color: #64748b;
+    max-width: 100%;
 }
 
 .request-status-chip.is-live {
@@ -342,5 +344,34 @@ const cardStatusTone = computed(() => {
     font-size: 0.82rem;
     color: #64748b;
     font-weight: 500;
+}
+
+@media (max-width: 640px) {
+    .request-card-head {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .request-status-chip {
+        align-self: flex-start;
+        white-space: normal;
+    }
+
+    .request-footer-meta {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .request-countries span,
+    .footer-item span {
+        white-space: normal;
+        overflow: visible;
+        text-overflow: clip;
+        word-break: break-word;
+    }
+
+    .footer-time {
+        width: 100%;
+    }
 }
 </style>
