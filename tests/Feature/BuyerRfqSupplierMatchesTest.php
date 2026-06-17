@@ -82,6 +82,36 @@ class BuyerRfqSupplierMatchesTest extends TestCase
             ->assertJsonPath('suppliers.0.id', $listing->id);
     }
 
+    public function test_supplier_matches_treat_turkiye_ports_as_turkey_scope(): void
+    {
+        $buyer = User::factory()->create([
+            'role' => 'buyer',
+        ]);
+
+        $turkiyePort = $this->createActivePort(
+            countryName: 'Türkiye',
+            countryCode: 'TR',
+            portName: 'Istanbul',
+            locationCode: 'IST',
+            unlocode: 'TRIST',
+        );
+
+        $listing = $this->createSupplierListingForPorts(
+            [$turkiyePort],
+            listingCountryName: 'Turkey',
+            listingPortCountryName: 'Turkey',
+        );
+
+        $this->actingAs($buyer)
+            ->getJson(route('rfqs.supplier-matches', [
+                'country_names' => ['Turkey'],
+                'port_ids' => [$turkiyePort->id],
+            ]))
+            ->assertOk()
+            ->assertJsonPath('summary.count', 1)
+            ->assertJsonPath('suppliers.0.id', $listing->id);
+    }
+
     private function createActivePort(
         string $countryName = 'Albania',
         string $countryCode = 'AL',
@@ -102,14 +132,20 @@ class BuyerRfqSupplierMatchesTest extends TestCase
     /**
      * @param  array<int, Port>  $ports
      */
-    private function createSupplierListingForPorts(array $ports): SupplierServiceListing
+    private function createSupplierListingForPorts(
+        array $ports,
+        ?string $listingCountryName = null,
+        ?string $listingPortCountryName = null,
+    ): SupplierServiceListing
     {
         $primaryPort = $ports[0];
+        $sellerCountry = $listingCountryName ?? $primaryPort->country_name;
+        $listingPortCountry = $listingPortCountryName ?? $primaryPort->country_name;
 
         $seller = User::factory()->create([
             'role' => 'seller',
             'company_name' => 'Atlas Marine Service',
-            'country' => $primaryPort->country_name,
+            'country' => $sellerCountry,
             'service_country_codes' => collect($ports)->pluck('country_code')->unique()->values()->all(),
         ]);
 
@@ -120,11 +156,11 @@ class BuyerRfqSupplierMatchesTest extends TestCase
             'listing_key' => 'atlas-service-'.Str::uuid(),
             'company_name' => $seller->company_name,
             'contact_name' => $seller->name,
-            'country' => $primaryPort->country_name,
+            'country' => $sellerCountry,
             'summary' => 'Rapid onboard service attendance.',
             'vendor_slug' => Str::slug($seller->company_name),
             'search_text' => collect($ports)
-                ->map(fn (Port $port) => "{$seller->company_name} {$port->country_name} {$port->port_name}")
+                ->map(fn (Port $port) => "{$seller->company_name} {$listingPortCountry} {$port->port_name}")
                 ->implode(' '),
             'is_visible' => true,
         ]);
@@ -132,7 +168,7 @@ class BuyerRfqSupplierMatchesTest extends TestCase
         foreach ($ports as $port) {
             $listing->ports()->create([
                 'country_code' => $port->country_code,
-                'country_name' => $port->country_name,
+                'country_name' => $listingPortCountry,
                 'port_name' => $port->port_name,
                 'unlocode' => $port->unlocode,
             ]);

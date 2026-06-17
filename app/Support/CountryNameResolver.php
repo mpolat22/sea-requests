@@ -2,6 +2,8 @@
 
 namespace App\Support;
 
+use Illuminate\Support\Str;
+
 class CountryNameResolver
 {
     /**
@@ -128,6 +130,12 @@ class CountryNameResolver
             return $value;
         }
 
+        $alias = self::canonicalNameAlias($value);
+
+        if ($alias !== null) {
+            return $alias;
+        }
+
         $normalized = strtoupper(trim((string) $value));
 
         if (strlen($normalized) === 2) {
@@ -153,14 +161,46 @@ class CountryNameResolver
             return null;
         }
 
-        $normalized = mb_strtolower(trim((string) $value));
+        $normalized = self::normalizedNameKey($value);
+
+        foreach (self::nameAliases() as $alias => $canonicalName) {
+            if ($normalized === $alias) {
+                return self::codeForName($canonicalName);
+            }
+        }
 
         foreach (self::all() as $code => $name) {
-            if (mb_strtolower($name) === $normalized) {
+            if (self::normalizedNameKey($name) === $normalized) {
                 return $code;
             }
         }
 
         return null;
+    }
+
+    private static function canonicalNameAlias(?string $value): ?string
+    {
+        $normalized = self::normalizedNameKey($value);
+
+        return self::nameAliases()[$normalized] ?? null;
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    private static function nameAliases(): array
+    {
+        return [
+            'turkiye' => 'Turkey',
+            'republic of turkey' => 'Turkey',
+        ];
+    }
+
+    private static function normalizedNameKey(?string $value): string
+    {
+        return (string) Str::of(Str::ascii(trim((string) $value)))
+            ->lower()
+            ->replaceMatches('/[^a-z0-9]+/', ' ')
+            ->trim();
     }
 }

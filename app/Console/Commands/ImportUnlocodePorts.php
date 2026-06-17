@@ -3,6 +3,7 @@
 namespace App\Console\Commands;
 
 use App\Models\Port;
+use App\Support\CountryNameResolver;
 use Illuminate\Console\Command;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\File;
@@ -142,6 +143,12 @@ class ImportUnlocodePorts extends Command
 
         if ($countryCode === '') {
             return '';
+        }
+
+        $canonical = CountryNameResolver::resolve($countryCode);
+
+        if (is_string($canonical) && $canonical !== '' && strtoupper($canonical) !== $countryCode) {
+            return $canonical;
         }
 
         if (class_exists(\Locale::class)) {
