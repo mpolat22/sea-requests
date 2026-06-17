@@ -1,5 +1,13 @@
 # Sea Requests Launch Checklist
 
+## 0. Release Control
+
+- Use commit messages in `type: short summary` format.
+- Use release tags in `YYYYMMDD-XXX` format.
+- Push `main` first, then create and push the release tag.
+- Deploy production from the release tag, not from an untagged local state.
+- Record the previous stable tag before every live deploy.
+
 ## 1. Brand And Metadata
 
 - Run `php scripts/generate_brand_assets.php` if any favicon, logo, or OG image is updated.
@@ -25,8 +33,13 @@
 ## 4. Build And Cache
 
 - Remove any leftover `public/hot` file before deploy.
-- Run `npm.cmd run build`.
-- Run `php artisan optimize`.
+- Run `composer install --no-dev --prefer-dist --optimize-autoloader`.
+- Run `npm ci`.
+- Run `npm run build`.
+- Run `php artisan optimize:clear`.
+- Run `php artisan config:cache`.
+- Run `php artisan route:cache`.
+- Run `php artisan view:cache`.
 - If route/config caching is used in your server flow, confirm dynamic `robots.txt` and `sitemap.xml` still respond correctly after cache warmup.
 
 ## 5. Background Processes
@@ -34,6 +47,7 @@
 - Start the queue worker for notifications, RFQ mails, and other async jobs.
 - Verify the process manager restarts workers after deploy.
 - Confirm failed jobs are monitored and retried.
+- Run `php artisan queue:restart` after each deployment.
 
 ## 6. SEO And Crawl Checks
 
@@ -53,3 +67,4 @@
 - Check mobile layout on home, services, requests, buyer dashboard, supplier dashboard, admin dashboard, and messenger drawer.
 - Confirm the footer, navbar badges, unread messenger counts, and order workflow statuses still render correctly.
 - Keep one buyer, one supplier, and one admin demo account ready for final smoke testing on the live server.
+- Keep the previous stable release tag ready for rollback until the new release is confirmed healthy.
