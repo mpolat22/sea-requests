@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use App\Notifications\PasswordResetCompletedNotification;
 use Illuminate\Auth\Events\PasswordReset;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -45,6 +46,7 @@ class ResetPasswordController extends Controller
                 ])->save();
 
                 event(new PasswordReset($user));
+                $user->notify(new PasswordResetCompletedNotification());
             }
         );
 
