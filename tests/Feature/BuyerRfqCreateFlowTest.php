@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Jobs\DispatchRfqDeliveryJob;
+use App\Jobs\SendRfqToSupplierJob;
 use App\Models\Category;
 use App\Models\Port;
 use App\Models\Rfq;
@@ -173,7 +174,8 @@ class BuyerRfqCreateFlowTest extends TestCase
         Storage::disk('public')->assertExists($rfq->attachments->first()->path);
 
         Queue::assertPushed(DispatchRfqDeliveryJob::class, function (DispatchRfqDeliveryJob $job) use ($rfq): bool {
-            return $job->rfqId === $rfq->id;
+            return $job->rfqId === $rfq->id
+                && $job->queue === null;
         });
     }
 
@@ -364,7 +366,73 @@ class BuyerRfqCreateFlowTest extends TestCase
         $this->assertSame([$subcategory->id], $rfq->subcategory_ids);
 
         Queue::assertPushed(DispatchRfqDeliveryJob::class, function (DispatchRfqDeliveryJob $job) use ($rfq): bool {
-            return $job->rfqId === $rfq->id;
+            return $job->rfqId === $rfq->id
+                && $job->queue === null;
+        });
+    }
+
+    public function test_rfq_delivery_job_dispatches_supplier_notifications_on_default_queue(): void
+    {
+        Queue::fake();
+
+        $buyer = User::factory()->create([
+            'role' => 'buyer',
+        ]);
+
+        $port = $this->createActivePort();
+        [, $listing] = $this->createSupplierListingForPort($port);
+
+        $rfq = Rfq::query()->create([
+            'buyer_id' => $buyer->id,
+            'reference_no' => 'RFQ-DELIVERY-QUEUE-001',
+            'company_name' => 'Buyer Company',
+            'ship_name' => 'MV Atlas',
+            'request_type' => 'service_request',
+            'visibility_scope' => Rfq::VISIBILITY_PUBLIC_MARKETPLACE,
+            'country_name' => $port->country_name,
+            'port_name' => $port->port_name,
+            'country_names' => [$port->country_name],
+            'ports_by_country' => [
+                $port->country_name => [
+                    ['id' => $port->id, 'name' => $port->port_name, 'unlocode' => $port->unlocode],
+                ],
+            ],
+            'requisition_date' => now()->toDateString(),
+            'due_date' => now()->addDays(5)->toDateString(),
+            'currency' => 'USD',
+            'priority' => 'normal',
+            'status' => Rfq::STATUS_SUBMITTED,
+            'general_notes' => 'Queue regression guard.',
+            'service_title' => 'Onboard inspection attendance',
+            'service_description' => 'Attendance request for matched suppliers.',
+            'items_count' => 1,
+            'submitted_at' => now(),
+        ]);
+
+        $recipient = $rfq->supplierRecipients()->create([
+            'supplier_service_listing_id' => $listing->id,
+            'seller_id' => $listing->seller_id,
+            'company_name' => $listing->company_name,
+            'category_name' => $listing->category_name,
+            'subcategory_name' => $listing->subcategory_name,
+            'country_name' => $port->country_name,
+            'port_name' => $port->port_name,
+        ]);
+
+        DispatchRfqDeliveryJob::dispatch($rfq->id);
+
+        Queue::assertPushed(DispatchRfqDeliveryJob::class, function (DispatchRfqDeliveryJob $job) use ($rfq): bool {
+            return $job->rfqId === $rfq->id
+                && $job->queue === null;
+        });
+
+        (new DispatchRfqDeliveryJob($rfq->id))->handle();
+
+        $this->assertSame('queued', $recipient->fresh()->delivery_status);
+
+        Queue::assertPushed(SendRfqToSupplierJob::class, function (SendRfqToSupplierJob $job) use ($recipient): bool {
+            return $job->recipientId === $recipient->id
+                && $job->queue === null;
         });
     }
 

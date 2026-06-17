@@ -2733,7 +2733,7 @@ class RfqController extends Controller
                     'delivery_error' => null,
                 ])->save();
 
-                SendRfqToSupplierJob::dispatch($recipient->id)->onQueue('rfq-delivery');
+                SendRfqToSupplierJob::dispatch($recipient->id);
             }
         }
 

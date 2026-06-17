@@ -23,7 +23,6 @@ class SendRfqToSupplierJob implements ShouldQueue
     public function __construct(
         public readonly int $recipientId
     ) {
-        $this->onQueue('rfq-delivery');
     }
 
     public function handle(): void

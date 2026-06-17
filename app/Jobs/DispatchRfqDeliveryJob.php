@@ -21,7 +21,6 @@ class DispatchRfqDeliveryJob implements ShouldQueue
     public function __construct(
         public readonly int $rfqId
     ) {
-        $this->onQueue('rfq-delivery');
     }
 
     public function handle(): void
@@ -41,7 +40,7 @@ class DispatchRfqDeliveryJob implements ShouldQueue
                 'delivery_error' => null,
             ])->save();
 
-            SendRfqToSupplierJob::dispatch($recipient->id)->onQueue('rfq-delivery');
+            SendRfqToSupplierJob::dispatch($recipient->id);
         }
     }
 }
