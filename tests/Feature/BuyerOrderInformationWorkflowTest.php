@@ -8,7 +8,9 @@ use App\Models\Port;
 use App\Models\Rfq;
 use App\Models\RfqItem;
 use App\Models\User;
+use App\Notifications\MarketplaceNotification;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Notification;
 use Inertia\Testing\AssertableInertia;
 use Tests\TestCase;
 
@@ -19,6 +21,8 @@ class BuyerOrderInformationWorkflowTest extends TestCase
     public function test_buyer_can_complete_spare_parts_order_information_and_move_order_to_invoice_pending(): void
     {
         [$buyer, $seller, $offer] = $this->createConfirmedSparePartsOrder();
+
+        Notification::fake();
 
         $response = $this
             ->actingAs($buyer)
@@ -48,6 +52,32 @@ class BuyerOrderInformationWorkflowTest extends TestCase
         $this->assertSame(Offer::ORDER_STATUS_INVOICE_PENDING, $offer->order_workflow_status);
         $this->assertSame('North Fleet Procurement Ltd.', $offer->billing_company_name);
         $this->assertSame('Istanbul', $offer->delivery_port);
+
+        Notification::assertSentTo(
+            $buyer,
+            MarketplaceNotification::class,
+            function (MarketplaceNotification $notification, array $channels) use ($buyer, $offer): bool {
+                $payload = $notification->toArray($buyer);
+
+                return in_array('mail', $channels, true)
+                    && in_array('database', $channels, true)
+                    && ($payload['title'] ?? null) === 'Order Information Saved'
+                    && ($payload['action_url'] ?? null) === route('buyer.orders.show', $offer);
+            }
+        );
+
+        Notification::assertSentTo(
+            $seller,
+            MarketplaceNotification::class,
+            function (MarketplaceNotification $notification, array $channels) use ($seller, $offer): bool {
+                $payload = $notification->toArray($seller);
+
+                return in_array('mail', $channels, true)
+                    && in_array('database', $channels, true)
+                    && ($payload['title'] ?? null) === 'Order Information Ready'
+                    && ($payload['action_url'] ?? null) === route('seller.orders.show', $offer);
+            }
+        );
 
         $this->actingAs($buyer)
             ->get(route('buyer.orders.show', $offer))
@@ -147,6 +177,8 @@ class BuyerOrderInformationWorkflowTest extends TestCase
     {
         [$buyer, $seller, $offer] = $this->createConfirmedSparePartsOrder();
 
+        Notification::fake();
+
         $this
             ->actingAs($buyer)
             ->put(route('buyer.orders.information.update', $offer), [
@@ -199,6 +231,32 @@ class BuyerOrderInformationWorkflowTest extends TestCase
 
         $this->assertSame('Gebze', $offer->delivery_port);
         $this->assertSame('Liman Caddesi 21, Istanbul', $offer->billing_address);
+
+        Notification::assertSentTo(
+            $buyer,
+            MarketplaceNotification::class,
+            function (MarketplaceNotification $notification, array $channels) use ($buyer, $offer): bool {
+                $payload = $notification->toArray($buyer);
+
+                return in_array('mail', $channels, true)
+                    && in_array('database', $channels, true)
+                    && ($payload['title'] ?? null) === 'Order Information Updated'
+                    && ($payload['action_url'] ?? null) === route('buyer.orders.show', $offer);
+            }
+        );
+
+        Notification::assertSentTo(
+            $seller,
+            MarketplaceNotification::class,
+            function (MarketplaceNotification $notification, array $channels) use ($seller, $offer): bool {
+                $payload = $notification->toArray($seller);
+
+                return in_array('mail', $channels, true)
+                    && in_array('database', $channels, true)
+                    && ($payload['title'] ?? null) === 'Order Information Updated'
+                    && ($payload['action_url'] ?? null) === route('seller.orders.show', $offer);
+            }
+        );
     }
 
     private function createConfirmedSparePartsOrder(): array

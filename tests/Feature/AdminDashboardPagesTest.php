@@ -12,8 +12,10 @@ use App\Models\RfqItem;
 use App\Models\RfqSupplierRecipient;
 use App\Models\Subcategory;
 use App\Models\User;
+use App\Notifications\MarketplaceNotification;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Inertia\Testing\AssertableInertia;
@@ -252,8 +254,10 @@ class AdminDashboardPagesTest extends TestCase
     public function test_admin_can_complete_full_order_workflow_from_order_information_to_payment_confirmation(): void
     {
         Storage::fake('public');
+        Notification::fake();
 
-        [$admin, $rfq, $offer] = $this->createAdminScenario();
+        [$admin, $rfq, $offer, $seller] = $this->createAdminScenario();
+        $buyer = $rfq->buyer()->firstOrFail();
 
         $this->actingAs($admin)
             ->put(route('admin.orders.information.update', $offer), [
@@ -279,6 +283,32 @@ class AdminDashboardPagesTest extends TestCase
         $offer->refresh();
         $this->assertSame(Offer::ORDER_STATUS_INVOICE_PENDING, $offer->order_workflow_status);
 
+        Notification::assertSentTo(
+            $buyer,
+            MarketplaceNotification::class,
+            function (MarketplaceNotification $notification, array $channels) use ($buyer, $offer): bool {
+                $payload = $notification->toArray($buyer);
+
+                return in_array('mail', $channels, true)
+                    && in_array('database', $channels, true)
+                    && ($payload['title'] ?? null) === 'Order Information Saved'
+                    && ($payload['action_url'] ?? null) === route('buyer.orders.show', $offer);
+            }
+        );
+
+        Notification::assertSentTo(
+            $seller,
+            MarketplaceNotification::class,
+            function (MarketplaceNotification $notification, array $channels) use ($seller, $offer): bool {
+                $payload = $notification->toArray($seller);
+
+                return in_array('mail', $channels, true)
+                    && in_array('database', $channels, true)
+                    && ($payload['title'] ?? null) === 'Order Information Ready'
+                    && ($payload['action_url'] ?? null) === route('seller.orders.show', $offer);
+            }
+        );
+
         $this->actingAs($admin)
             ->post(route('admin.orders.invoices.store', $offer), [
                 'return_to' => 'orders',
@@ -298,6 +328,32 @@ class AdminDashboardPagesTest extends TestCase
         $this->assertSame('INV-ADMIN-001', $invoice->invoice_number);
         Storage::disk('public')->assertExists($invoice->invoice_document_path);
 
+        Notification::assertSentTo(
+            $buyer,
+            MarketplaceNotification::class,
+            function (MarketplaceNotification $notification, array $channels) use ($buyer, $offer): bool {
+                $payload = $notification->toArray($buyer);
+
+                return in_array('mail', $channels, true)
+                    && in_array('database', $channels, true)
+                    && ($payload['title'] ?? null) === 'Supplier Invoice Uploaded'
+                    && ($payload['action_url'] ?? null) === route('buyer.orders.show', $offer);
+            }
+        );
+
+        Notification::assertSentTo(
+            $seller,
+            MarketplaceNotification::class,
+            function (MarketplaceNotification $notification, array $channels) use ($seller, $offer): bool {
+                $payload = $notification->toArray($seller);
+
+                return in_array('mail', $channels, true)
+                    && in_array('database', $channels, true)
+                    && ($payload['title'] ?? null) === 'Invoice Uploaded'
+                    && ($payload['action_url'] ?? null) === route('seller.orders.show', $offer);
+            }
+        );
+
         $this->actingAs($admin)
             ->post(route('admin.orders.invoices.payment-proof.update', [$offer, $invoice]), [
                 'return_to' => 'orders',
@@ -316,6 +372,32 @@ class AdminDashboardPagesTest extends TestCase
         $this->assertSame('ADMIN-BANK-001', $invoice->payment_reference);
         Storage::disk('public')->assertExists($invoice->payment_proof_document_path);
 
+        Notification::assertSentTo(
+            $buyer,
+            MarketplaceNotification::class,
+            function (MarketplaceNotification $notification, array $channels) use ($buyer, $offer): bool {
+                $payload = $notification->toArray($buyer);
+
+                return in_array('mail', $channels, true)
+                    && in_array('database', $channels, true)
+                    && ($payload['title'] ?? null) === 'Payment Proof Uploaded'
+                    && ($payload['action_url'] ?? null) === route('buyer.orders.show', $offer);
+            }
+        );
+
+        Notification::assertSentTo(
+            $seller,
+            MarketplaceNotification::class,
+            function (MarketplaceNotification $notification, array $channels) use ($seller, $offer): bool {
+                $payload = $notification->toArray($seller);
+
+                return in_array('mail', $channels, true)
+                    && in_array('database', $channels, true)
+                    && ($payload['title'] ?? null) === 'Buyer Payment Proof Uploaded'
+                    && ($payload['action_url'] ?? null) === route('seller.orders.show', $offer);
+            }
+        );
+
         $this->actingAs($admin)
             ->post(route('admin.orders.invoices.payment-confirm.store', [$offer, $invoice]), [
                 'return_to' => 'orders',
@@ -328,6 +410,32 @@ class AdminDashboardPagesTest extends TestCase
 
         $this->assertSame(Offer::ORDER_STATUS_COMPLETED, $offer->order_workflow_status);
         $this->assertNotNull($invoice->payment_confirmed_at);
+
+        Notification::assertSentTo(
+            $buyer,
+            MarketplaceNotification::class,
+            function (MarketplaceNotification $notification, array $channels) use ($buyer, $offer): bool {
+                $payload = $notification->toArray($buyer);
+
+                return in_array('mail', $channels, true)
+                    && in_array('database', $channels, true)
+                    && ($payload['title'] ?? null) === 'Payment Receipt Confirmed'
+                    && ($payload['action_url'] ?? null) === route('buyer.orders.show', $offer);
+            }
+        );
+
+        Notification::assertSentTo(
+            $seller,
+            MarketplaceNotification::class,
+            function (MarketplaceNotification $notification, array $channels) use ($seller, $offer): bool {
+                $payload = $notification->toArray($seller);
+
+                return in_array('mail', $channels, true)
+                    && in_array('database', $channels, true)
+                    && ($payload['title'] ?? null) === 'Payment Receipt Confirmed'
+                    && ($payload['action_url'] ?? null) === route('seller.orders.show', $offer);
+            }
+        );
 
         $this->actingAs($admin)
             ->get(route('admin.orders.modal', $offer))

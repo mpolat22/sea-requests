@@ -6,6 +6,7 @@ use App\Models\Offer;
 use App\Models\OfferAward;
 use App\Models\OfferInvoice;
 use App\Support\OfferInvoiceTotals;
+use App\Support\MarketplaceNotificationCenter;
 use App\Support\OfferOrderWorkflow;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -76,13 +77,17 @@ class SellerOrderInvoiceController extends Controller
         if ($invoice) {
             $invoice->update($payload);
             $successCode = 'invoice-updated';
+            $isUpdate = true;
         } else {
             $invoice = $offer->invoices()->create($payload);
             $successCode = 'invoice-added';
+            $isUpdate = false;
         }
 
         $offer->load('invoices');
         $this->workflow->sync($offer);
+        MarketplaceNotificationCenter::notifyBuyerInvoiceSaved($offer, $invoice, $isUpdate);
+        MarketplaceNotificationCenter::notifySellerInvoiceSaved($offer, $invoice, $isUpdate);
 
         return redirect($this->targetRoute($request, $offer))
             ->with('success', [

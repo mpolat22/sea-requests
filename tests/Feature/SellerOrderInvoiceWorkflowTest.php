@@ -8,8 +8,10 @@ use App\Models\Port;
 use App\Models\Rfq;
 use App\Models\RfqItem;
 use App\Models\User;
+use App\Notifications\MarketplaceNotification;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Testing\AssertableInertia;
 use Tests\TestCase;
@@ -21,6 +23,7 @@ class SellerOrderInvoiceWorkflowTest extends TestCase
     public function test_seller_can_add_invoice_and_both_order_sides_receive_invoice_list(): void
     {
         Storage::fake('public');
+        Notification::fake();
 
         [$buyer, $seller, $offer] = $this->createInvoicePendingSparePartsOrder();
 
@@ -47,6 +50,32 @@ class SellerOrderInvoiceWorkflowTest extends TestCase
         $this->assertSame('145.50', number_format((float) $invoice->invoice_amount, 2, '.', ''));
         $this->assertNotNull($invoice->invoice_document_path);
         Storage::disk('public')->assertExists($invoice->invoice_document_path);
+
+        Notification::assertSentTo(
+            $buyer,
+            MarketplaceNotification::class,
+            function (MarketplaceNotification $notification, array $channels) use ($buyer, $offer): bool {
+                $payload = $notification->toArray($buyer);
+
+                return in_array('mail', $channels, true)
+                    && in_array('database', $channels, true)
+                    && ($payload['title'] ?? null) === 'Supplier Invoice Uploaded'
+                    && ($payload['action_url'] ?? null) === route('buyer.orders.show', $offer);
+            }
+        );
+
+        Notification::assertSentTo(
+            $seller,
+            MarketplaceNotification::class,
+            function (MarketplaceNotification $notification, array $channels) use ($seller, $offer): bool {
+                $payload = $notification->toArray($seller);
+
+                return in_array('mail', $channels, true)
+                    && in_array('database', $channels, true)
+                    && ($payload['title'] ?? null) === 'Invoice Uploaded'
+                    && ($payload['action_url'] ?? null) === route('seller.orders.show', $offer);
+            }
+        );
 
         $this->actingAs($seller)
             ->get(route('seller.orders.show', $offer))
@@ -76,6 +105,7 @@ class SellerOrderInvoiceWorkflowTest extends TestCase
     public function test_seller_can_add_multiple_invoices_and_edit_an_existing_invoice(): void
     {
         Storage::fake('public');
+        Notification::fake();
 
         [$buyer, $seller, $offer] = $this->createInvoicePendingSparePartsOrder();
 
@@ -127,6 +157,32 @@ class SellerOrderInvoiceWorkflowTest extends TestCase
         $this->assertSame('85.00', number_format((float) $firstInvoice->invoice_amount, 2, '.', ''));
         $this->assertSame($oldPath, $firstInvoice->invoice_document_path);
         $this->assertSame(2, $offer->invoices()->count());
+
+        Notification::assertSentTo(
+            $buyer,
+            MarketplaceNotification::class,
+            function (MarketplaceNotification $notification, array $channels) use ($buyer, $offer): bool {
+                $payload = $notification->toArray($buyer);
+
+                return in_array('mail', $channels, true)
+                    && in_array('database', $channels, true)
+                    && ($payload['title'] ?? null) === 'Supplier Invoice Updated'
+                    && ($payload['action_url'] ?? null) === route('buyer.orders.show', $offer);
+            }
+        );
+
+        Notification::assertSentTo(
+            $seller,
+            MarketplaceNotification::class,
+            function (MarketplaceNotification $notification, array $channels) use ($seller, $offer): bool {
+                $payload = $notification->toArray($seller);
+
+                return in_array('mail', $channels, true)
+                    && in_array('database', $channels, true)
+                    && ($payload['title'] ?? null) === 'Invoice Updated'
+                    && ($payload['action_url'] ?? null) === route('seller.orders.show', $offer);
+            }
+        );
     }
 
     public function test_seller_cannot_make_total_invoices_exceed_agreed_order_total(): void

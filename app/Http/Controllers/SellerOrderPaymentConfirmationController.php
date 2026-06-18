@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Offer;
 use App\Models\OfferAward;
 use App\Models\OfferInvoice;
+use App\Support\MarketplaceNotificationCenter;
 use App\Support\OfferOrderWorkflow;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -43,6 +44,8 @@ class SellerOrderPaymentConfirmationController extends Controller
 
         $offer->load('invoices');
         $this->workflow->sync($offer);
+        MarketplaceNotificationCenter::notifyBuyerPaymentConfirmed($offer, $invoice);
+        MarketplaceNotificationCenter::notifySellerPaymentConfirmed($offer, $invoice);
 
         return redirect($this->targetRoute($request, $offer))
             ->with('success', [

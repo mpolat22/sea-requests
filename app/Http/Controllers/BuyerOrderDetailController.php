@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Offer;
 use App\Models\OfferAward;
 use App\Support\BuyerDashboardData;
+use App\Support\MarketplaceNotificationCenter;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -99,6 +100,8 @@ class BuyerOrderDetailController extends Controller
         }
 
         $offer->update($payload);
+        MarketplaceNotificationCenter::notifyBuyerOrderInformationSaved($offer, $wasInitialOrderInformationSave);
+        MarketplaceNotificationCenter::notifySellerOrderInformationSaved($offer, $wasInitialOrderInformationSave);
 
         $returnTo = (string) $request->input('return_to', 'detail');
 

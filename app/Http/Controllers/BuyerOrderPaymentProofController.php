@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Offer;
 use App\Models\OfferAward;
 use App\Models\OfferInvoice;
+use App\Support\MarketplaceNotificationCenter;
 use App\Support\OfferOrderWorkflow;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -56,6 +57,8 @@ class BuyerOrderPaymentProofController extends Controller
 
         $offer->load('invoices');
         $this->workflow->sync($offer);
+        MarketplaceNotificationCenter::notifyBuyerPaymentProofSaved($offer, $invoice, $hadExistingProof);
+        MarketplaceNotificationCenter::notifySellerPaymentProofSaved($offer, $invoice, $hadExistingProof);
 
         return redirect($this->targetRoute($request, $offer))
             ->with('success', [

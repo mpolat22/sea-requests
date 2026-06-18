@@ -9,8 +9,10 @@ use App\Models\Port;
 use App\Models\Rfq;
 use App\Models\RfqItem;
 use App\Models\User;
+use App\Notifications\MarketplaceNotification;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Testing\AssertableInertia;
 use Tests\TestCase;
@@ -22,6 +24,7 @@ class BuyerOrderPaymentProofWorkflowTest extends TestCase
     public function test_buyer_can_upload_payment_proof_for_a_specific_invoice(): void
     {
         Storage::fake('public');
+        Notification::fake();
 
         [$buyer, $seller, $offer, $invoice] = $this->createOrderWithInvoice();
 
@@ -46,6 +49,32 @@ class BuyerOrderPaymentProofWorkflowTest extends TestCase
         $this->assertSame('BANK-TRX-9981', $invoice->payment_reference);
         $this->assertNotNull($invoice->payment_proof_document_path);
         Storage::disk('public')->assertExists($invoice->payment_proof_document_path);
+
+        Notification::assertSentTo(
+            $buyer,
+            MarketplaceNotification::class,
+            function (MarketplaceNotification $notification, array $channels) use ($buyer, $offer): bool {
+                $payload = $notification->toArray($buyer);
+
+                return in_array('mail', $channels, true)
+                    && in_array('database', $channels, true)
+                    && ($payload['title'] ?? null) === 'Payment Proof Uploaded'
+                    && ($payload['action_url'] ?? null) === route('buyer.orders.show', $offer);
+            }
+        );
+
+        Notification::assertSentTo(
+            $seller,
+            MarketplaceNotification::class,
+            function (MarketplaceNotification $notification, array $channels) use ($seller, $offer): bool {
+                $payload = $notification->toArray($seller);
+
+                return in_array('mail', $channels, true)
+                    && in_array('database', $channels, true)
+                    && ($payload['title'] ?? null) === 'Buyer Payment Proof Uploaded'
+                    && ($payload['action_url'] ?? null) === route('seller.orders.show', $offer);
+            }
+        );
 
         $this->actingAs($buyer)
             ->get(route('buyer.orders.show', $offer))
@@ -73,6 +102,7 @@ class BuyerOrderPaymentProofWorkflowTest extends TestCase
     public function test_seller_can_confirm_payment_after_buyer_uploads_payment_proof(): void
     {
         Storage::fake('public');
+        Notification::fake();
 
         [$buyer, $seller, $offer, $invoice] = $this->createOrderWithInvoice([
             'payment_proof_date' => now()->toDateString(),
@@ -102,6 +132,32 @@ class BuyerOrderPaymentProofWorkflowTest extends TestCase
 
         $this->assertSame(Offer::ORDER_STATUS_COMPLETED, $offer->order_workflow_status);
         $this->assertNotNull($invoice->payment_confirmed_at);
+
+        Notification::assertSentTo(
+            $buyer,
+            MarketplaceNotification::class,
+            function (MarketplaceNotification $notification, array $channels) use ($buyer, $offer): bool {
+                $payload = $notification->toArray($buyer);
+
+                return in_array('mail', $channels, true)
+                    && in_array('database', $channels, true)
+                    && ($payload['title'] ?? null) === 'Payment Receipt Confirmed'
+                    && ($payload['action_url'] ?? null) === route('buyer.orders.show', $offer);
+            }
+        );
+
+        Notification::assertSentTo(
+            $seller,
+            MarketplaceNotification::class,
+            function (MarketplaceNotification $notification, array $channels) use ($seller, $offer): bool {
+                $payload = $notification->toArray($seller);
+
+                return in_array('mail', $channels, true)
+                    && in_array('database', $channels, true)
+                    && ($payload['title'] ?? null) === 'Payment Receipt Confirmed'
+                    && ($payload['action_url'] ?? null) === route('seller.orders.show', $offer);
+            }
+        );
 
         $this->actingAs($seller)
             ->get(route('seller.orders.show', $offer))
