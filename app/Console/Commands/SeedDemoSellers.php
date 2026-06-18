@@ -118,19 +118,23 @@ class SeedDemoSellers extends Command
                 ->map(fn (string $code) => CountryNameResolver::resolve($code) ?? $code)
                 ->values();
             $selectedPortIds = $this->selectedPortIdsForSeller($number, $selectedCountryCodes, $portsByCountryCode);
-            $selectedSubcategories = $selectedCategories
-                ->flatMap(fn (Category $category) => $category->subcategories)
+            $selectedSubcategoriesByCategory = $selectedCategories
+                ->values()
+                ->mapWithKeys(fn (Category $category, int $categoryIndex) => [
+                    (string) $category->id => $this->selectedSubcategoriesForCategory($category, $number, $categoryIndex),
+                ]);
+
+            $selectedSubcategories = $selectedSubcategoriesByCategory
+                ->flatMap(fn (Collection $subcategories) => $subcategories)
                 ->unique('id')
                 ->values();
 
-            $subcategoriesByCategory = $selectedCategories
-                ->mapWithKeys(fn (Category $category) => [
-                    (string) $category->id => $category->subcategories
-                        ->pluck('id')
-                        ->map(fn ($id) => (int) $id)
-                        ->values()
-                        ->all(),
-                ])
+            $subcategoriesByCategory = $selectedSubcategoriesByCategory
+                ->map(fn (Collection $subcategories) => $subcategories
+                    ->pluck('id')
+                    ->map(fn ($id) => (int) $id)
+                    ->values()
+                    ->all())
                 ->all();
 
             $email = self::DEMO_EMAILS[$index] ?? sprintf('demo-seller-%02d@example.test', $number);
@@ -230,7 +234,7 @@ class SeedDemoSellers extends Command
     {
         $focus = $categories->pluck('name')->take(3)->implode(', ');
 
-        return 'Demo Supplier -'.$number.' is prepared for marketplace testing with full category, country, and port coverage focused on '.$focus.'.';
+        return 'Demo Supplier -'.$number.' is prepared for marketplace testing with curated category, country, and port coverage focused on '.$focus.'.';
     }
 
     private function overviewForSeller(int $number, Collection $categories, Collection $countryNames): string
@@ -241,6 +245,70 @@ class SeedDemoSellers extends Command
         return 'Demo Supplier -'.$number.' is a fully approved test supplier profile created for platform QA. '
             .'This account covers a mixed working-port selection across its assigned country group and is enabled across the following categories: '
             .$categoryList.'. Countries covered: '.$countryList.'.';
+    }
+
+    private function selectedSubcategoriesForCategory(Category $category, int $position, int $categoryIndex): Collection
+    {
+        $subcategories = $category->subcategories
+            ->sortBy('name')
+            ->values();
+
+        $total = $subcategories->count();
+
+        if ($total <= 1) {
+            return $subcategories;
+        }
+
+        $take = $this->demoSubcategorySelectionCount($total);
+        $offset = max(0, $position - 1) + $categoryIndex;
+        $step = max(1, (int) floor($total / max(1, $take)));
+        $selected = collect();
+        $usedIndexes = [];
+
+        for ($index = 0; $index < ($total * 2) && $selected->count() < $take; $index++) {
+            $candidateIndex = ($offset + ($index * $step)) % $total;
+
+            if (isset($usedIndexes[$candidateIndex])) {
+                continue;
+            }
+
+            $selected->push($subcategories[$candidateIndex]);
+            $usedIndexes[$candidateIndex] = true;
+        }
+
+        for ($index = 0; $index < $total && $selected->count() < $take; $index++) {
+            if (isset($usedIndexes[$index])) {
+                continue;
+            }
+
+            $selected->push($subcategories[$index]);
+            $usedIndexes[$index] = true;
+        }
+
+        return $selected
+            ->unique('id')
+            ->values();
+    }
+
+    private function demoSubcategorySelectionCount(int $total): int
+    {
+        if ($total <= 1) {
+            return $total;
+        }
+
+        if ($total <= 3) {
+            return 1;
+        }
+
+        if ($total <= 6) {
+            return 2;
+        }
+
+        if ($total <= 12) {
+            return 3;
+        }
+
+        return min($total - 1, max(4, min(12, (int) ceil($total * 0.12))));
     }
 
     private function selectedPortIdsForSeller(int $position, Collection $countryCodes, Collection $portsByCountryCode): array
