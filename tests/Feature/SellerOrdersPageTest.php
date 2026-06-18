@@ -80,6 +80,40 @@ class SellerOrdersPageTest extends TestCase
             ->assertJsonPath('order.create_invoice_url', route('seller.orders.invoices.store', $offer));
     }
 
+    public function test_seller_orders_summary_enables_invoice_action_after_order_information_is_complete(): void
+    {
+        $buyer = User::factory()->create(['role' => 'buyer']);
+        $seller = $this->createReadySeller('Atlas Marine', 'TR', 'Istanbul', 'TRIST');
+
+        [$rfq, $offer] = $this->createConfirmedServiceOrder($buyer, $seller, 'RFQ-SELLER-ORDER-INVOICE-001');
+
+        $offer->forceFill([
+            'billing_company_name' => 'Buyer Billing Co',
+            'billing_address' => 'Istanbul / Turkey',
+            'billing_contact_name' => 'Buyer Contact',
+            'billing_contact_email' => 'buyer@example.test',
+            'billing_contact_phone' => '+90 5550000000',
+            'service_location_type' => 'on_board',
+            'service_location' => 'MV Workflow',
+            'service_contact_name' => 'Chief Engineer',
+            'service_contact_email' => 'chief@example.test',
+            'service_contact_phone' => '+90 5551111111',
+            'service_required_date' => now()->addDays(3)->toDateString(),
+        ])->save();
+
+        $this->actingAs($seller)
+            ->get(route('seller.orders'))
+            ->assertOk()
+            ->assertInertia(fn (AssertableInertia $page) => $page
+                ->component('Supplier/Dashboard/Orders')
+                ->where('orders.0.offer_id', $offer->id)
+                ->where('orders.0.reference_no', $rfq->reference_no)
+                ->where('orders.0.order_workflow_status', Offer::ORDER_STATUS_INVOICE_PENDING)
+                ->where('orders.0.order_workflow_status_label', 'Invoice Pending')
+                ->where('orders.0.can_manage_invoices', true)
+            );
+    }
+
     private function createConfirmedServiceOrder(User $buyer, User $seller, string $referenceNo): array
     {
         $rfq = Rfq::query()->create([

@@ -1,5 +1,5 @@
 <script setup>
-import { computed, defineAsyncComponent, ref } from 'vue';
+import { computed, ref } from 'vue';
 import { Link } from '@inertiajs/vue3';
 import SupplierDashboardShell from './Shell.vue';
 import OrderSelectedItemsSection from '../../../Components/OrderSelectedItemsSection.vue';
@@ -7,8 +7,6 @@ import OrderInformationPanels from '../../../Components/OrderInformationPanels.v
 import OfferCommercialSummary from '../../../Components/OfferCommercialSummary.vue';
 import RfqGeneralInformationSection from '../../../Components/RfqGeneralInformationSection.vue';
 import OrderInvoicesSection from '../../../Components/OrderInvoicesSection.vue';
-
-const InvoiceUploadModal = defineAsyncComponent(() => import('./InvoiceUploadModal.vue'));
 
 const props = defineProps({
     dashboard: {
@@ -51,7 +49,6 @@ const copy = {
     acceptedTerms: 'Accepted Commercial Terms',
     invoices: 'Invoices & Payments',
     invoicesIntro: 'Review every invoice opened for this order, check buyer payment proof, and confirm payment receipt from the Orders table action when needed.',
-    manageInvoices: 'Manage Invoices',
     partialAwardAccepted: 'Partial award accepted',
     fullQuotedScopeRequired: 'Full quoted scope required',
     close: 'Close',
@@ -65,7 +62,6 @@ const copy = {
 };
 
 const orderWorkflowLabel = computed(() => award.order_workflow_status_label || 'Order Information Pending');
-const isInvoiceUploadModalOpen = ref(false);
 
 const detailModal = ref(null);
 
@@ -126,21 +122,9 @@ const selectedCountryCount = computed(() => selectedCountries.value.length);
 const selectedPortCount = computed(() => portGroups.value
     .reduce((total, entry) => total + (entry.ports?.length ?? 0), 0));
 const portSelectionThreshold = 10;
-const hasInvoiceManagement = computed(() => (
-    Boolean(award.can_manage_invoices)
-    || (Array.isArray(award.invoices) && award.invoices.length > 0)
-));
 
 const openDetailModal = (type) => {
     detailModal.value = type;
-};
-
-const openInvoiceUploadModal = () => {
-    isInvoiceUploadModalOpen.value = true;
-};
-
-const closeInvoiceUploadModal = () => {
-    isInvoiceUploadModalOpen.value = false;
 };
 
 const closeDetailModal = () => {
@@ -302,41 +286,15 @@ const generalInformationFields = computed(() => [
         </section>
 
         <section class="surface-card section-card order-invoices-section">
-            <div class="section-heading section-heading-with-action">
-                <div class="section-heading-copy">
-                    <h2 class="directory-section-title">{{ copy.invoices }}</h2>
-                    <p class="section-heading-intro">{{ copy.invoicesIntro }}</p>
-                </div>
-
-                <button
-                    v-if="hasInvoiceManagement"
-                    type="button"
-                    class="back-button invoice-action-button"
-                    @click="openInvoiceUploadModal"
-                >
-                    {{ copy.manageInvoices }}
-                </button>
-            </div>
-
             <OrderInvoicesSection
                 :title="copy.invoices"
-                :show-heading="false"
+                :intro="copy.invoicesIntro"
                 :invoices="award.invoices || []"
                 :buyer-label="copy.buyerCompany"
                 :buyer-name="award.company_name || ''"
                 :supplier-name="dashboard.company_name || ''"
             />
         </section>
-
-        <InvoiceUploadModal
-            :is-open="isInvoiceUploadModalOpen"
-            :order="award"
-            :can-manage="Boolean(award.can_manage_invoices)"
-            :create-url="award.create_invoice_url || ''"
-            :supplier-company-name="dashboard.company_name || ''"
-            return-to="detail"
-            @close="closeInvoiceUploadModal"
-        />
 
         <div v-if="detailModal" class="detail-modal-backdrop" @click.self="closeDetailModal">
             <div class="detail-modal">
@@ -398,10 +356,6 @@ const generalInformationFields = computed(() => [
 .status-dot{width:10px;height:10px;border-radius:999px;display:inline-block}
 .status-dot.is-awarded{background:#0f766e;box-shadow:0 0 0 3px rgba(15,118,110,.16)}
 .section-heading{margin-bottom:16px}
-.section-heading-with-action{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;flex-wrap:wrap}
-.section-heading-copy{display:grid;gap:8px}
-.section-heading-intro{margin:0;color:#64748b;font-size:.9rem;line-height:1.7}
-.invoice-action-button{border:0;cursor:pointer}
 .section-heading :deep(.directory-section-title){margin:0;font-size:1.04rem;font-weight:700;line-height:1.25;color:#0f172a}
 .section-card :deep(.order-info-grid){align-items:stretch}
 .detail-modal-backdrop{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;padding:24px;background:rgba(15,23,42,.55);backdrop-filter:blur(10px);z-index:2200}
@@ -426,6 +380,5 @@ const generalInformationFields = computed(() => [
     .subsection-surface{padding:20px}
     .hero-actions{width:100%;flex-direction:column;align-items:stretch}
     .back-button{width:100%}
-    .section-heading-with-action{align-items:stretch}
 }
 </style>
