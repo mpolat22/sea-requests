@@ -95,6 +95,7 @@ const invoices = computed(() => currentOrder.value.invoices ?? []);
 const isSpareParts = computed(() => currentOrder.value.request_type === 'spare_parts');
 const activeInvoiceId = ref(null);
 const isFormVisible = ref(false);
+const createFormPanel = ref(null);
 const fieldRefs = {};
 
 const currentInvoice = computed(() => invoices.value.find((invoice) => invoice.id === activeInvoiceId.value) ?? null);
@@ -362,10 +363,20 @@ const handleFileChange = (event) => {
     clearFieldErrorIfValid('invoice_document');
 };
 
-const openCreateForm = () => {
+const scrollCreateFormIntoView = async () => {
+    await nextTick();
+    createFormPanel.value?.scrollIntoView({
+        behavior: 'smooth',
+        block: 'start',
+    });
+    fieldRefs.invoice_number?.focus?.();
+};
+
+const openCreateForm = async () => {
     activeInvoiceId.value = null;
     isFormVisible.value = true;
     resetForm();
+    await scrollCreateFormIntoView();
 };
 
 const openEditForm = (invoice) => {
@@ -610,7 +621,7 @@ const confirmPayment = (invoice) => {
                             </template>
                         </OrderInvoicesSection>
 
-                        <div v-if="isFormVisible && !currentInvoice" class="inline-editor-shell">
+                        <div v-if="isFormVisible && !currentInvoice" ref="createFormPanel" class="inline-editor-shell create-form-panel">
                             <div class="section-head">
                                 <p class="directory-eyebrow section-card-eyebrow">{{ copy.formTitle }}</p>
                                 <p class="section-copy">{{ copy.formIntro }}</p>
@@ -705,6 +716,7 @@ const confirmPayment = (invoice) => {
 .invoice-form,.section-form,.section-form-narrow{display:grid;gap:16px}
 .section-card{display:grid;gap:18px;padding:24px 26px;border:1px solid rgba(4,21,31,.08);border-radius:10px;background:rgba(255,255,255,.94);box-shadow:0 20px 42px rgba(15,23,42,.06)}
 .inline-editor-shell{display:grid;gap:18px;margin-top:18px;padding-top:18px;border-top:1px solid rgba(148,163,184,.16)}
+.create-form-panel{scroll-margin-top:16px}
 .section-head{display:grid;gap:8px}
 .section-head-inline{display:flex;align-items:flex-start;justify-content:space-between;gap:16px}
 .section-card-eyebrow,.section-copy{margin:0}
