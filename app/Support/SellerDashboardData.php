@@ -511,6 +511,7 @@ class SellerDashboardData
             ->withCount('invoices')
             ->with([
                 'rfq:id,reference_no,request_type,visibility_scope,company_name,ship_name,service_title,currency',
+                'invoices:id,offer_id,invoice_amount,payment_proof_date,payment_reference,payment_notes,payment_proof_document_path,payment_confirmed_at',
                 'awards' => fn ($query) => $query
                     ->select(['id', 'offer_id', 'offer_item_id', 'awarded_quantity', 'confirmed_at'])
                     ->where('status', OfferAward::STATUS_CONFIRMED)
@@ -583,7 +584,7 @@ class SellerDashboardData
         $agreedInvoiceTotal = $this->invoiceTotals->agreedTotal($offer);
         $invoicesCount = (int) ($offer->invoices_count ?? 0);
         $hasInvoices = $invoicesCount > 0;
-        $orderWorkflowStatus = $this->summaryOrderWorkflowStatus($offer, $invoicesCount);
+        $orderWorkflowStatus = $this->workflow->resolveStatus($offer);
 
         return [
             'id' => $offer->id,
@@ -604,7 +605,7 @@ class SellerDashboardData
             'selected_item_names' => $selectedProductNames->all(),
             'order_workflow_status' => $orderWorkflowStatus,
             'order_workflow_status_label' => $this->workflow->label($orderWorkflowStatus),
-            'can_manage_invoices' => $offer->hasCompleteOrderInformation() && $orderWorkflowStatus !== Offer::ORDER_STATUS_COMPLETED,
+            'can_manage_invoices' => $offer->canSellerManageInvoices(),
             'has_invoices' => $hasInvoices,
         ];
     }

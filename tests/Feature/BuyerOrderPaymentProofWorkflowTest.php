@@ -211,6 +211,62 @@ class BuyerOrderPaymentProofWorkflowTest extends TestCase
         $this->assertNotNull($invoice->payment_confirmed_at);
     }
 
+    public function test_partial_invoice_payment_confirmation_keeps_order_open_for_next_invoice(): void
+    {
+        Storage::fake('public');
+
+        [$buyer, $seller, $offer, $invoice] = $this->createOrderWithInvoice([
+            'invoice_amount' => 60.00,
+            'payment_proof_date' => now()->toDateString(),
+            'payment_reference' => 'BANK-TRX-PARTIAL-001',
+            'payment_notes' => 'Buyer uploaded partial payment proof.',
+            'payment_proof_document_disk' => 'public',
+            'payment_proof_document_path' => 'offers/test/payment-proof-partial.pdf',
+            'payment_proof_document_name' => 'payment-proof-partial.pdf',
+            'payment_proof_document_mime_type' => 'application/pdf',
+            'payment_proof_document_size' => 1024,
+        ]);
+
+        Storage::disk('public')->put('offers/test/payment-proof-partial.pdf', 'proof');
+
+        $this
+            ->actingAs($seller)
+            ->post(route('seller.orders.invoices.payment-confirm.store', [$offer, $invoice]), [
+                'return_to' => 'orders',
+            ])
+            ->assertRedirect(route('seller.orders'))
+            ->assertSessionHas('success.code', 'payment-confirmed');
+
+        $offer->refresh();
+        $invoice->refresh();
+
+        $this->assertSame(Offer::ORDER_STATUS_INVOICE_PENDING, $offer->order_workflow_status);
+        $this->assertNotNull($invoice->payment_confirmed_at);
+
+        $this->actingAs($seller)
+            ->get(route('seller.orders.show', $offer))
+            ->assertOk()
+            ->assertInertia(fn (AssertableInertia $page) => $page
+                ->component('Supplier/Dashboard/OrderDetail')
+                ->where('order.order_workflow_status', Offer::ORDER_STATUS_INVOICE_PENDING)
+                ->where('order.order_workflow_status_label', 'Invoice Pending')
+                ->where('order.can_manage_invoices', true)
+                ->where('order.can_add_invoice', true)
+                ->where('order.remaining_invoice_total', '60')
+            );
+
+        $this->actingAs($seller)
+            ->get(route('seller.orders'))
+            ->assertOk()
+            ->assertInertia(fn (AssertableInertia $page) => $page
+                ->component('Supplier/Dashboard/Orders')
+                ->where('orders.0.offer_id', $offer->id)
+                ->where('orders.0.order_workflow_status', Offer::ORDER_STATUS_INVOICE_PENDING)
+                ->where('orders.0.order_workflow_status_label', 'Invoice Pending')
+                ->where('orders.0.can_manage_invoices', true)
+            );
+    }
+
     public function test_seller_gets_redirect_instead_of_403_when_payment_proof_is_missing(): void
     {
         Storage::fake('public');

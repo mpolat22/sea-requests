@@ -147,6 +147,7 @@ class BuyerDashboardData
             ->withCount('invoices')
             ->with([
                 'rfq:id,reference_no,request_type,visibility_scope,company_name,ship_name,service_title,currency',
+                'invoices:id,offer_id,invoice_amount,payment_proof_date,payment_reference,payment_notes,payment_proof_document_path,payment_confirmed_at',
                 'seller:id,name,company_name',
                 'awards' => fn ($query) => $query
                     ->select(['id', 'offer_id', 'offer_item_id', 'awarded_quantity', 'confirmed_at', 'status'])
@@ -374,7 +375,7 @@ class BuyerDashboardData
         $agreedInvoiceTotal = $this->invoiceTotals->agreedTotal($offer);
         $invoicesCount = (int) ($offer->invoices_count ?? 0);
         $hasInvoices = $invoicesCount > 0;
-        $orderWorkflowStatus = $this->summaryOrderWorkflowStatus($offer, $invoicesCount);
+        $orderWorkflowStatus = $this->workflow->resolveStatus($offer);
 
         return [
             'id' => $offer->id,

@@ -7,12 +7,12 @@ use App\Models\OfferInvoice;
 
 class OfferOrderWorkflow
 {
+    public function __construct(
+        protected OfferInvoiceTotals $invoiceTotals
+    ) {}
+
     public function resolveStatus(Offer $offer): string
     {
-        if ($offer->order_workflow_status === Offer::ORDER_STATUS_COMPLETED) {
-            return Offer::ORDER_STATUS_COMPLETED;
-        }
-
         if (! $offer->hasCompleteOrderInformation()) {
             return Offer::ORDER_STATUS_ORDER_INFORMATION_PENDING;
         }
@@ -26,7 +26,9 @@ class OfferOrderWorkflow
         }
 
         if ($invoices->every(fn (OfferInvoice $invoice) => $invoice->isPaymentConfirmed())) {
-            return Offer::ORDER_STATUS_COMPLETED;
+            return $this->invoiceTotals->remainingTotal($offer) > 0.00001
+                ? Offer::ORDER_STATUS_INVOICE_PENDING
+                : Offer::ORDER_STATUS_COMPLETED;
         }
 
         if ($invoices->contains(fn (OfferInvoice $invoice) => $invoice->canSellerConfirmPayment())) {
