@@ -674,7 +674,7 @@ onBeforeUnmount(() => {
     position: fixed;
     top: 24px;
     right: 24px;
-    z-index: 80;
+    z-index: 5000;
     width: min(420px, calc(100vw - 32px));
     padding: 16px 18px;
     border-radius: 10px;

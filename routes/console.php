@@ -12,3 +12,8 @@ Schedule::command('rfqs:auto-close-overdue')
     ->dailyAt('00:10')
     ->timezone('Europe/Istanbul')
     ->withoutOverlapping();
+
+Schedule::command('outreach:dispatch-due')
+    ->everyMinute()
+    ->timezone('Europe/Istanbul')
+    ->withoutOverlapping();

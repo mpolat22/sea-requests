@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Admin\AdminDashboardController;
 use App\Http\Controllers\Admin\AdminOrderController;
+use App\Http\Controllers\Admin\AdminOutreachController;
 use App\Http\Controllers\Admin\AdminRfqController;
 use App\Http\Controllers\Admin\AdminUserManagementController;
 use App\Http\Controllers\Admin\UserApprovalController;
@@ -68,6 +69,9 @@ Route::get('/requests/{rfq}-{slug}/similar', [RfqController::class, 'similar'])
 Route::get('/requests/{rfq}-{slug}', [RfqController::class, 'show'])
     ->whereNumber('rfq')
     ->name('rfqs.show');
+Route::get('/outreach/unsubscribe/{contact}', [AdminOutreachController::class, 'unsubscribe'])
+    ->middleware('signed')
+    ->name('outreach.unsubscribe');
 
 Route::get('/robots.txt', function (Request $request) {
     $content = implode("\n", [
@@ -2124,6 +2128,20 @@ Route::middleware('auth')->group(function () {
         ->whereNumber('invoice')
         ->name('admin.orders.invoices.payment-confirm.store');
     Route::get('/dashboard/admin/orders/{offer}', [AdminOrderController::class, 'show'])->whereNumber('offer')->name('admin.orders.show');
+    Route::get('/dashboard/admin/outreach', [AdminOutreachController::class, 'index'])->name('admin.outreach');
+    Route::post('/dashboard/admin/outreach/imports', [AdminOutreachController::class, 'import'])->name('admin.outreach.imports.store');
+    Route::post('/dashboard/admin/outreach/contacts', [AdminOutreachController::class, 'storeManualContact'])->name('admin.outreach.contacts.store');
+    Route::delete('/dashboard/admin/outreach/contacts/{contact}', [AdminOutreachController::class, 'destroyContact'])->name('admin.outreach.contacts.destroy');
+    Route::post('/dashboard/admin/outreach/senders', [AdminOutreachController::class, 'storeSenderAccount'])->name('admin.outreach.senders.store');
+    Route::post('/dashboard/admin/outreach/senders/test-draft', [AdminOutreachController::class, 'testDraftSenderAccount'])->name('admin.outreach.senders.test-draft');
+    Route::post('/dashboard/admin/outreach/senders/{sender}/test', [AdminOutreachController::class, 'testSenderAccount'])->name('admin.outreach.senders.test');
+    Route::put('/dashboard/admin/outreach/senders/{sender}', [AdminOutreachController::class, 'updateSenderAccount'])->name('admin.outreach.senders.update');
+    Route::delete('/dashboard/admin/outreach/senders/{sender}', [AdminOutreachController::class, 'destroySenderAccount'])->name('admin.outreach.senders.destroy');
+    Route::post('/dashboard/admin/outreach/templates', [AdminOutreachController::class, 'storeTemplate'])->name('admin.outreach.templates.store');
+    Route::put('/dashboard/admin/outreach/templates/{template}', [AdminOutreachController::class, 'updateTemplate'])->name('admin.outreach.templates.update');
+    Route::delete('/dashboard/admin/outreach/templates/{template}', [AdminOutreachController::class, 'destroyTemplate'])->name('admin.outreach.templates.destroy');
+    Route::put('/dashboard/admin/outreach/regions/{regionKey}/plan', [AdminOutreachController::class, 'updateRegionPlan'])->name('admin.outreach.regions.update');
+    Route::delete('/dashboard/admin/outreach/regions/{regionKey}/plan', [AdminOutreachController::class, 'destroyRegionPlan'])->name('admin.outreach.regions.destroy');
     Route::get('/admin/vendors', AdminDashboardController::class);
     Route::get('/admin/users/{user}/seller-verification', [SellerVerificationController::class, 'createForAdmin'])->name('admin.seller-verification.edit');
     Route::post('/admin/users/{user}/seller-verification', [SellerVerificationController::class, 'storeForAdmin'])->name('admin.seller-verification.update');

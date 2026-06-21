@@ -6,6 +6,7 @@ use App\Models\Brand;
 use App\Models\Category;
 use App\Models\Offer;
 use App\Models\OfferAward;
+use App\Models\OutreachSegment;
 use App\Models\OfferItem;
 use App\Models\Port;
 use App\Models\Rfq;
@@ -40,6 +41,19 @@ class AdminDashboardData
                 'orders_url' => route('admin.orders'),
                 'orders_count' => Offer::query()
                     ->whereHas('awards', fn (Builder $query) => $query->where('status', OfferAward::STATUS_CONFIRMED))
+                    ->count(),
+                'outreach_url' => route('admin.outreach'),
+                'outreach_count' => OutreachSegment::query()
+                    ->where('audience', 'supplier')
+                    ->whereIn('name', [
+                        'SUPPLIER ASIA',
+                        'SUPPLIER EUROPE',
+                        'SUPPLIER AFRICA',
+                        'SUPPLIER NORTHAMERICA',
+                        'SUPPLIER SOUTHAMERICA',
+                        'SUPPLIER OCEANIA',
+                        'SUPPLIER GLOBAL',
+                    ])
                     ->count(),
             ],
         ];
