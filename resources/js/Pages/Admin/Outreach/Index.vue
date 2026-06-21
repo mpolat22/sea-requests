@@ -82,7 +82,6 @@ const summaryCards = computed(() => [
         actionType: 'contacts',
         actionPayload: { status: 'unsubscribed', region: '', search: '' },
     },
-    { label: 'Templates', value: formatNumber(props.summary.templates_count) },
     {
         label: 'Sent Today',
         value: formatNumber(props.summary.sent_today),

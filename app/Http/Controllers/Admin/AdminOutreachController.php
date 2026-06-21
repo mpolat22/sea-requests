@@ -273,7 +273,6 @@ class AdminOutreachController extends Controller
                 'unsubscribed_contacts' => (int) ($contactSummary?->unsubscribed_contacts ?? 0),
                 'regions_count' => $regionCards->count(),
                 'active_schedules' => $regionCards->filter(fn (array $region) => (bool) data_get($region, 'schedule.is_active'))->count(),
-                'templates_count' => OutreachTemplate::query()->where('audience', 'supplier')->count(),
                 'sent_today' => OutreachSendLog::query()->whereDate('sent_at', Carbon::today('Europe/Istanbul'))->where('status', OutreachSendLog::STATUS_SENT)->count(),
                 'queued_now' => OutreachSendLog::query()->where('status', OutreachSendLog::STATUS_QUEUED)->count(),
             ],
