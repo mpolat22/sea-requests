@@ -23,6 +23,8 @@ use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -304,7 +306,16 @@ class AdminOutreachController extends Controller
         ]);
 
         $file = $validated['file'];
-        $storedPath = $file->storeAs('outreach-imports', now()->format('YmdHis').'-'.$file->getClientOriginalName());
+        $disk = Storage::disk('local');
+        $directory = $disk->path('outreach-imports');
+        File::ensureDirectoryExists($directory, 0770, true);
+        @chmod($directory, 0770);
+
+        $storedPath = $file->storeAs('outreach-imports', now()->format('YmdHis').'-'.$file->getClientOriginalName(), 'local');
+
+        if ($storedPath !== false) {
+            @chmod($disk->path($storedPath), 0660);
+        }
 
         $run = OutreachImportRun::query()->create([
             'audience' => 'supplier',
