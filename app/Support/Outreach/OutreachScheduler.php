@@ -34,6 +34,8 @@ class OutreachScheduler
             return false;
         }
 
+        $persistedNow = $this->persistedTimestamp($now);
+
         $cycleKey = $this->cycleKey($schedule, $now);
 
         if ($cycleKey === null) {
@@ -89,11 +91,11 @@ class OutreachScheduler
             'recipient_organization' => $contact->organization_name,
             'sender_email' => $senderAccount?->from_email ?: (string) config('mail.from.address'),
             'status' => OutreachSendLog::STATUS_QUEUED,
-            'queued_at' => $now,
+            'queued_at' => $persistedNow,
         ]);
 
         $schedule->forceFill([
-            'last_dispatched_at' => $now,
+            'last_dispatched_at' => $persistedNow,
             'last_cycle_key' => $cycleKey,
         ])->save();
 
@@ -260,6 +262,11 @@ class OutreachScheduler
         $weeksBetween = (int) floor($anchor->diffInDays($currentWeek, false) / 7);
 
         return $weeksBetween >= 0 && $weeksBetween % 2 === 0;
+    }
+
+    private function persistedTimestamp(CarbonImmutable $now): CarbonImmutable
+    {
+        return $now->setTimezone((string) config('app.timezone', 'UTC'));
     }
 
     private function hasConfiguredButInactiveSenderAccounts(string $audience): bool

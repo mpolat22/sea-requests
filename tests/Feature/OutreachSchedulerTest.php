@@ -11,6 +11,7 @@ use App\Models\OutreachTemplate;
 use App\Support\Outreach\OutreachScheduler;
 use Carbon\CarbonImmutable;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Queue;
 use Tests\TestCase;
 
@@ -100,9 +101,12 @@ class OutreachSchedulerTest extends TestCase
         $this->assertTrue($scheduler->dispatchSchedule($schedule, $now));
 
         $log = OutreachSendLog::query()->latest('id')->firstOrFail();
+        $expectedStoredTimestamp = $now->setTimezone((string) config('app.timezone', 'UTC'))->format('Y-m-d H:i:s');
 
         $this->assertSame($contact->id, $log->contact_id);
         $this->assertSame('daily-2026-06-22', $log->cycle_key);
+        $this->assertSame($expectedStoredTimestamp, DB::table('outreach_send_logs')->where('id', $log->id)->value('queued_at'));
+        $this->assertSame($expectedStoredTimestamp, DB::table('outreach_schedules')->where('id', $schedule->id)->value('last_dispatched_at'));
 
         Queue::assertPushed(SendOutreachEmailJob::class);
     }
