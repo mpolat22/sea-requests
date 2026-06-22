@@ -242,9 +242,12 @@ class OutreachScheduler
 
     private function isDispatchWeek(OutreachSchedule $schedule, CarbonImmutable $now): bool
     {
-        $startsOn = CarbonImmutable::parse($schedule->starts_on)->startOfDay();
+        $startsOnDate = $schedule->starts_on instanceof \DateTimeInterface
+            ? $schedule->starts_on->format('Y-m-d')
+            : (string) $schedule->starts_on;
+        $startsOn = CarbonImmutable::createFromFormat('Y-m-d', $startsOnDate, $now->getTimezone())->startOfDay();
 
-        if ($now->startOfDay()->lt($startsOn)) {
+        if ($now->lt($startsOn)) {
             return false;
         }
 
