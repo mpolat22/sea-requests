@@ -23,8 +23,7 @@ const props = defineProps({
     },
 });
 
-const contactEmailDisplay = computed(() => props.contactEmail || 'support@searequests.com');
-const contactPhoneDisplay = '05413342219';
+const contactEmailDisplay = computed(() => props.contactEmail || 'support@searequests.ai');
 
 const contactForm = useForm({
     name: '',
@@ -123,21 +122,8 @@ const submitContactForm = () => {
 
                     <div class="contact-info-list">
                         <div class="contact-info-item">
-                            <strong>Phone</strong>
-                            <a :href="`tel:${contactPhoneDisplay}`">{{ contactPhoneDisplay }}</a>
-                        </div>
-
-                        <div class="contact-info-item">
                             <strong>Email</strong>
                             <a :href="`mailto:${contactEmailDisplay}`">{{ contactEmailDisplay }}</a>
-                        </div>
-
-                        <div class="contact-info-item">
-                            <strong>Address</strong>
-                            <div>
-                                <p>123 Main Street, Suite 500</p>
-                                <p>City, Country</p>
-                            </div>
                         </div>
 
                         <div class="contact-info-item">
