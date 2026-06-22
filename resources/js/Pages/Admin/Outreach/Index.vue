@@ -35,6 +35,7 @@ const manualContactEmailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const contactSearch = ref(props.contactsPage.filters?.search ?? '');
 const contactStatus = ref(props.contactsPage.filters?.status ?? 'all');
 const contactRegion = ref(props.contactsPage.filters?.region ?? '');
+const reactivatingContactId = ref(null);
 const isRefreshingContacts = ref(false);
 const isRefreshingLogs = ref(false);
 const contactsLastSyncedAt = ref(new Date().toISOString());
@@ -247,6 +248,7 @@ const manualContactForm = useForm({
 const deletePlanForm = useForm({});
 const deleteSenderForm = useForm({});
 const deleteTemplateForm = useForm({});
+const reactivateContactForm = useForm({});
 const deleteContactForm = useForm({});
 
 function normalizeWeeklyPlan(weeklyPlan = []) {
@@ -1002,6 +1004,7 @@ function openModal(type, payload = null) {
     deletePlanForm.clearErrors();
     deleteSenderForm.clearErrors();
     deleteTemplateForm.clearErrors();
+    reactivateContactForm.clearErrors();
     deleteContactForm.clearErrors();
 
     if (type === 'contact') {
@@ -1051,6 +1054,7 @@ function closeModal() {
     deletePlanForm.clearErrors();
     deleteSenderForm.clearErrors();
     deleteTemplateForm.clearErrors();
+    reactivateContactForm.clearErrors();
     deleteContactForm.clearErrors();
 }
 
@@ -1330,6 +1334,35 @@ function deleteContact() {
             }
 
             contactsLastSyncedAt.value = new Date().toISOString();
+        },
+    });
+}
+
+function canReactivateContact(contact) {
+    return Boolean(contact?.reactivate_url) && contact?.status === 'unsubscribed';
+}
+
+function reactivateContact(contact) {
+    if (!canReactivateContact(contact) || reactivateContactForm.processing) {
+        return;
+    }
+
+    reactivatingContactId.value = contact.id;
+
+    reactivateContactForm.patch(contact.reactivate_url, {
+        preserveScroll: true,
+        preserveState: true,
+        only: ['summary', 'regions', 'contactsPage'],
+        onStart: () => {
+            isRefreshingContacts.value = true;
+        },
+        onSuccess: () => {
+            activeModal.value = 'contacts';
+            contactsLastSyncedAt.value = new Date().toISOString();
+        },
+        onFinish: () => {
+            isRefreshingContacts.value = false;
+            reactivatingContactId.value = null;
         },
     });
 }
@@ -2249,7 +2282,7 @@ function deleteContact() {
 
                             <div class="monitor-stats-row">
                                 <div class="monitor-stat-chip">
-                                    <span>Queued</span>
+                                    <span>Queued Now</span>
                                     <strong>{{ formatNumber(filteredLogCounts.queued) }}</strong>
                                 </div>
                                 <div class="monitor-stat-chip">
@@ -2270,6 +2303,9 @@ function deleteContact() {
                                 Showing {{ formatNumber(filteredLogs.length) }} of the latest {{ formatNumber(props.logs.length) }} delivery log rows.
                                 Last synced {{ formatDateTime(logsLastSyncedAt) }}.
                             </p>
+                            <p class="filter-meta">
+                                Queued Now only shows emails still waiting at this exact refresh moment. If the outreach worker picks them up immediately, this can stay 0 while Sent continues increasing.
+                            </p>
                         </div>
 
                         <div v-if="filteredLogs.length" class="data-table-wrap">
@@ -2281,7 +2317,7 @@ function deleteContact() {
                                         <th>Region</th>
                                         <th>Sender</th>
                                         <th>Template</th>
-                                        <th>Queued</th>
+                                        <th>Queued At</th>
                                         <th>Attempted</th>
                                         <th>Sent</th>
                                         <th>Error</th>
@@ -2411,6 +2447,16 @@ function deleteContact() {
                                         <td>{{ contact.last_result || '-' }}</td>
                                         <td>
                                             <div class="actions-cell">
+                                                <button
+                                                    v-if="canReactivateContact(contact)"
+                                                    type="button"
+                                                    class="action-button action-button-primary"
+                                                    :title="reactivatingContactId === contact.id ? 'Reactivating' : 'Reactivate'"
+                                                    :disabled="reactivateContactForm.processing && reactivatingContactId === contact.id"
+                                                    @click="reactivateContact(contact)"
+                                                >
+                                                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 11a8 8 0 1 1-2.34-5.66" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M20 4v7h-7" fill="none" stroke="currentColor" stroke-width="1.8"/></svg>
+                                                </button>
                                                 <button type="button" class="action-button action-button-danger" title="Delete" @click="openModal('contact-delete', contact)">
                                                     <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M9 7V4h6v3" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M7 7l1 13h8l1-13" fill="none" stroke="currentColor" stroke-width="1.8"/></svg>
                                                 </button>
@@ -2802,6 +2848,8 @@ function deleteContact() {
 .action-button{display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border:0;background:transparent;padding:0;color:#0f172a;transition:color .2s ease, background-color .2s ease, opacity .2s ease}
 .action-button svg{width:17px;height:17px;flex:0 0 17px}
 .action-button.is-loading{color:#2563eb;background:#dbeafe;border-radius:999px}
+.action-button:disabled{opacity:.55;cursor:not-allowed}
+.action-button-primary{color:#2563eb}
 .action-button-danger{color:#ef4444}
 .spin-icon{animation:spin 0.85s linear infinite}
 @keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}

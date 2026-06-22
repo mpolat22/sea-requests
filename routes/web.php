@@ -2134,6 +2134,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/dashboard/admin/outreach', [AdminOutreachController::class, 'index'])->name('admin.outreach');
     Route::post('/dashboard/admin/outreach/imports', [AdminOutreachController::class, 'import'])->name('admin.outreach.imports.store');
     Route::post('/dashboard/admin/outreach/contacts', [AdminOutreachController::class, 'storeManualContact'])->name('admin.outreach.contacts.store');
+    Route::patch('/dashboard/admin/outreach/contacts/{contact}/reactivate', [AdminOutreachController::class, 'reactivateContact'])->name('admin.outreach.contacts.reactivate');
     Route::delete('/dashboard/admin/outreach/contacts/{contact}', [AdminOutreachController::class, 'destroyContact'])->name('admin.outreach.contacts.destroy');
     Route::post('/dashboard/admin/outreach/senders', [AdminOutreachController::class, 'storeSenderAccount'])->name('admin.outreach.senders.store');
     Route::post('/dashboard/admin/outreach/senders/test-draft', [AdminOutreachController::class, 'testDraftSenderAccount'])->name('admin.outreach.senders.test-draft');

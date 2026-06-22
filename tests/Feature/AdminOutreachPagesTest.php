@@ -427,6 +427,78 @@ class AdminOutreachPagesTest extends TestCase
         $this->assertDatabaseCount('outreach_send_logs', 0);
     }
 
+    public function test_admin_can_reactivate_unsubscribed_outreach_contact(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin']);
+
+        $segment = OutreachSegment::query()->create([
+            'name' => 'SUPPLIER ASIA',
+            'audience' => 'supplier',
+            'region_key' => 'asia',
+            'recommended_weekday' => 1,
+            'recommended_start_time' => '09:00',
+            'recommended_end_time' => '11:00',
+            'is_active' => true,
+        ]);
+
+        $contact = OutreachContact::query()->create([
+            'email' => 'reactivate@example.com',
+            'audience' => 'supplier',
+            'primary_segment_id' => $segment->id,
+            'organization_name' => 'Reactivation Marine',
+            'status' => OutreachContact::STATUS_UNSUBSCRIBED,
+            'last_result' => 'unsubscribed',
+        ]);
+
+        $this->actingAs($admin)
+            ->patch(route('admin.outreach.contacts.reactivate', $contact))
+            ->assertRedirect();
+
+        $this->assertDatabaseHas('outreach_contacts', [
+            'id' => $contact->id,
+            'status' => OutreachContact::STATUS_ACTIVE,
+            'last_result' => 'reactivated_by_admin',
+        ]);
+    }
+
+    public function test_reactivated_outreach_contact_returns_to_registered_when_matching_seller_exists(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin']);
+        User::factory()->create([
+            'role' => 'seller',
+            'email' => 'registered-reactivate@example.com',
+        ]);
+
+        $segment = OutreachSegment::query()->create([
+            'name' => 'SUPPLIER EUROPE',
+            'audience' => 'supplier',
+            'region_key' => 'europe',
+            'recommended_weekday' => 2,
+            'recommended_start_time' => '13:00',
+            'recommended_end_time' => '15:00',
+            'is_active' => true,
+        ]);
+
+        $contact = OutreachContact::query()->create([
+            'email' => 'registered-reactivate@example.com',
+            'audience' => 'supplier',
+            'primary_segment_id' => $segment->id,
+            'organization_name' => 'Registered Reactivation Marine',
+            'status' => OutreachContact::STATUS_UNSUBSCRIBED,
+            'last_result' => 'unsubscribed',
+        ]);
+
+        $this->actingAs($admin)
+            ->patch(route('admin.outreach.contacts.reactivate', $contact))
+            ->assertRedirect();
+
+        $this->assertDatabaseHas('outreach_contacts', [
+            'id' => $contact->id,
+            'status' => OutreachContact::STATUS_REGISTERED,
+            'last_result' => 'reactivated_by_admin',
+        ]);
+    }
+
     public function test_admin_can_create_sender_account(): void
     {
         $admin = User::factory()->create(['role' => 'admin']);

@@ -408,6 +408,28 @@ class AdminOutreachController extends Controller
         ]);
     }
 
+    public function reactivateContact(Request $request, OutreachContact $contact): RedirectResponse
+    {
+        abort_unless($request->user()?->isAdmin(), 403);
+        abort_unless($contact->audience === 'supplier', 404);
+
+        $normalizedEmail = mb_strtolower(trim((string) $contact->email));
+        $isRegistered = User::query()
+            ->where('role', 'seller')
+            ->whereRaw('lower(email) = ?', [$normalizedEmail])
+            ->exists();
+
+        $contact->status = $isRegistered
+            ? OutreachContact::STATUS_REGISTERED
+            : OutreachContact::STATUS_ACTIVE;
+        $contact->last_result = 'reactivated_by_admin';
+        $contact->save();
+
+        return back()->with('success', [
+            'message' => 'Supplier outreach contact reactivated.',
+        ]);
+    }
+
     public function storeTemplate(Request $request): RedirectResponse
     {
         abort_unless($request->user()?->isAdmin(), 403);
@@ -806,6 +828,9 @@ class AdminOutreachController extends Controller
                         'sent_count' => (int) $contact->sent_count,
                         'last_result' => $contact->last_result,
                         'source_type' => (string) data_get($contact->source_payload, 'source_type', 'import'),
+                        'reactivate_url' => $contact->status === OutreachContact::STATUS_UNSUBSCRIBED
+                            ? route('admin.outreach.contacts.reactivate', $contact)
+                            : null,
                         'delete_url' => route('admin.outreach.contacts.destroy', $contact),
                     ];
                 })
