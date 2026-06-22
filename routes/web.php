@@ -1997,7 +1997,7 @@ Route::get('/about-us', fn () => Inertia::render('Static/AboutUs', [
     ),
 ]))->name('about');
 Route::get('/contact', fn () => Inertia::render('Static/Contact', [
-    'contactEmail' => config('mail.from.address'),
+    'contactEmail' => 'support@searequests.ai',
     'meta' => $staticPageMeta(
         'Contact | Sea Requests',
         'Contact the Sea Requests team for marketplace questions, buyer and supplier support, or account-related enquiries.',

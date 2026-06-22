@@ -27,7 +27,7 @@ class ContactMessageController extends Controller
             'agree_to_contact.accepted' => 'You must accept the contact consent text to continue.',
         ]);
 
-        $recipient = config('mail.from.address');
+        $recipient = 'support@searequests.ai';
 
         Mail::send('emails.contact-message', ['payload' => $validated], function ($message) use ($validated, $recipient): void {
             $message->to($recipient)
