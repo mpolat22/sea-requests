@@ -657,17 +657,23 @@ class AdminOutreachController extends Controller
         abort_unless($request->hasValidSignature(), 403);
 
         $alreadyUnsubscribed = $contact->status === OutreachContact::STATUS_UNSUBSCRIBED;
+        $confirmed = false;
 
-        if (! $alreadyUnsubscribed) {
+        if ($request->isMethod('post') && ! $alreadyUnsubscribed) {
             $contact->forceFill([
                 'status' => OutreachContact::STATUS_UNSUBSCRIBED,
                 'last_result' => 'unsubscribed',
             ])->save();
+
+            $alreadyUnsubscribed = true;
+            $confirmed = true;
         }
 
         return view('outreach.unsubscribe', [
             'contact' => $contact,
             'alreadyUnsubscribed' => $alreadyUnsubscribed,
+            'confirmed' => $confirmed,
+            'confirmActionUrl' => $request->fullUrl(),
             'appName' => (string) config('app.name', 'Sea Requests'),
             'homeUrl' => rtrim((string) config('app.url'), '/'),
         ]);

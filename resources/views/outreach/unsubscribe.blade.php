@@ -3,7 +3,9 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>{{ $alreadyUnsubscribed ? 'Already unsubscribed' : 'Unsubscribed' }} | {{ $appName }}</title>
+    <title>
+        {{ $confirmed ? 'Unsubscribed' : ($alreadyUnsubscribed ? 'Already unsubscribed' : 'Confirm unsubscribe') }} | {{ $appName }}
+    </title>
     <style>
         :root {
             color-scheme: light;
@@ -63,11 +65,16 @@
             color: var(--accent);
             font-size: 0.95rem;
         }
+        .actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin-top: 22px;
+        }
         .button {
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            margin-top: 8px;
             min-height: 46px;
             padding: 0 18px;
             border-radius: 999px;
@@ -75,22 +82,69 @@
             color: #fff;
             font-weight: 600;
             text-decoration: none;
+            border: 0;
+            cursor: pointer;
+            font: inherit;
+        }
+        .button-secondary {
+            background: #ffffff;
+            color: var(--accent);
+            border: 1px solid rgba(16, 43, 76, 0.14);
+        }
+        .helper {
+            margin-top: 18px;
+            font-size: 0.94rem;
+        }
+        .helper a {
+            color: var(--accent);
+            font-weight: 600;
         }
     </style>
 </head>
 <body>
     <main class="panel">
         <p class="eyebrow">Email Preferences</p>
-        <h1>{{ $alreadyUnsubscribed ? 'This address is already removed.' : 'You have been unsubscribed.' }}</h1>
-        <p>
-            {{ $alreadyUnsubscribed
-                ? 'This email address was already removed from future supplier outreach sends.'
-                : 'This email address will no longer receive supplier outreach emails from '.$appName.'.' }}
-        </p>
+        @if (! $alreadyUnsubscribed)
+            <h1>Confirm your unsubscribe request.</h1>
+            <p>
+                You opened the email preference link for supplier introduction emails from {{ $appName }}.
+                Nothing has been changed yet.
+            </p>
+            <p>
+                If you still want to stop future supplier outreach emails for this address, confirm it below.
+                If you clicked by mistake, simply return to the platform and no unsubscribe action will happen.
+            </p>
+        @elseif ($confirmed)
+            <h1>You have been unsubscribed.</h1>
+            <p>
+                This email address will no longer receive supplier outreach emails from {{ $appName }}.
+            </p>
+        @else
+            <h1>This address is already removed.</h1>
+            <p>
+                This email address was already unsubscribed from future supplier outreach emails.
+            </p>
+        @endif
         <div class="meta">
             Recipient: <strong>{{ $contact->email }}</strong>
         </div>
-        <a class="button" href="{{ $homeUrl }}">Return to {{ $appName }}</a>
+        @if (! $alreadyUnsubscribed)
+            <div class="actions">
+                <a class="button button-secondary" href="{{ $homeUrl }}">Keep me subscribed</a>
+                <form method="POST" action="{{ $confirmActionUrl }}">
+                    @csrf
+                    <button class="button" type="submit">Unsubscribe this email</button>
+                </form>
+            </div>
+        @else
+            <div class="actions">
+                <a class="button" href="{{ $homeUrl }}">Return to {{ $appName }}</a>
+            </div>
+        @endif
+        <p class="helper">
+            Platform link:
+            <a href="{{ $homeUrl }}">{{ $homeUrl }}</a>
+        </p>
     </main>
 </body>
 </html>

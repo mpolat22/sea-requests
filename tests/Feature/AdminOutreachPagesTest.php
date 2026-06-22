@@ -728,7 +728,7 @@ class AdminOutreachPagesTest extends TestCase
         ]);
     }
 
-    public function test_signed_unsubscribe_link_marks_contact_as_unsubscribed(): void
+    public function test_signed_unsubscribe_link_shows_confirmation_before_status_change(): void
     {
         $contact = OutreachContact::query()->create([
             'email' => 'unsubscribe@example.com',
@@ -739,6 +739,27 @@ class AdminOutreachPagesTest extends TestCase
         $url = URL::signedRoute('outreach.unsubscribe', ['contact' => $contact->id]);
 
         $this->get($url)
+            ->assertOk()
+            ->assertSee('Confirm your unsubscribe request.', false)
+            ->assertSee('unsubscribe@example.com', false);
+
+        $this->assertDatabaseHas('outreach_contacts', [
+            'id' => $contact->id,
+            'status' => OutreachContact::STATUS_ACTIVE,
+        ]);
+    }
+
+    public function test_signed_unsubscribe_confirmation_post_marks_contact_as_unsubscribed(): void
+    {
+        $contact = OutreachContact::query()->create([
+            'email' => 'unsubscribe@example.com',
+            'audience' => 'supplier',
+            'status' => OutreachContact::STATUS_ACTIVE,
+        ]);
+
+        $url = URL::signedRoute('outreach.unsubscribe', ['contact' => $contact->id]);
+
+        $this->post($url)
             ->assertOk()
             ->assertSee('You have been unsubscribed.', false)
             ->assertSee('unsubscribe@example.com', false);

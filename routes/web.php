@@ -72,6 +72,9 @@ Route::get('/requests/{rfq}-{slug}', [RfqController::class, 'show'])
 Route::get('/outreach/unsubscribe/{contact}', [AdminOutreachController::class, 'unsubscribe'])
     ->middleware('signed')
     ->name('outreach.unsubscribe');
+Route::post('/outreach/unsubscribe/{contact}', [AdminOutreachController::class, 'unsubscribe'])
+    ->middleware('signed')
+    ->name('outreach.unsubscribe.confirm');
 
 Route::get('/robots.txt', function (Request $request) {
     $content = implode("\n", [
