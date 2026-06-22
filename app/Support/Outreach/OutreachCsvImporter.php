@@ -93,7 +93,9 @@ class OutreachCsvImporter
                 DB::transaction(function () use (
                     $email,
                     $record,
-                    $segment,
+                    $regionKey,
+                    $regionSegment,
+                    $sourceSegment,
                     $registeredSellerEmails,
                     &$newContacts,
                     &$updatedContacts

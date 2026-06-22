@@ -253,6 +253,71 @@ class AdminOutreachPagesTest extends TestCase
         ]);
     }
 
+    public function test_supplier_csv_import_processes_contacts_successfully(): void
+    {
+        Storage::fake('local');
+
+        $admin = User::factory()->create(['role' => 'admin']);
+        User::factory()->create([
+            'role' => 'seller',
+            'email' => 'registered-supplier@example.com',
+        ]);
+
+        Storage::disk('local')->put(
+            'outreach-imports/suppliers.csv',
+            implode("\n", [
+                'Labels,Organization Name,E-mail 1 - Value,First Name,Last Name,File As',
+                'SUPPLIER EUROPE-1 ::: * myContacts,Acme Marine,active-supplier@example.com,Andrew,Stone,Acme Marine',
+                'SUPPLIER EUROPE-1 ::: * myContacts,Registered Marine,registered-supplier@example.com,Sarah,North,Registered Marine',
+            ])
+        );
+
+        $run = OutreachImportRun::query()->create([
+            'audience' => 'supplier',
+            'file_name' => 'suppliers.csv',
+            'stored_path' => 'outreach-imports/suppliers.csv',
+            'status' => 'queued',
+            'imported_by' => $admin->id,
+            'message' => 'Queued for import.',
+        ]);
+
+        app(\App\Support\Outreach\OutreachCsvImporter::class)->import($run);
+
+        $run->refresh();
+
+        $this->assertSame('completed', $run->status);
+        $this->assertSame(2, $run->row_count);
+        $this->assertSame(2, $run->processed_count);
+        $this->assertSame(2, $run->new_contacts_count);
+        $this->assertSame(0, $run->updated_contacts_count);
+        $this->assertSame(0, $run->duplicate_emails_count);
+        $this->assertSame(0, $run->skipped_count);
+
+        $regionSegment = OutreachSegment::query()->where('name', 'SUPPLIER EUROPE')->firstOrFail();
+        $sourceSegment = OutreachSegment::query()->where('name', 'SUPPLIER EUROPE-1')->firstOrFail();
+
+        $activeContact = OutreachContact::query()->where('email', 'active-supplier@example.com')->firstOrFail();
+        $registeredContact = OutreachContact::query()->where('email', 'registered-supplier@example.com')->firstOrFail();
+
+        $this->assertSame($regionSegment->id, $activeContact->primary_segment_id);
+        $this->assertSame(OutreachContact::STATUS_ACTIVE, $activeContact->status);
+        $this->assertSame('europe', $activeContact->source_payload['region_key'] ?? null);
+        $this->assertSame('SUPPLIER EUROPE-1', $activeContact->source_payload['raw_label'] ?? null);
+
+        $this->assertSame($regionSegment->id, $registeredContact->primary_segment_id);
+        $this->assertSame(OutreachContact::STATUS_REGISTERED, $registeredContact->status);
+
+        $this->assertDatabaseHas('outreach_contact_segment', [
+            'outreach_contact_id' => $activeContact->id,
+            'outreach_segment_id' => $regionSegment->id,
+        ]);
+
+        $this->assertDatabaseHas('outreach_contact_segment', [
+            'outreach_contact_id' => $activeContact->id,
+            'outreach_segment_id' => $sourceSegment->id,
+        ]);
+    }
+
     public function test_admin_can_add_manual_supplier_contact_to_region(): void
     {
         $admin = User::factory()->create(['role' => 'admin']);
