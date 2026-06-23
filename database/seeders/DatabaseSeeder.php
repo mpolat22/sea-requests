@@ -18,9 +18,28 @@ class DatabaseSeeder extends Seeder
     {
         $this->call(CategorySeeder::class);
 
-        $admin = User::query()->firstOrNew(['email' => 'info@spareparts.com']);
+        $adminEmail = 'admin@searequests.ai';
+
+        $admin = User::query()
+            ->where('role', 'admin')
+            ->whereIn('email', [
+                $adminEmail,
+                'info@searequests.com',
+                'info@spareparts.com',
+            ])
+            ->orderByRaw(
+                "case
+                    when email = ? then 0
+                    when email = 'info@searequests.com' then 1
+                    when email = 'info@spareparts.com' then 2
+                    else 3
+                end",
+                [$adminEmail]
+            )
+            ->first() ?? User::query()->firstOrNew(['email' => $adminEmail]);
         $admin->forceFill([
             'name' => 'Sea Requests Admin',
+            'email' => $adminEmail,
             'company_name' => 'Sea Requests',
             'phone' => null,
             'locale' => 'en',

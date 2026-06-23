@@ -30,8 +30,12 @@ class MarketplaceNotification extends Notification implements ShouldQueue
     public function toMail(object $notifiable): MailMessage
     {
         $copy = $this->payload();
+        $fromAddress = (string) config('mail.requests_mail.from.address', config('mail.from.address'));
+        $fromName = (string) config('mail.requests_mail.from.name', config('mail.from.name'));
 
         $mail = (new MailMessage)
+            ->mailer('requests')
+            ->from($fromAddress, $fromName)
             ->subject($copy['subject'])
             ->greeting('Hello '.($notifiable->name ?? '').',')
             ->line($copy['message']);

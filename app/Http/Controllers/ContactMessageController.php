@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Mail\ContactMessageMail;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Mail;
@@ -27,13 +28,11 @@ class ContactMessageController extends Controller
             'agree_to_contact.accepted' => 'You must accept the contact consent text to continue.',
         ]);
 
-        $recipient = 'support@searequests.ai';
+        $recipient = (string) config('mail.support_mail.recipient', 'support@searequests.ai');
 
-        Mail::send('emails.contact-message', ['payload' => $validated], function ($message) use ($validated, $recipient): void {
-            $message->to($recipient)
-                ->replyTo($validated['email'], $validated['name'])
-                ->subject('Sea Requests | Contact Form Message');
-        });
+        Mail::mailer('support')
+            ->to($recipient)
+            ->send(new ContactMessageMail($validated));
 
         return back()->with('success', 'Your message has been sent successfully.');
     }

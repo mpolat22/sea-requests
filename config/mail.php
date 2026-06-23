@@ -49,6 +49,36 @@ return [
             'local_domain' => env('MAIL_EHLO_DOMAIN', parse_url((string) env('APP_URL', 'http://localhost'), PHP_URL_HOST)),
         ],
 
+        'support' => [
+            'transport' => 'smtp',
+            'scheme' => env('SUPPORT_MAIL_SCHEME', env('MAIL_SCHEME')),
+            'url' => env('SUPPORT_MAIL_URL'),
+            'host' => env('SUPPORT_MAIL_HOST', env('MAIL_HOST', '127.0.0.1')),
+            'port' => env('SUPPORT_MAIL_PORT', env('MAIL_PORT', 2525)),
+            'username' => env('SUPPORT_MAIL_USERNAME', env('MAIL_USERNAME')),
+            'password' => env('SUPPORT_MAIL_PASSWORD', env('MAIL_PASSWORD')),
+            'timeout' => null,
+            'local_domain' => env(
+                'SUPPORT_MAIL_EHLO_DOMAIN',
+                env('MAIL_EHLO_DOMAIN', parse_url((string) env('APP_URL', 'http://localhost'), PHP_URL_HOST))
+            ),
+        ],
+
+        'requests' => [
+            'transport' => 'smtp',
+            'scheme' => env('REQUESTS_MAIL_SCHEME', env('MAIL_SCHEME')),
+            'url' => env('REQUESTS_MAIL_URL'),
+            'host' => env('REQUESTS_MAIL_HOST', env('MAIL_HOST', '127.0.0.1')),
+            'port' => env('REQUESTS_MAIL_PORT', env('MAIL_PORT', 2525)),
+            'username' => env('REQUESTS_MAIL_USERNAME', env('MAIL_USERNAME')),
+            'password' => env('REQUESTS_MAIL_PASSWORD', env('MAIL_PASSWORD')),
+            'timeout' => null,
+            'local_domain' => env(
+                'REQUESTS_MAIL_EHLO_DOMAIN',
+                env('MAIL_EHLO_DOMAIN', parse_url((string) env('APP_URL', 'http://localhost'), PHP_URL_HOST))
+            ),
+        ],
+
         'ses' => [
             'transport' => 'ses',
         ],
@@ -113,6 +143,21 @@ return [
     'from' => [
         'address' => env('MAIL_FROM_ADDRESS', 'hello@example.com'),
         'name' => env('MAIL_FROM_NAME', env('APP_NAME', 'Laravel')),
+    ],
+
+    'support_mail' => [
+        'recipient' => env('SUPPORT_MAIL_TO_ADDRESS', 'support@searequests.ai'),
+        'from' => [
+            'address' => env('SUPPORT_MAIL_FROM_ADDRESS', env('MAIL_FROM_ADDRESS', 'support@searequests.ai')),
+            'name' => env('SUPPORT_MAIL_FROM_NAME', env('MAIL_FROM_NAME', env('APP_NAME', 'Laravel'))),
+        ],
+    ],
+
+    'requests_mail' => [
+        'from' => [
+            'address' => env('REQUESTS_MAIL_FROM_ADDRESS', env('MAIL_FROM_ADDRESS', 'requests@searequests.ai')),
+            'name' => env('REQUESTS_MAIL_FROM_NAME', env('MAIL_FROM_NAME', env('APP_NAME', 'Laravel'))),
+        ],
     ],
 
 ];
