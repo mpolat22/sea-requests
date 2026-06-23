@@ -13,6 +13,7 @@ use App\Models\Subcategory;
 use App\Models\SupplierServiceListing;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Str;
 use Inertia\Testing\AssertableInertia;
 use Tests\TestCase;
@@ -20,6 +21,13 @@ use Tests\TestCase;
 class BuyerRfqEditPolicyTest extends TestCase
 {
     use RefreshDatabase;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        Notification::fake();
+    }
 
     public function test_submitted_rfq_without_offers_can_still_be_fully_edited(): void
     {
@@ -323,6 +331,7 @@ class BuyerRfqEditPolicyTest extends TestCase
             'reference_no' => $rfq->reference_no,
             'company_name' => $rfq->company_name,
             'ship_name' => $rfq->ship_name,
+            'imo_number' => $rfq->imo_number ?: '1234567',
             'country_names' => [$port->country_name],
             'ports_by_country' => [
                 $port->country_name => [$port->id],
@@ -367,6 +376,7 @@ class BuyerRfqEditPolicyTest extends TestCase
             'reference_no' => 'RFQ-EDIT-BASE-001',
             'company_name' => 'Buyer Company',
             'ship_name' => 'MV Buyer',
+            'imo_number' => '1234567',
             'request_type' => 'service_request',
             'visibility_scope' => Rfq::VISIBILITY_PUBLIC_MARKETPLACE,
             'country_name' => $port->country_name,

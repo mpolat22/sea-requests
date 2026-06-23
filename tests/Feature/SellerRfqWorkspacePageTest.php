@@ -25,6 +25,7 @@ class SellerRfqWorkspacePageTest extends TestCase
             'reference_no' => 'RFQ-SUPPLIER-WORKSPACE-001',
             'company_name' => 'Buyer Company',
             'ship_name' => 'MV Workspace',
+            'imo_number' => '1234567',
             'request_type' => 'service_request',
             'visibility_scope' => Rfq::VISIBILITY_PUBLIC_MARKETPLACE,
             'country_name' => $port->country_name,

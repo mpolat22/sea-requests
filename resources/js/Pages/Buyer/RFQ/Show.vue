@@ -160,6 +160,11 @@ const generalInformationFields = computed(() => [
         value: props.rfq.ship_name || '-',
     },
     {
+        key: 'imo_number',
+        label: 'IMO Number',
+        value: props.rfq.imo_number || '-',
+    },
+    {
         key: 'status',
         label: currentCopy.value.labels.status,
         value: currentCopy.value.statuses[props.rfq.status] || props.rfq.status || '-',

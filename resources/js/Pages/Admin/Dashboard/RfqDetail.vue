@@ -271,6 +271,7 @@ const generalInformationFields = computed(() => [
     { key: 'reference_no', label: copy.labels.referenceNo, value: rfq.reference_no || '-' },
     { key: 'company', label: copy.labels.company, value: rfq.company_name || '-' },
     { key: 'ship', label: copy.labels.ship, value: rfq.ship_name || '-' },
+    { key: 'imo_number', label: 'IMO Number', value: rfq.imo_number || '-' },
     { key: 'status', label: copy.labels.status, value: copy.statuses[rfq.status] || rfq.status || '-' },
     { key: 'request_type', label: copy.labels.requestType, value: copy.requestType[rfq.request_type] || rfq.request_type || '-' },
     { key: 'visibility', label: copy.labels.visibility, value: rfq.is_private_request ? copy.privateRequest : copy.publishedRequest },

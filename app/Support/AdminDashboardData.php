@@ -72,6 +72,7 @@ class AdminDashboardData
                 'reference_no',
                 'company_name',
                 'ship_name',
+                'imo_number',
                 'request_type',
                 'visibility_scope',
                 'country_name',
@@ -190,7 +191,7 @@ class AdminDashboardData
             ])
             ->whereHas('awards', fn (Builder $query) => $query->where('status', OfferAward::STATUS_CONFIRMED))
             ->with([
-                'rfq:id,reference_no,request_type,visibility_scope,company_name,ship_name,service_title,currency,priority',
+                'rfq:id,reference_no,request_type,visibility_scope,company_name,ship_name,imo_number,service_title,currency,priority',
                 'seller:id,name,company_name',
                 'items' => fn ($query) => $query->select(['id', 'offer_id', 'rfq_item_id', 'unit_price']),
                 'invoices',
@@ -421,6 +422,7 @@ class AdminDashboardData
             'supplier_name' => $offer->seller?->company_name ?: $offer->seller?->name ?: '-',
             'supplier_profile_url' => $this->supplierProfileUrl($offer->seller),
             'ship_name' => $rfq?->ship_name ?: '-',
+            'imo_number' => $rfq?->imo_number ?: '-',
             'confirmed_at' => $this->isoString($offer->latest_confirmed_at),
             'currency' => $offer->currency ?: $rfq?->currency ?: 'USD',
             'selected_total' => $this->decimalString($selectedTotal),
@@ -446,6 +448,7 @@ class AdminDashboardData
             'reference_no' => $rfq->reference_no,
             'company_name' => $rfq->company_name,
             'ship_name' => $rfq->ship_name,
+            'imo_number' => $rfq->imo_number,
             'country_names' => collect($rfq->country_names ?? [])->filter()->values()->all(),
             'ports_by_country' => $this->normalizedPortsByCountry($rfq),
             'port_totals_by_country' => $this->activePortCountsForCountries(collect($rfq->country_names ?? [])->filter()->values()->all()),
@@ -577,6 +580,7 @@ class AdminDashboardData
             'supplier_profile_url' => $this->supplierProfileUrl($offer->seller),
             'company_name' => $rfq->company_name,
             'ship_name' => $rfq->ship_name,
+            'imo_number' => $rfq->imo_number,
             'service_title' => $rfq->service_title,
             'service_description' => $rfq->service_description ?? '',
             'country_names' => collect($rfq->country_names ?? [])->filter()->values()->all(),

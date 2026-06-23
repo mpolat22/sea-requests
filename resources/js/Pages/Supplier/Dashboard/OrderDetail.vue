@@ -169,6 +169,11 @@ const generalInformationFields = computed(() => [
         value: textOrDash(award.ship_name),
     },
     {
+        key: 'imo_number',
+        label: 'IMO Number',
+        value: textOrDash(award.imo_number),
+    },
+    {
         key: 'status',
         label: copy.orderStatus,
         value: orderWorkflowLabel.value,

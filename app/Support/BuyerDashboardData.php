@@ -146,7 +146,7 @@ class BuyerDashboardData
             ])
             ->withCount('invoices')
             ->with([
-                'rfq:id,reference_no,request_type,visibility_scope,company_name,ship_name,service_title,currency',
+                'rfq:id,reference_no,request_type,visibility_scope,company_name,ship_name,imo_number,service_title,currency',
                 'invoices:id,offer_id,invoice_amount,payment_proof_date,payment_reference,payment_notes,payment_proof_document_path,payment_confirmed_at',
                 'seller:id,name,company_name',
                 'awards' => fn ($query) => $query
@@ -390,6 +390,7 @@ class BuyerDashboardData
             'supplier_name' => $offer->seller?->company_name ?: $offer->seller?->name ?: '-',
             'supplier_profile_url' => $this->supplierProfileUrl($offer->seller),
             'ship_name' => $rfq->ship_name,
+            'imo_number' => $rfq->imo_number,
             'service_title' => $rfq->service_title,
             'confirmed_at' => $this->isoString($offer->latest_confirmed_at),
             'currency' => $offer->currency ?: $rfq->currency ?: 'USD',
@@ -484,6 +485,7 @@ class BuyerDashboardData
             'supplier_profile_url' => $this->supplierProfileUrl($offer->seller),
             'company_name' => $rfq->company_name,
             'ship_name' => $rfq->ship_name,
+            'imo_number' => $rfq->imo_number,
             'service_title' => $rfq->service_title,
             'service_description' => $rfq->service_description ?? '',
             'country_names' => collect($rfq->country_names ?? [])->filter()->values()->all(),

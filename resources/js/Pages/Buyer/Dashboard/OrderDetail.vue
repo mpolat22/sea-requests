@@ -130,6 +130,7 @@ const generalInformationFields = computed(() => [
     { key: 'reference_no', label: copy.referenceNo, value: textOrDash(order.reference_no) },
     { key: 'supplier', label: copy.supplier, value: textOrDash(order.supplier_name), href: order.supplier_profile_url || '' },
     { key: 'ship', label: copy.ship, value: textOrDash(order.ship_name) },
+    { key: 'imo_number', label: 'IMO Number', value: textOrDash(order.imo_number) },
     { key: 'status', label: copy.orderStatus, value: orderWorkflowLabel.value },
     { key: 'country', label: copy.country, value: `${selectedCountryCount.value} ${copy.countriesSelected}`, clickable: true, action: 'countries' },
     { key: 'ports', label: copy.ports, value: `${selectedPortCount.value} ${copy.portsSelected}`, clickable: true, action: 'ports', long: true },

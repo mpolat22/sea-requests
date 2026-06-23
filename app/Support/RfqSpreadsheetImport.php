@@ -19,6 +19,7 @@ class RfqSpreadsheetImport
         'reference_no' => 'Reference No',
         'company_name' => 'Company',
         'ship_name' => 'Ship',
+        'imo_number' => 'IMO Number',
         'requisition_date' => 'Requisition Date',
         'due_date' => 'Due Date',
         'currency' => 'Currency',
@@ -58,6 +59,10 @@ class RfqSpreadsheetImport
             'ship', 'vessel', 'mv', 'm v', 'm.v', 'm/v', 'vessel name',
             'ship name', 'mv vessel', 'm v vessel', 'm.v vessel', 'name of vessel',
             'vessels', 'ships', 'vessel names', 'fleet vessel',
+        ],
+        'imo_number' => [
+            'imo', 'imo number', 'imo no', 'imo no.', 'imo #', 'vessel imo',
+            'vessel imo number', 'ship imo', 'ship imo number',
         ],
         'requisition_date' => [
             'requisition date', 'request date', 'required date', 'delivery date', 'req date',

@@ -30,6 +30,14 @@ const props = defineProps({
         type: Function,
         required: true,
     },
+    validateImoNumber: {
+        type: Function,
+        required: true,
+    },
+    normalizeImoNumber: {
+        type: Function,
+        required: true,
+    },
     validateDateNotPast: {
         type: Function,
         required: true,
@@ -225,6 +233,20 @@ const portSearchModel = computed({
                     @input="props.clearFieldErrorIfValid('ship_name', props.validateRequiredText(props.form.ship_name))"
                 />
                 <small v-if="props.hasError('ship_name')" class="field-error">{{ props.getError('ship_name') }}</small>
+            </label>
+
+            <label class="field">
+                <span>IMO Number <span class="required-star">*</span></span>
+                <input
+                    v-model="props.form.imo_number"
+                    :class="{ 'has-error': props.hasError('imo_number') }"
+                    type="text"
+                    inputmode="numeric"
+                    maxlength="7"
+                    placeholder="Enter IMO Number"
+                    @input="props.form.imo_number = props.normalizeImoNumber(props.form.imo_number); props.clearFieldErrorIfValid('imo_number', props.validateImoNumber(props.form.imo_number))"
+                />
+                <small v-if="props.hasError('imo_number')" class="field-error">{{ props.getError('imo_number') }}</small>
             </label>
 
             <label class="field">

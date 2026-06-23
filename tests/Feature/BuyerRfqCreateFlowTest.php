@@ -89,6 +89,7 @@ class BuyerRfqCreateFlowTest extends TestCase
             ->post(route('rfqs.store'), $this->sparePartsPayload($port, [
                 'reference_no' => 'RFQ-SPARE-CREATE-001',
                 'status' => 'draft',
+                'imo_number' => '1234567',
                 'items' => [[
                     'product_name' => 'Cylinder liner',
                     'part_no' => 'CL-100',
@@ -117,6 +118,7 @@ class BuyerRfqCreateFlowTest extends TestCase
         $this->assertSame(Rfq::STATUS_DRAFT, $rfq->status);
         $this->assertSame(Rfq::VISIBILITY_PUBLIC_MARKETPLACE, $rfq->visibilityScope());
         $this->assertSame('spare_parts', $rfq->request_type);
+        $this->assertSame('1234567', $rfq->imo_number);
         $this->assertNull($rfq->submitted_at);
         $this->assertCount(1, $rfq->items);
         $this->assertCount(0, $rfq->attachments);
@@ -320,6 +322,39 @@ class BuyerRfqCreateFlowTest extends TestCase
             );
     }
 
+    public function test_imo_number_is_required_numeric_and_max_seven_digits(): void
+    {
+        $buyer = User::factory()->create([
+            'role' => 'buyer',
+        ]);
+
+        $port = $this->createActivePort();
+
+        $this->actingAs($buyer)
+            ->from(route('rfqs.create'))
+            ->post(route('rfqs.store'), $this->sparePartsPayload($port, [
+                'imo_number' => '',
+            ]))
+            ->assertRedirect(route('rfqs.create'))
+            ->assertSessionHasErrors(['imo_number']);
+
+        $this->actingAs($buyer)
+            ->from(route('rfqs.create'))
+            ->post(route('rfqs.store'), $this->sparePartsPayload($port, [
+                'imo_number' => 'IMO1234',
+            ]))
+            ->assertRedirect(route('rfqs.create'))
+            ->assertSessionHasErrors(['imo_number']);
+
+        $this->actingAs($buyer)
+            ->from(route('rfqs.create'))
+            ->post(route('rfqs.store'), $this->sparePartsPayload($port, [
+                'imo_number' => '12345678',
+            ]))
+            ->assertRedirect(route('rfqs.create'))
+            ->assertSessionHasErrors(['imo_number']);
+    }
+
     public function test_supplier_targeted_service_request_is_saved_as_private_and_limited_to_selected_supplier(): void
     {
         Queue::fake();
@@ -443,6 +478,7 @@ class BuyerRfqCreateFlowTest extends TestCase
             'reference_no' => 'RFQ-SPARE-BASE-001',
             'company_name' => 'Buyer Company',
             'ship_name' => 'MV Atlas',
+            'imo_number' => '1234567',
             'country_names' => [$port->country_name],
             'ports_by_country' => [
                 $port->country_name => [$port->id],
@@ -487,6 +523,7 @@ class BuyerRfqCreateFlowTest extends TestCase
             'reference_no' => 'RFQ-SERVICE-BASE-001',
             'company_name' => 'Buyer Company',
             'ship_name' => 'MV Atlas',
+            'imo_number' => '1234567',
             'country_names' => [$port->country_name],
             'ports_by_country' => [
                 $port->country_name => [$port->id],

@@ -8,6 +8,7 @@ use App\Models\RfqItem;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Testing\AssertableInertia;
 use Tests\TestCase;
@@ -15,6 +16,13 @@ use Tests\TestCase;
 class BuyerRfqEditAttachmentsTest extends TestCase
 {
     use RefreshDatabase;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        Notification::fake();
+    }
 
     public function test_buyer_edit_page_shows_existing_service_request_attachments(): void
     {
@@ -112,6 +120,7 @@ class BuyerRfqEditAttachmentsTest extends TestCase
                 'reference_no' => $rfq->reference_no,
                 'company_name' => $rfq->company_name,
                 'ship_name' => $rfq->ship_name,
+                'imo_number' => $rfq->imo_number ?: '1234567',
                 'country_names' => ['Albania'],
                 'ports_by_country' => [
                     'Albania' => [$port->id],
@@ -197,6 +206,7 @@ class BuyerRfqEditAttachmentsTest extends TestCase
                 'reference_no' => $rfq->reference_no,
                 'company_name' => $rfq->company_name,
                 'ship_name' => $rfq->ship_name,
+                'imo_number' => $rfq->imo_number ?: '1234567',
                 'country_names' => ['Albania'],
                 'ports_by_country' => [
                     'Albania' => [$port->id],
@@ -267,6 +277,7 @@ class BuyerRfqEditAttachmentsTest extends TestCase
             'reference_no' => 'RFQ-SERVICE-EDIT-001',
             'company_name' => 'Buyer Company',
             'ship_name' => 'MV Buyer',
+            'imo_number' => '1234567',
             'request_type' => 'service_request',
             'visibility_scope' => Rfq::VISIBILITY_PUBLIC_MARKETPLACE,
             'country_name' => 'Albania',
@@ -296,6 +307,7 @@ class BuyerRfqEditAttachmentsTest extends TestCase
             'reference_no' => 'RFQ-SPARE-EDIT-001',
             'company_name' => 'Buyer Company',
             'ship_name' => 'MV Buyer',
+            'imo_number' => '1234567',
             'request_type' => 'spare_parts',
             'visibility_scope' => Rfq::VISIBILITY_PUBLIC_MARKETPLACE,
             'country_name' => 'Albania',

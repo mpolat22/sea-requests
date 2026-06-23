@@ -13,6 +13,7 @@ class RfqImportAiRefiner
         'reference_no',
         'company_name',
         'ship_name',
+        'imo_number',
         'status',
         'country',
         'port',

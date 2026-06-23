@@ -141,6 +141,50 @@ class RequestShowPageTest extends TestCase
             );
     }
 
+    public function test_public_request_show_hides_company_ship_and_imo_from_guests(): void
+    {
+        $buyer = User::factory()->create(['role' => 'buyer']);
+        $port = $this->createActivePort();
+
+        $rfq = Rfq::query()->create([
+            'buyer_id' => $buyer->id,
+            'reference_no' => 'RFQ-PUBLIC-SHOW-IMO-001',
+            'company_name' => 'Northwind Buyer',
+            'ship_name' => 'MV Horizon',
+            'imo_number' => '7654321',
+            'request_type' => 'service_request',
+            'visibility_scope' => Rfq::VISIBILITY_PUBLIC_MARKETPLACE,
+            'country_name' => $port->country_name,
+            'port_name' => $port->port_name,
+            'country_names' => [$port->country_name],
+            'ports_by_country' => [
+                $port->country_name => [
+                    ['id' => $port->id, 'name' => $port->port_name, 'unlocode' => $port->unlocode],
+                ],
+            ],
+            'requisition_date' => now()->toDateString(),
+            'due_date' => now()->addDays(5)->toDateString(),
+            'currency' => 'USD',
+            'priority' => 'normal',
+            'status' => Rfq::STATUS_SUBMITTED,
+            'general_notes' => 'Visibility gate test.',
+            'service_title' => 'Generator inspection',
+            'service_description' => 'Public request visibility gate test.',
+            'items_count' => 1,
+            'submitted_at' => now(),
+        ]);
+
+        $this->get(route('rfqs.show', ['rfq' => $rfq, 'slug' => $rfq->publicSlug()]))
+            ->assertOk()
+            ->assertInertia(fn (AssertableInertia $page) => $page
+                ->component('Request/RequestShow')
+                ->where('rfq.company_name', null)
+                ->where('rfq.ship_name', null)
+                ->where('rfq.imo_number', null)
+                ->where('rfq.can_view_company_ship', false)
+            );
+    }
+
     private function createActivePort(): Port
     {
         return Port::query()->create([

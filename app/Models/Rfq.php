@@ -35,6 +35,7 @@ class Rfq extends Model
         'reference_no',
         'company_name',
         'ship_name',
+        'imo_number',
         'request_type',
         'visibility_scope',
         'country_name',

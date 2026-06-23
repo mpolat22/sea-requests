@@ -253,6 +253,12 @@ const generalInformationFields = computed(() => {
         value: props.rfq.ship_name || '-',
     };
 
+    const imoField = {
+        key: 'imo_number',
+        label: 'IMO Number',
+        value: props.rfq.imo_number || '-',
+    };
+
     if (isAwardedSellerView.value) {
         return [
             {
@@ -262,6 +268,7 @@ const generalInformationFields = computed(() => {
             },
             companyField,
             shipField,
+            imoField,
             statusField,
             countryField,
             portsField,
@@ -306,7 +313,7 @@ const generalInformationFields = computed(() => {
             label: currentCopy.value.labels.referenceNo,
             value: props.rfq.reference_no || '-',
         },
-        ...(canViewCompanyShip.value ? [companyField, shipField] : []),
+        ...(canViewCompanyShip.value ? [companyField, shipField, imoField] : []),
         countryField,
         portsField,
         statusField,

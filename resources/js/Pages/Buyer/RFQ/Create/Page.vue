@@ -95,6 +95,7 @@ const form = useForm({
     reference_no: props.defaults.reference_no,
     company_name: props.defaults.company_name,
     ship_name: props.defaults.ship_name,
+    imo_number: props.defaults.imo_number ?? '',
     country_names: props.defaults.country_names,
     ports_by_country: props.defaults.ports_by_country,
     category_ids: props.defaults.category_ids ?? [],
@@ -317,6 +318,7 @@ const importTemplateGeneralFields = [
     ['reference_no', 'Reference No'],
     ['company_name', 'Company'],
     ['ship_name', 'Ship'],
+    ['imo_number', 'IMO Number'],
     ['country', 'Country'],
     ['port', 'Port'],
     ['requisition_date', 'Requisition Date'],
@@ -800,6 +802,7 @@ const seedImportPreviewDraft = (preview) => {
             reference_no: preview.general?.reference_no ?? '',
             company_name: preview.general?.company_name ?? '',
             ship_name: preview.general?.ship_name ?? '',
+            imo_number: normalizeImoNumber(preview.general?.imo_number ?? ''),
             status: canonicalStatus || preview.general?.status || '',
             country: canonicalCountry || preview.general?.country || '',
             port: preview.general?.port ?? '',
@@ -876,6 +879,8 @@ const clearFieldErrorIfValid = (key, isValid) => {
 
 const validateRequiredText = (value) => String(value ?? '').trim().length > 0;
 const validateRequiredSelect = (value) => String(value ?? '').trim().length > 0;
+const normalizeImoNumber = (value) => String(value ?? '').replace(/\D+/g, '').slice(0, 7);
+const validateImoNumber = (value) => /^\d{1,7}$/.test(String(value ?? '').trim());
 const validateQuantity = (value) => Number(value) > 0;
 const validateDateNotPast = (value) => Boolean(value) && String(value) >= todayIso();
 const validateFiles = (files) => Array.isArray(files) && files.length > 0;
@@ -885,6 +890,112 @@ const validateServiceTitle = (value) => validateRequiredText(value) && countChar
 const validateServiceDescription = (value) => {
     const characters = countCharacters(value);
     return characters >= SERVICE_DESCRIPTION_MIN_CHARACTERS;
+};
+
+const validateClientSideSubmit = () => {
+    const errors = {};
+
+    if (!validateRequiredText(form.reference_no)) {
+        errors.reference_no = 'Reference No is required.';
+    }
+
+    if (!validateRequiredText(form.company_name)) {
+        errors.company_name = 'Company is required.';
+    }
+
+    if (!validateRequiredText(form.ship_name)) {
+        errors.ship_name = 'Ship is required.';
+    }
+
+    const normalizedImoNumber = normalizeImoNumber(form.imo_number);
+
+    if (!normalizedImoNumber) {
+        errors.imo_number = 'IMO Number is required.';
+    } else if (!validateImoNumber(normalizedImoNumber)) {
+        errors.imo_number = 'IMO Number must contain only numbers and be no more than 7 digits.';
+    }
+
+    if (!Array.isArray(form.country_names) || form.country_names.length === 0) {
+        errors.country_names = 'Select at least one country.';
+    }
+
+    if (!validatePortsSelection(form.ports_by_country)) {
+        errors.ports_by_country = 'Select at least one port.';
+    }
+
+    if (!validateRequiredText(form.requisition_date)) {
+        errors.requisition_date = 'Requisition Date is required.';
+    } else if (!validateDateNotPast(form.requisition_date)) {
+        errors.requisition_date = 'Requisition Date cannot be earlier than today.';
+    }
+
+    if (!validateRequiredText(form.due_date)) {
+        errors.due_date = 'Due Date is required.';
+    } else if (!validateDateNotPast(form.due_date)) {
+        errors.due_date = 'Due Date cannot be earlier than today.';
+    }
+
+    if (!validateRequiredSelect(form.currency)) {
+        errors.currency = 'Currency is required.';
+    }
+
+    if (!validateRequiredSelect(form.priority)) {
+        errors.priority = 'Priority is required.';
+    }
+
+    if (isServiceRequest.value) {
+        if (!validateRequiredText(form.service_title)) {
+            errors.service_title = 'Title is required.';
+        }
+
+        if (!validateRequiredText(form.service_description)) {
+            errors.service_description = 'Description is required.';
+        } else if (!validateServiceDescription(form.service_description)) {
+            errors.service_description = `Description must be at least ${SERVICE_DESCRIPTION_MIN_CHARACTERS} characters.`;
+        }
+
+        return errors;
+    }
+
+    if (!Array.isArray(form.items) || form.items.length === 0) {
+        errors.items = 'Add at least one item.';
+        return errors;
+    }
+
+    form.items.forEach((item, index) => {
+        if (!validateRequiredText(item.product_name)) {
+            errors[itemKey(index, 'product_name')] = 'Product is required.';
+        }
+
+        const quantityText = String(item.quantity ?? '').trim();
+
+        if (!quantityText) {
+            errors[itemKey(index, 'quantity')] = 'Qty required.';
+        } else if (Number.isNaN(Number(quantityText))) {
+            errors[itemKey(index, 'quantity')] = 'Qty must be a number.';
+        } else if (!validateQuantity(item.quantity)) {
+            errors[itemKey(index, 'quantity')] = 'Qty must be greater than 0.';
+        }
+
+        if (!validateRequiredSelect(item.unit)) {
+            errors[itemKey(index, 'unit')] = 'Unit required.';
+        }
+    });
+
+    return errors;
+};
+
+const focusFirstSubmitError = async () => {
+    await nextTick();
+
+    const firstErrorField = document.querySelector('.rfq-form .has-error');
+
+    if (!(firstErrorField instanceof HTMLElement)) {
+        return;
+    }
+
+    firstErrorField.focus?.();
+    firstErrorField.scrollIntoView({ behavior: 'smooth', block: 'center' });
 };
 const normalizeImportLookup = (value) => String(value ?? '')
     .toLowerCase()
@@ -1942,6 +2053,7 @@ const applyImportPreview = async () => {
     form.reference_no = general.reference_no || form.reference_no;
     form.company_name = general.company_name || form.company_name;
     form.ship_name = general.ship_name || form.ship_name;
+    form.imo_number = normalizeImoNumber(general.imo_number) || form.imo_number;
     form.requisition_date = general.requisition_date || form.requisition_date;
     form.due_date = general.due_date || form.due_date;
     form.currency = general.currency || form.currency;
@@ -2037,6 +2149,7 @@ const previewGeneralColumns = [
     { key: 'reference_no', label: 'Reference No' },
     { key: 'company_name', label: 'Company' },
     { key: 'ship_name', label: 'Ship' },
+    { key: 'imo_number', label: 'IMO Number' },
     { key: 'status', label: 'RFQ Status' },
     { key: 'country', label: 'Country' },
     { key: 'port', label: 'Ports' },
@@ -2063,6 +2176,7 @@ const previewGeneralDisplay = computed(() => {
         reference_no: preview.reference_no || form.reference_no || '',
         company_name: preview.company_name || form.company_name || '',
         ship_name: preview.ship_name || form.ship_name || '',
+        imo_number: normalizeImoNumber(preview.imo_number || form.imo_number || ''),
         status: preview.status ? formatOptionLabel(preview.status) : (form.status ? formatOptionLabel(form.status) : ''),
         country: preview.country || form.country_names?.join(', ') || '',
         port: preview.port || selectedPortNames || '',
@@ -2171,6 +2285,8 @@ const generalInformationSectionProps = computed(() => ({
     getError,
     clearFieldErrorIfValid,
     validateRequiredText,
+    validateImoNumber,
+    normalizeImoNumber,
     validateDateNotPast,
     validateRequiredSelect,
     openImportTemplate,
@@ -2846,9 +2962,19 @@ watch(
 const submit = (statusOverride = null) => {
     submitIntent.value = statusOverride === 'draft' ? 'draft' : 'submit';
     form.status = statusOverride ?? form.status;
+    form.clearErrors();
+
+    const clientErrors = validateClientSideSubmit();
+
+    if (Object.keys(clientErrors).length > 0) {
+        form.setError(clientErrors);
+        void focusFirstSubmitError();
+        return;
+    }
 
     if (submitIntent.value !== 'draft' && isSupplierTargetedRequest.value && form.supplier_recipient_ids.length === 0) {
         form.setError('supplier_recipient_ids', 'No approved suppliers match this private request scope. Change country, ports, category, subcategory, or brand before submitting.');
+        void focusFirstSubmitError();
         return;
     }
 
