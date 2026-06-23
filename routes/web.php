@@ -195,9 +195,9 @@ Route::get('/sitemap.xml', function (Request $request) {
         ])
     );
 
-    $urls = collect([
+    $allUrls = collect([
         ['loc' => $root.'/', 'lastmod' => $homeLastmod, 'changefreq' => 'weekly', 'priority' => '1.0'],
-        ['loc' => $root.'/services', 'lastmod' => $servicesLastmod, 'changefreq' => 'daily', 'priority' => '0.9'],
+        ['loc' => $root.'/services', 'lastmod' => $servicesLastmod, 'changefreq' => 'weekly', 'priority' => '0.9'],
         ['loc' => $root.'/requests', 'lastmod' => $requestsLastmod, 'changefreq' => 'weekly', 'priority' => '0.8'],
         ['loc' => $root.'/about-us', 'lastmod' => $staticInfoLastmod, 'changefreq' => 'monthly', 'priority' => '0.45'],
         ['loc' => $root.'/blog', 'lastmod' => $staticInfoLastmod, 'changefreq' => 'monthly', 'priority' => '0.4'],
@@ -206,88 +206,7 @@ Route::get('/sitemap.xml', function (Request $request) {
         ['loc' => $root.'/disclaimer', 'lastmod' => $staticInfoLastmod, 'changefreq' => 'yearly', 'priority' => '0.3'],
         ['loc' => $root.'/privacy-policy', 'lastmod' => $privacyLastmod, 'changefreq' => 'yearly', 'priority' => '0.3'],
         ['loc' => $root.'/terms-of-service', 'lastmod' => $termsLastmod, 'changefreq' => 'yearly', 'priority' => '0.3'],
-    ]);
-
-    $categoryUrls = Category::query()
-        ->where('is_active', true)
-        ->orderBy('name')
-        ->get(['slug', 'updated_at'])
-        ->map(fn (Category $category) => [
-            'loc' => ServiceDirectoryRoute::url($category),
-            'lastmod' => $lastmodFrom(
-                optional($category->updated_at),
-                $fileLastmod(['resources/js/Pages/Service/ServicesIndex.vue'])
-            ),
-            'changefreq' => 'weekly',
-            'priority' => '0.8',
-        ]);
-
-    $subcategoryUrls = Subcategory::query()
-        ->select(['subcategories.slug', 'subcategories.updated_at', 'categories.slug as category_slug'])
-        ->join('categories', 'categories.id', '=', 'subcategories.category_id')
-        ->where('categories.is_active', true)
-        ->where('subcategories.is_active', true)
-        ->orderBy('categories.name')
-        ->orderBy('subcategories.name')
-        ->get()
-        ->map(function ($row) use ($lastmodFrom, $fileLastmod) {
-            return [
-                'loc' => ServiceDirectoryRoute::url(
-                    Category::make(['slug' => $row->category_slug]),
-                    Subcategory::make(['slug' => $row->slug])
-                ),
-                'lastmod' => $lastmodFrom(
-                    $row->updated_at,
-                    $fileLastmod(['resources/js/Pages/Service/ServicesIndex.vue'])
-                ),
-                'changefreq' => 'weekly',
-                'priority' => '0.75',
-            ];
-        })
-        ->filter()
-        ->values();
-
-    $serviceUrls = SupplierServiceListing::query()
-        ->visible()
-        ->orderBy('updated_at', 'desc')
-        ->get(['category_slug', 'subcategory_slug', 'vendor_slug', 'updated_at'])
-        ->map(fn (SupplierServiceListing $listing) => [
-            'loc' => route('services.show', [
-                'category' => $listing->category_slug,
-                'subcategory' => $listing->subcategory_slug ?: $listing->category_slug,
-                'vendor' => $listing->vendor_slug,
-            ]),
-            'lastmod' => $lastmodFrom(
-                optional($listing->updated_at),
-                $fileLastmod(['resources/js/Pages/Service/ServiceShow.vue'])
-            ),
-            'changefreq' => 'weekly',
-            'priority' => '0.7',
-        ]);
-
-    $rfqUrls = Rfq::query()
-        ->published()
-        ->publicMarketplace()
-        ->orderBy('updated_at', 'desc')
-        ->get(['id', 'request_type', 'service_title', 'reference_no', 'updated_at'])
-        ->map(fn (Rfq $rfq) => [
-            'loc' => $rfq->publicShowUrl(),
-            'lastmod' => $lastmodFrom(
-                optional($rfq->updated_at),
-                $fileLastmod([
-                    'app/Http/Controllers/RfqController.php',
-                    'resources/js/Pages/Request/RequestShow.vue',
-                ])
-            ),
-            'changefreq' => 'weekly',
-            'priority' => '0.65',
-        ]);
-
-    $allUrls = $urls
-        ->concat($categoryUrls)
-        ->concat($subcategoryUrls)
-        ->concat($serviceUrls)
-        ->concat($rfqUrls)
+    ])
         ->map(function (array $item) {
             $loc = htmlspecialchars($item['loc'], ENT_XML1);
             $lastmod = htmlspecialchars($item['lastmod'], ENT_XML1);
