@@ -1,10 +1,7 @@
 <script setup>
 import { Link } from '@inertiajs/vue3';
 import { onBeforeUnmount, onMounted, ref } from 'vue';
-
-const consentKey = 'sea_requests_cookie_consent';
-const consentValue = 'accepted';
-const consentTimestampKey = `${consentKey}_at`;
+import { consentKey, consentTimestampKey, hasCookieConsent, persistCookieConsent } from '../lib/cookieConsent';
 
 const isVisible = ref(false);
 
@@ -16,26 +13,8 @@ const copy = {
     accept: 'Accept Cookies',
 };
 
-const hasConsent = () => {
-    if (typeof window === 'undefined') {
-        return true;
-    }
-
-    try {
-        if (window.localStorage.getItem(consentKey) === consentValue) {
-            return true;
-        }
-    } catch {
-        // Ignore storage access errors and fall back to cookie check.
-    }
-
-    return document.cookie
-        .split('; ')
-        .some((part) => part === `${consentKey}=${consentValue}` || part.startsWith(`${consentKey}=${consentValue};`));
-};
-
 const syncVisibility = () => {
-    isVisible.value = !hasConsent();
+    isVisible.value = !hasCookieConsent();
 };
 
 const acceptCookies = () => {
@@ -43,17 +22,9 @@ const acceptCookies = () => {
         return;
     }
 
-    const acceptedAt = new Date().toISOString();
-
-    try {
-        window.localStorage.setItem(consentKey, consentValue);
-        window.localStorage.setItem(consentTimestampKey, acceptedAt);
-    } catch {
-        // Ignore storage access errors and still persist through a cookie.
-    }
-
-    document.cookie = `${consentKey}=${consentValue}; Max-Age=31536000; Path=/; SameSite=Lax`;
+    persistCookieConsent();
     isVisible.value = false;
+    window.dispatchEvent(new CustomEvent('sea-requests:cookie-consent-accepted'));
 };
 
 const handleStorage = (event) => {
