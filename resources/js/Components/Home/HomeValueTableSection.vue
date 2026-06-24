@@ -181,8 +181,8 @@ defineProps({
     min-height: 36px;
     padding: 0 12px;
     border-radius: 999px;
-    background: rgba(14, 116, 144, 0.08);
-    color: #0e7490;
+    background: rgba(11, 96, 119, 0.12);
+    color: #0b6077;
     font-size: 0.74rem;
     font-weight: 700;
     letter-spacing: 0.12em;
@@ -205,13 +205,13 @@ defineProps({
 }
 
 .buyer-chip {
-    background: rgba(37, 99, 235, 0.08);
-    color: #2563eb;
+    background: rgba(29, 78, 216, 0.12);
+    color: #1d4ed8;
 }
 
 .supplier-chip {
-    background: rgba(15, 118, 110, 0.08);
-    color: #0f766e;
+    background: rgba(17, 94, 89, 0.12);
+    color: #115e59;
 }
 
 .value-table tbody th {

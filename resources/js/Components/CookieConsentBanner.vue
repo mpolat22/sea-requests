@@ -48,13 +48,12 @@ onBeforeUnmount(() => {
         <aside
             v-if="isVisible"
             class="cookie-banner"
-            role="dialog"
-            aria-live="polite"
-            aria-label="Cookie notice"
+            aria-labelledby="cookie-notice-title"
+            aria-describedby="cookie-notice-text"
         >
             <div class="cookie-copy">
-                <strong>{{ copy.title }}</strong>
-                <p>
+                <strong id="cookie-notice-title">{{ copy.title }}</strong>
+                <p id="cookie-notice-text">
                     {{ copy.text }}
                     <Link class="cookie-inline-link" href="/privacy-policy">{{ copy.privacy }}</Link>
                     and

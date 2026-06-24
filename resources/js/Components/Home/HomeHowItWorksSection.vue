@@ -31,6 +31,59 @@ watch(
 
 const activeTab = computed(() => props.tabs.find((tab) => tab.key === activeTabKey.value) ?? props.tabs[0] ?? null);
 
+const tabId = (tabKey) => `workflow-tab-${tabKey}`;
+const panelId = (tabKey) => `workflow-panel-${tabKey}`;
+
+const activateTabByOffset = (currentKey, offset) => {
+    const currentIndex = props.tabs.findIndex((tab) => tab.key === currentKey);
+
+    if (currentIndex === -1 || !props.tabs.length) {
+        return;
+    }
+
+    const nextIndex = (currentIndex + offset + props.tabs.length) % props.tabs.length;
+    activeTabKey.value = props.tabs[nextIndex].key;
+};
+
+const focusTab = (tabKey) => {
+    if (typeof window === 'undefined') {
+        return;
+    }
+
+    window.requestAnimationFrame(() => {
+        document.getElementById(tabId(tabKey))?.focus();
+    });
+};
+
+const handleTabKeydown = (event, tabKey) => {
+    switch (event.key) {
+    case 'ArrowRight':
+    case 'ArrowDown':
+        event.preventDefault();
+        activateTabByOffset(tabKey, 1);
+        focusTab(activeTabKey.value);
+        break;
+    case 'ArrowLeft':
+    case 'ArrowUp':
+        event.preventDefault();
+        activateTabByOffset(tabKey, -1);
+        focusTab(activeTabKey.value);
+        break;
+    case 'Home':
+        event.preventDefault();
+        activeTabKey.value = props.tabs[0]?.key ?? null;
+        focusTab(activeTabKey.value);
+        break;
+    case 'End':
+        event.preventDefault();
+        activeTabKey.value = props.tabs[props.tabs.length - 1]?.key ?? null;
+        focusTab(activeTabKey.value);
+        break;
+    default:
+        break;
+    }
+};
+
 const flowIcon = (flowKey) => {
     if (flowKey?.includes('service')) return 'search';
     return 'document';
@@ -58,19 +111,30 @@ const stepIcon = (stepKey) => {
                     <div class="workflow-tabs" role="tablist" aria-label="Workflow personas">
                         <button
                             v-for="tab in tabs"
+                            :id="tabId(tab.key)"
                             :key="tab.key"
                             type="button"
+                            role="tab"
                             class="workflow-tab"
                             :class="{ active: tab.key === activeTab?.key }"
                             :aria-selected="tab.key === activeTab?.key"
+                            :aria-controls="panelId(tab.key)"
+                            :tabindex="tab.key === activeTab?.key ? 0 : -1"
                             @click="activeTabKey = tab.key"
+                            @keydown="handleTabKeydown($event, tab.key)"
                         >
                             {{ tab.label }}
                         </button>
                     </div>
                 </div>
 
-                <div v-if="activeTab?.flows?.length" class="flows-stack">
+                <div
+                    v-if="activeTab?.flows?.length"
+                    :id="panelId(activeTab.key)"
+                    role="tabpanel"
+                    :aria-labelledby="tabId(activeTab.key)"
+                    class="flows-stack"
+                >
                     <article v-for="flow in activeTab.flows" :key="flow.key" class="flow-card">
                         <div class="flow-head">
                             <div class="flow-icon-box">
@@ -174,6 +238,7 @@ const stepIcon = (stepKey) => {
     color: rgba(4, 21, 31, 0.72);
     font-size: 0.92rem;
     font-weight: 700;
+    cursor: pointer;
     transition: background-color 180ms ease, color 180ms ease, box-shadow 180ms ease;
 }
 
@@ -181,6 +246,11 @@ const stepIcon = (stepKey) => {
     background: linear-gradient(180deg, #5d8cff, #4f7bff);
     color: #ffffff;
     box-shadow: 0 10px 24px rgba(79, 123, 255, 0.22);
+}
+
+.workflow-tab:focus-visible {
+    outline: 3px solid rgba(79, 123, 255, 0.32);
+    outline-offset: 2px;
 }
 
 .workflow-copy {

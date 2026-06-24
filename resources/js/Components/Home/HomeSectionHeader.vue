@@ -75,8 +75,8 @@ defineProps({
     min-height: 44px;
     padding: 0 16px;
     border-radius: 10px;
-    background: rgba(14, 116, 144, 0.1);
-    color: #0e7490;
+    background: rgba(12, 97, 119, 0.12);
+    color: #0c6177;
     text-decoration: none;
     font-size: 0.88rem;
     font-weight: 600;
@@ -88,6 +88,11 @@ defineProps({
     transform: translateY(-1px);
     background: #0e7490;
     color: #ffffff;
+}
+
+.header-action:focus-visible {
+    outline: 3px solid rgba(14, 116, 144, 0.25);
+    outline-offset: 2px;
 }
 
 @media (max-width: 820px) {
