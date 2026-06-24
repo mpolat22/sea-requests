@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Support\RfqSpreadsheetImport;
 use App\Models\User;
 use App\Support\RfqImportAiRefiner;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -64,6 +65,16 @@ class BuyerRfqImportPreviewTest extends TestCase
             ],
         ];
 
+        $this->mock(RfqSpreadsheetImport::class, function (MockInterface $mock) {
+            $mock->shouldReceive('extractPdfDocumentData')
+                ->once()
+                ->andReturn([
+                    'rows' => [],
+                    'ocr_lines' => [],
+                    'page_images' => [],
+                ]);
+        });
+
         $this->mock(RfqImportAiRefiner::class, function (MockInterface $mock) use ($expectedPreview) {
             $mock->shouldReceive('extractFromDocumentImages')
                 ->once()
@@ -109,5 +120,98 @@ class BuyerRfqImportPreviewTest extends TestCase
             ->assertJsonPath('summary.ai_first_extracted', true)
             ->assertJsonPath('items.0.product_name', 'Fuel oil filter element')
             ->assertJsonPath('items.0.quantity', '4');
+    }
+
+    public function test_pdf_import_preview_can_fall_back_to_server_rendered_page_images(): void
+    {
+        $buyer = User::factory()->create([
+            'role' => 'buyer',
+        ]);
+
+        $expectedPreview = [
+            'summary' => [
+                'file_name' => 'server-scan.pdf',
+                'sheet_name' => 'Server Scan',
+                'source_type' => 'pdf',
+                'items_count' => 1,
+                'mapped_columns' => ['product_name', 'quantity', 'unit'],
+                'review_count' => 2,
+                'ai_refined' => true,
+                'ai_recovered' => false,
+                'ai_first_extracted' => true,
+            ],
+            'general' => [],
+            'mapping' => [
+                'general' => [],
+                'items' => [],
+            ],
+            'confidence' => [
+                'general' => [],
+                'items' => [],
+            ],
+            'items' => [[
+                'product_name' => 'Main engine piston ring',
+                'part_no' => '',
+                'manufacturer' => '',
+                'model_type' => '',
+                'catalog_code' => '',
+                'serial_number' => '',
+                'drawing_number' => '',
+                'quantity' => '2',
+                'unit' => 'SET',
+                'rob' => '',
+                'quality' => '',
+                'comments' => '',
+                'files' => [],
+            ]],
+            'raw' => [
+                'general_pairs' => [],
+                'item_columns' => [],
+                'item_rows' => [],
+            ],
+        ];
+
+        $this->mock(RfqSpreadsheetImport::class, function (MockInterface $mock) {
+            $mock->shouldReceive('extractPdfDocumentData')
+                ->once()
+                ->andReturn([
+                    'rows' => [],
+                    'ocr_lines' => [],
+                    'page_images' => [
+                        'data:image/jpeg;base64,'.base64_encode('server-rendered-page'),
+                    ],
+                ]);
+        });
+
+        $this->mock(RfqImportAiRefiner::class, function (MockInterface $mock) use ($expectedPreview) {
+            $mock->shouldReceive('extractFromDocumentImages')
+                ->once()
+                ->withArgs(function (array $images, string $fileName, string $sheetName): bool {
+                    return count($images) === 1
+                        && str_starts_with($images[0], 'data:image/jpeg;base64,')
+                        && $fileName === 'server-scan.pdf'
+                        && $sheetName === 'Server Scan';
+                })
+                ->andReturn($expectedPreview);
+
+            $mock->shouldReceive('extractBestPreviewFromRows')->never();
+            $mock->shouldReceive('recoverFromRows')->never();
+            $mock->shouldReceive('refinePreview')->never();
+            $mock->shouldReceive('extractFromImageFile')->never();
+        });
+
+        $response = $this->actingAs($buyer)->post(route('rfqs.import-preview'), [
+            'file' => UploadedFile::fake()->create('server-scan.pdf', 24, 'application/pdf'),
+            'rows_payload' => json_encode([]),
+            'ocr_lines_payload' => json_encode([]),
+            'page_images_payload' => json_encode([]),
+            'sheet_name' => 'Server Scan',
+            'source_type' => 'pdf',
+        ]);
+
+        $response->assertOk()
+            ->assertJsonPath('summary.source_type', 'pdf')
+            ->assertJsonPath('items.0.product_name', 'Main engine piston ring')
+            ->assertJsonPath('items.0.unit', 'SET');
     }
 }

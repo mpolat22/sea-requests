@@ -1750,13 +1750,34 @@ class RfqController extends Controller
                         ->take(3)
                         ->values()
                         ->all();
-                    $structuredAliases = $fallbackRows !== []
-                        ? $importer->prepareCustomAliasesForRows($fallbackRows, $customAliases)
-                        : ['general' => [], 'items' => []];
 
                     $detectedSheetName = (string) ($request->input('sheet_name')
                         ?: pathinfo($validated['file']->getClientOriginalName(), PATHINFO_FILENAME)
                         ?: ($extension === 'pdf' ? 'Imported PDF' : 'Imported Image'));
+
+                    if ($extension === 'pdf' && $fallbackRows === []) {
+                        $serverPdfData = $importer->extractPdfDocumentData($validated['file']);
+
+                        if ($fallbackOcrLines === [] && ! empty($serverPdfData['ocr_lines'])) {
+                            $fallbackOcrLines = is_array($serverPdfData['ocr_lines']) ? $serverPdfData['ocr_lines'] : [];
+                        }
+
+                        if ($fallbackPageImages === [] && ! empty($serverPdfData['page_images'])) {
+                            $fallbackPageImages = collect($serverPdfData['page_images'])
+                                ->filter(fn ($image) => is_string($image) && preg_match('/^data:image\/(?:png|jpe?g|webp);base64,/i', $image))
+                                ->take(3)
+                                ->values()
+                                ->all();
+                        }
+
+                        if ($fallbackRows === [] && ! empty($serverPdfData['rows'])) {
+                            $fallbackRows = is_array($serverPdfData['rows']) ? $serverPdfData['rows'] : [];
+                        }
+                    }
+
+                    $structuredAliases = $fallbackRows !== []
+                        ? $importer->prepareCustomAliasesForRows($fallbackRows, $customAliases)
+                        : ['general' => [], 'items' => []];
 
                     if ($extension !== 'pdf') {
                         $visionPreview = $aiRefiner->extractFromImageFile(
@@ -1832,10 +1853,7 @@ class RfqController extends Controller
 
                     if ($fallbackRows === []) {
                         if ($extension === 'pdf') {
-                            $preview = $importer->parse($validated['file'], $customAliases);
-                            $sourceRows = $preview['raw']['source_rows'] ?? [];
-                            $ocrLines = $preview['raw']['ocr_lines'] ?? [];
-                            $effectiveAliases = $preview['raw']['applied_template_aliases'] ?? $customAliases;
+                            throw new \RuntimeException('We could not extract readable rows from this PDF.');
                         } else {
                             throw new \RuntimeException('We could not detect readable text in this image. Try a clearer image, or upload the file as PDF, Excel, or CSV.');
                         }

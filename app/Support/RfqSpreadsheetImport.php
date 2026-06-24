@@ -234,7 +234,7 @@ class RfqSpreadsheetImport
         $extension = strtolower((string) $file->getClientOriginalExtension());
 
         if ($extension === 'pdf') {
-            $parsed = $this->extractPdfRows($file);
+            $parsed = $this->extractPdfDocumentData($file);
             $preview = $this->parseRows(
                 $parsed['rows'],
                 pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME) ?: 'Imported PDF',
@@ -262,7 +262,7 @@ class RfqSpreadsheetImport
         );
     }
 
-    private function extractPdfRows(UploadedFile $file): array
+    public function extractPdfDocumentData(UploadedFile $file): array
     {
         $python = $this->resolvePythonExecutable();
         $script = base_path('scripts/extract_pdf_rows.py');
@@ -288,6 +288,7 @@ class RfqSpreadsheetImport
         return [
             'rows' => $decoded['rows'],
             'ocr_lines' => is_array($decoded['ocr_lines'] ?? null) ? $decoded['ocr_lines'] : [],
+            'page_images' => is_array($decoded['page_images'] ?? null) ? $decoded['page_images'] : [],
         ];
     }
 
