@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Mail\ContactMessageMail;
+use App\Support\UserFacingMail;
 use Illuminate\Support\Facades\Mail;
 use Tests\TestCase;
 
@@ -50,5 +51,32 @@ class ContactMessageControllerTest extends TestCase
         $response
             ->assertRedirect(route('contact'))
             ->assertSessionHas('success', 'Your message has been sent successfully.');
+    }
+
+    public function test_contact_form_shows_friendly_error_when_support_mail_fails(): void
+    {
+        $this->app->instance(UserFacingMail::class, new class extends UserFacingMail
+        {
+            public function attempt(callable $callback, mixed $fallbackResult = null): array
+            {
+                return [
+                    'ok' => false,
+                    'result' => $fallbackResult,
+                ];
+            }
+        });
+
+        $response = $this->from(route('contact'))->post(route('contact.send'), [
+            'name' => 'Mustafa Polat',
+            'email' => 'mustafa@example.com',
+            'phone' => '+905551112233',
+            'subject' => 'Marketplace question',
+            'message' => 'I would like to learn more about supplier onboarding.',
+            'agree_to_contact' => '1',
+        ]);
+
+        $response
+            ->assertRedirect(route('contact'))
+            ->assertSessionHas('error', 'We could not send your message right now. Please try again shortly.');
     }
 }

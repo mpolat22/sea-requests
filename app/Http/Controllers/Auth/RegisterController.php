@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
+use App\Support\UserFacingMail;
 use App\Models\User;
 use App\Support\MarketplaceNotificationCenter;
 use Illuminate\Http\RedirectResponse;
@@ -25,7 +26,7 @@ class RegisterController extends Controller
         ]);
     }
 
-    public function store(Request $request): RedirectResponse
+    public function store(Request $request, UserFacingMail $mail): RedirectResponse
     {
         $request->merge([
             'email' => $this->normalizeEmail($request->input('email')),
@@ -76,10 +77,16 @@ class RegisterController extends Controller
             $request->session()->put('auth.next', $validated['next']);
         }
 
-        $user->sendEmailVerificationNotification();
+        $verificationEmail = $mail->attempt(fn () => $user->sendEmailVerificationNotification());
         MarketplaceNotificationCenter::notifyRegistrationCreated($user);
 
-        return redirect()->route('verification.notice');
+        $redirect = redirect()->route('verification.notice');
+
+        if (! $verificationEmail['ok']) {
+            return $redirect->with('error', 'Your account was created, but we could not send the verification email right now. Please use Resend Verification Email to try again shortly.');
+        }
+
+        return $redirect;
     }
 
     private function normalizePhoneNumber(?string $value): ?string

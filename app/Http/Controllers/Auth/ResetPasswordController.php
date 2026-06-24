@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Auth;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\Notifications\PasswordResetCompletedNotification;
+use App\Support\UserFacingMail;
 use Illuminate\Auth\Events\PasswordReset;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -25,7 +26,7 @@ class ResetPasswordController extends Controller
         ]);
     }
 
-    public function store(Request $request): RedirectResponse
+    public function store(Request $request, UserFacingMail $mail): RedirectResponse
     {
         $request->merge([
             'email' => strtolower(trim((string) $request->input('email'))),
@@ -37,22 +38,34 @@ class ResetPasswordController extends Controller
             'password' => ['required', 'confirmed', PasswordRule::min(8)->letters()->numbers()],
         ], $this->messages());
 
+        $confirmationEmailSent = true;
+
         $status = Password::reset(
             $request->only('email', 'password', 'password_confirmation', 'token'),
-            function (User $user, string $password) {
+            function (User $user, string $password) use ($mail, &$confirmationEmailSent) {
                 $user->forceFill([
                     'password' => Hash::make($password),
                     'remember_token' => Str::random(60),
                 ])->save();
 
                 event(new PasswordReset($user));
-                $user->notify(new PasswordResetCompletedNotification());
+                $confirmationEmailSent = $mail->attempt(
+                    fn () => $user->notify(new PasswordResetCompletedNotification())
+                )['ok'];
             }
         );
 
-        return $status === Password::PASSWORD_RESET
-            ? redirect()->route('login')->with('success', __($status))
-            : back()->withErrors(['email' => __($status)]);
+        if ($status !== Password::PASSWORD_RESET) {
+            return back()->withErrors(['email' => __($status)]);
+        }
+
+        $redirect = redirect()->route('login')->with('success', __($status));
+
+        if (! $confirmationEmailSent) {
+            return $redirect->with('error', 'Your password was reset, but we could not send the confirmation email right now.');
+        }
+
+        return $redirect;
     }
 
     private function messages(): array

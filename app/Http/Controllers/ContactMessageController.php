@@ -3,13 +3,14 @@
 namespace App\Http\Controllers;
 
 use App\Mail\ContactMessageMail;
+use App\Support\UserFacingMail;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Mail;
 
 class ContactMessageController extends Controller
 {
-    public function store(Request $request): RedirectResponse
+    public function store(Request $request, UserFacingMail $mail): RedirectResponse
     {
         $validated = $request->validate([
             'name' => ['required', 'string', 'min:2', 'max:255'],
@@ -30,9 +31,15 @@ class ContactMessageController extends Controller
 
         $recipient = (string) config('mail.support_mail.recipient', 'support@searequests.ai');
 
-        Mail::mailer('support')
-            ->to($recipient)
-            ->send(new ContactMessageMail($validated));
+        $delivery = $mail->attempt(function () use ($recipient, $validated): void {
+            Mail::mailer('support')
+                ->to($recipient)
+                ->send(new ContactMessageMail($validated));
+        });
+
+        if (! $delivery['ok']) {
+            return back()->with('error', 'We could not send your message right now. Please try again shortly.');
+        }
 
         return back()->with('success', 'Your message has been sent successfully.');
     }

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\User;
+use App\Support\UserFacingMail;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -30,7 +31,7 @@ class BuyerProfileController extends Controller
         ]);
     }
 
-    public function update(Request $request): RedirectResponse
+    public function update(Request $request, UserFacingMail $mail): RedirectResponse
     {
         /** @var User|null $user */
         $user = $request->user();
@@ -93,11 +94,16 @@ class BuyerProfileController extends Controller
         ])->save();
 
         if ($emailChanged) {
-            $user->sendEmailVerificationNotification();
-
-            return redirect()
+            $verificationEmail = $mail->attempt(fn () => $user->sendEmailVerificationNotification());
+            $redirect = redirect()
                 ->route('verification.notice')
                 ->with('success', 'buyer-email-updated');
+
+            if (! $verificationEmail['ok']) {
+                return $redirect->with('error', 'Your email address was updated, but we could not send the verification email right now. Please try again shortly.');
+            }
+
+            return $redirect;
         }
 
         return back()->with('success', 'buyer-profile-updated');
