@@ -10,9 +10,6 @@ import sys
 import tempfile
 from pathlib import Path
 
-from pypdf import PdfReader
-
-
 if hasattr(sys.stdout, "reconfigure"):
     sys.stdout.reconfigure(encoding="utf-8", errors="replace")
 
@@ -119,7 +116,12 @@ def render_pdf_page_images(path: Path, limit: int = 3) -> list[str]:
     return []
 
 
-def pdf_to_rows(path: Path) -> dict:
+def extract_pdf_text_with_pypdf(path: Path) -> tuple[list[list[str]], list[str]]:
+    try:
+        from pypdf import PdfReader  # type: ignore
+    except Exception:
+        return [], []
+
     reader = PdfReader(str(path), strict=False)
 
     if reader.is_encrypted:
@@ -145,6 +147,55 @@ def pdf_to_rows(path: Path) -> dict:
 
     while rows and rows[-1] == []:
         rows.pop()
+
+    return rows, text_lines
+
+
+def extract_pdf_text_with_pdftotext(path: Path) -> tuple[list[list[str]], list[str]]:
+    pdftotext_path = shutil.which("pdftotext")
+
+    if not pdftotext_path:
+        return [], []
+
+    try:
+        result = subprocess.run(
+            [
+                pdftotext_path,
+                "-layout",
+                "-enc",
+                "UTF-8",
+                "-nopgbrk",
+                str(path),
+                "-",
+            ],
+            check=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+            encoding="utf-8",
+            errors="replace",
+        )
+    except Exception:
+        return [], []
+
+    text = result.stdout or ""
+    lines = [line.rstrip() for line in text.splitlines()]
+    lines = [line for line in lines if normalize_line(line)]
+
+    return [split_layout_line(line) for line in lines], lines
+
+
+def pdf_to_rows(path: Path) -> dict:
+    rows, text_lines = extract_pdf_text_with_pypdf(path)
+
+    if not rows:
+        rows, text_lines = extract_pdf_text_with_pdftotext(path)
+
+    if rows:
+        rows.append([])
+
+        while rows and rows[-1] == []:
+            rows.pop()
 
     return {
         "rows": rows,

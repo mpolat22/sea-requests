@@ -4,6 +4,7 @@ namespace App\Support;
 
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use Symfony\Component\Process\ExecutableFinder;
 use Symfony\Component\Process\Process;
@@ -277,6 +278,13 @@ class RfqSpreadsheetImport
         $process->run();
 
         if (! $process->isSuccessful()) {
+            Log::warning('RFQ PDF helper process failed.', [
+                'file_name' => $file->getClientOriginalName(),
+                'exit_code' => $process->getExitCode(),
+                'stdout' => trim($process->getOutput()),
+                'stderr' => trim($process->getErrorOutput()),
+            ]);
+
             throw new RuntimeException('We could not read this PDF file.');
         }
 
