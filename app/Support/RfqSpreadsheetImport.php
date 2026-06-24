@@ -5,6 +5,7 @@ namespace App\Support;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Str;
+use Symfony\Component\Process\ExecutableFinder;
 use Symfony\Component\Process\Process;
 use PhpOffice\PhpSpreadsheet\IOFactory;
 use PhpOffice\PhpSpreadsheet\Cell\Coordinate;
@@ -294,21 +295,31 @@ class RfqSpreadsheetImport
 
     private function resolvePythonExecutable(): string
     {
-        $candidates = array_filter([
+        $finder = new ExecutableFinder();
+
+        $candidates = array_values(array_filter([
             env('RFQ_PDF_PYTHON'),
             env('PYTHON_EXECUTABLE'),
             'C:\\Users\\rmust\\.cache\\codex-runtimes\\codex-primary-runtime\\dependencies\\python\\python.exe',
-            'python',
             'python3',
-        ]);
+            'python',
+        ]));
 
         foreach ($candidates as $candidate) {
-            if ($candidate === 'python' || $candidate === 'python3') {
+            $candidate = (string) $candidate;
+
+            if ($candidate === '') {
+                continue;
+            }
+
+            if (is_file($candidate)) {
                 return $candidate;
             }
 
-            if (is_file((string) $candidate)) {
-                return (string) $candidate;
+            $resolved = $finder->find($candidate);
+
+            if (is_string($resolved) && $resolved !== '') {
+                return $resolved;
             }
         }
 
