@@ -1,6 +1,9 @@
 const PDF_TYPES = new Set(['pdf']);
 const IMAGE_TYPES = new Set(['png', 'jpg', 'jpeg', 'webp']);
 const MIN_PDF_TEXT_LENGTH = 24;
+const MAX_PDF_AI_PAGE_IMAGES = 3;
+const PDF_AI_IMAGE_MAX_WIDTH = 1400;
+const PDF_AI_IMAGE_QUALITY = 0.82;
 const LINE_TOLERANCE = 10;
 const CELL_GAP = 26;
 const OCR_HEADER_ALIASES = {
@@ -494,6 +497,18 @@ const renderPdfPageToCanvas = async (page) => {
     return canvas;
 };
 
+const canvasToAiImageDataUrl = (sourceCanvas) => {
+    const scale = Math.min(1, PDF_AI_IMAGE_MAX_WIDTH / Math.max(1, sourceCanvas.width));
+    const canvas = document.createElement('canvas');
+    const context = canvas.getContext('2d', { willReadFrequently: true });
+
+    canvas.width = Math.max(1, Math.round(sourceCanvas.width * scale));
+    canvas.height = Math.max(1, Math.round(sourceCanvas.height * scale));
+    context.drawImage(sourceCanvas, 0, 0, canvas.width, canvas.height);
+
+    return canvas.toDataURL('image/jpeg', PDF_AI_IMAGE_QUALITY);
+};
+
 const sourceToCanvas = async (source) => {
     if (source instanceof HTMLCanvasElement) {
         return source;
@@ -620,20 +635,50 @@ const extractPdfRows = async (file) => {
     const pdf = await getDocument({ data: new Uint8Array(buffer) }).promise;
     const rows = [];
     const ocrLines = [];
+    const pageImages = [];
 
     for (let pageNumber = 1; pageNumber <= pdf.numPages; pageNumber += 1) {
         const page = await pdf.getPage(pageNumber);
-        const tokens = await extractPdfPageTokens(page);
-        const textLength = tokens.reduce((total, token) => total + token.text.length, 0);
+        let pageRows = [];
+        let pageLines = [];
 
-        let pageRows = tokensToRows(tokens);
-        let pageLines = tokensToLineTexts(tokens);
+        try {
+            const tokens = await extractPdfPageTokens(page);
+            const textLength = tokens.reduce((total, token) => total + token.text.length, 0);
+            pageRows = tokensToRows(tokens);
+            pageLines = tokensToLineTexts(tokens);
 
-        if (textLength < MIN_PDF_TEXT_LENGTH) {
-            const canvas = await renderPdfPageToCanvas(page);
-            const ocrResult = await ocrCanvasToRows(canvas);
-            pageRows = ocrResult.rows;
-            pageLines = ocrResult.ocrLines;
+            if (textLength < MIN_PDF_TEXT_LENGTH || pageRows.length === 0) {
+                const canvas = await renderPdfPageToCanvas(page);
+
+                if (pageImages.length < MAX_PDF_AI_PAGE_IMAGES) {
+                    pageImages.push(canvasToAiImageDataUrl(canvas));
+                }
+
+                const ocrResult = await ocrCanvasToRows(canvas);
+
+                if (ocrResult.rows.length) {
+                    pageRows = ocrResult.rows;
+                }
+
+                if (ocrResult.ocrLines.length) {
+                    pageLines = ocrResult.ocrLines;
+                }
+            }
+        } catch (pageError) {
+            try {
+                const canvas = await renderPdfPageToCanvas(page);
+
+                if (pageImages.length < MAX_PDF_AI_PAGE_IMAGES) {
+                    pageImages.push(canvasToAiImageDataUrl(canvas));
+                }
+
+                const ocrResult = await ocrCanvasToRows(canvas);
+                pageRows = ocrResult.rows;
+                pageLines = ocrResult.ocrLines;
+            } catch (ocrError) {
+                console.warn('RFQ PDF page extraction failed.', pageError, ocrError);
+            }
         }
 
         rows.push(...pageRows);
@@ -648,6 +693,7 @@ const extractPdfRows = async (file) => {
     return {
         rows,
         ocrLines,
+        pageImages,
         sheetName: file.name.replace(/\.[^.]+$/, '') || 'Imported PDF',
     };
 };

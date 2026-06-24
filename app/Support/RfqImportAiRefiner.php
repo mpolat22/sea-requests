@@ -300,6 +300,69 @@ class RfqImportAiRefiner
         return $preview['items'] === [] ? null : $preview;
     }
 
+    public function extractFromDocumentImages(
+        array $imageDataUrls,
+        string $fileName,
+        string $sheetName = 'Imported PDF',
+        string $sourceType = 'pdf',
+        array $customAliases = [],
+        array $ocrLines = [],
+        array $ocrRows = []
+    ): ?array {
+        if (! $this->isEnabled()) {
+            return null;
+        }
+
+        $imageDataUrls = collect($imageDataUrls)
+            ->filter(fn ($image) => is_string($image) && str_starts_with($image, 'data:image/'))
+            ->take(3)
+            ->values()
+            ->all();
+
+        if ($imageDataUrls === []) {
+            return null;
+        }
+
+        $response = $this->requestStructuredJsonWithImages(
+            $this->recoverySchema(),
+            $this->pdfVisionPrompt(),
+            [
+                'source' => [
+                    'file_name' => $fileName,
+                    'sheet_name' => $sheetName,
+                    'source_type' => $sourceType,
+                ],
+                'template_aliases' => $customAliases,
+                'ocr_rows' => collect($ocrRows)
+                    ->map(fn ($row) => collect($row)->map(fn ($value) => $this->normalizeText($value))->all())
+                    ->take(200)
+                    ->values()
+                    ->all(),
+                'ocr_lines' => collect($ocrLines)
+                    ->map(fn ($line) => $this->normalizeText($line))
+                    ->filter()
+                    ->take(160)
+                    ->values()
+                    ->all(),
+            ],
+            $imageDataUrls
+        );
+
+        if (! is_array($response) || empty($response['items']) || ! is_array($response['items'])) {
+            return null;
+        }
+
+        $preview = $this->buildPreviewFromAiResponse(
+            $response,
+            $sheetName,
+            $fileName,
+            $sourceType,
+            true
+        );
+
+        return $preview['items'] === [] ? null : $preview;
+    }
+
     private function requestStructuredJson(array $schema, string $systemPrompt, array $payload): ?array
     {
         try {
@@ -356,7 +419,26 @@ class RfqImportAiRefiner
 
     private function requestStructuredJsonWithImage(array $schema, string $systemPrompt, array $payload, string $imageDataUrl): ?array
     {
+        return $this->requestStructuredJsonWithImages($schema, $systemPrompt, $payload, [$imageDataUrl]);
+    }
+
+    private function requestStructuredJsonWithImages(array $schema, string $systemPrompt, array $payload, array $imageDataUrls): ?array
+    {
         try {
+            $imageInputs = collect($imageDataUrls)
+                ->filter(fn ($imageDataUrl) => is_string($imageDataUrl) && trim($imageDataUrl) !== '')
+                ->map(fn ($imageDataUrl) => [
+                    'type' => 'input_image',
+                    'image_url' => $imageDataUrl,
+                    'detail' => 'high',
+                ])
+                ->values()
+                ->all();
+
+            if ($imageInputs === []) {
+                return null;
+            }
+
             $response = Http::baseUrl((string) config('services.openai.base_url'))
                 ->withToken((string) config('services.openai.api_key'))
                 ->timeout((int) config('services.openai.timeout', 60))
@@ -370,11 +452,7 @@ class RfqImportAiRefiner
                                 'type' => 'input_text',
                                 'text' => json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
                             ],
-                            [
-                                'type' => 'input_image',
-                                'image_url' => $imageDataUrl,
-                                'detail' => 'high',
-                            ],
+                            ...$imageInputs,
                         ]],
                     ],
                     'text' => [
@@ -665,6 +743,38 @@ Rules:
 - Leave fields empty instead of inventing data.
 - Ignore decorative text, page titles, helper text, and footer text.
 - RFQ Status may not exist in the source image. Leave it empty if absent.
+- The first table column may be just a row number like "#". Ignore it.
+- A row is still a valid item even if Part No or some middle columns are blank, as long as a product row is visibly present.
+- Prefer exact table reading over aggressive cleanup.
+PROMPT;
+    }
+
+    private function pdfVisionPrompt(): string
+    {
+        return <<<'PROMPT'
+You are extracting a maritime RFQ from one or more page images rendered from an uploaded PDF.
+
+Read the visible PDF page images as the primary source of truth.
+Use OCR rows and OCR lines only as helpers when text is fragmented or faint.
+Use template_aliases as strong hints only when they clearly match what is visible.
+
+Return:
+- general fields that are clearly visible
+- the full item table
+
+Rules:
+- Reconstruct the actual requisition table from the visible PDF pages, not from guessed OCR fragments.
+- Preserve the real visible item count. If multiple visible rows exist, return all real rows.
+- Do not merge separate visible rows unless they are clearly one broken row split by OCR noise.
+- Keep one real requisition item as one row.
+- Product names must stay whole.
+- Qty must be numeric string only.
+- Unit must be only the unit text like PCS, SET, LOT, KIT.
+- ROB must be numeric string only.
+- Comments must stay as comments only.
+- Leave fields empty instead of inventing data.
+- Ignore page titles, decorative text, footers, and helper text unless they clearly belong to the requisition.
+- RFQ Status may not exist in the PDF. Leave it empty if absent.
 - The first table column may be just a row number like "#". Ignore it.
 - A row is still a valid item even if Part No or some middle columns are blank, as long as a product row is visibly present.
 - Prefer exact table reading over aggressive cleanup.

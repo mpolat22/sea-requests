@@ -1945,6 +1945,7 @@ const handleImportSelection = async (event) => {
             let extracted = {
                 rows: [],
                 ocrLines: [],
+                pageImages: [],
                 sheetName: file.name,
             };
 
@@ -1958,6 +1959,7 @@ const handleImportSelection = async (event) => {
             payload.append('file', file);
             payload.append('rows_payload', JSON.stringify(extracted.rows ?? []));
             payload.append('ocr_lines_payload', JSON.stringify(extracted.ocrLines ?? []));
+            payload.append('page_images_payload', JSON.stringify(extracted.pageImages ?? []));
             payload.append('sheet_name', extracted.sheetName ?? file.name);
             payload.append('source_type', sourceType);
 

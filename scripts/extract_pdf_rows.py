@@ -25,12 +25,23 @@ def split_layout_line(line: str) -> list[str]:
 
 
 def pdf_to_rows(path: Path) -> dict:
-    reader = PdfReader(str(path))
+    reader = PdfReader(str(path), strict=False)
+
+    if reader.is_encrypted:
+        try:
+            reader.decrypt("")
+        except Exception:
+            pass
+
     rows: list[list[str]] = []
     text_lines: list[str] = []
 
     for page in reader.pages:
-        text = page.extract_text(extraction_mode="layout") or page.extract_text() or ""
+        try:
+            text = page.extract_text(extraction_mode="layout") or page.extract_text() or ""
+        except Exception:
+            text = ""
+
         lines = [line.rstrip() for line in text.splitlines()]
         lines = [line for line in lines if normalize_line(line)]
         text_lines.extend(lines)

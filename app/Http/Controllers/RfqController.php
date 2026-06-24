@@ -1742,8 +1742,14 @@ class RfqController extends Controller
                 if (in_array($extension, ['png', 'jpg', 'jpeg', 'webp', 'pdf'], true)) {
                     $fallbackRows = json_decode((string) $request->input('rows_payload', '[]'), true);
                     $fallbackOcrLines = json_decode((string) $request->input('ocr_lines_payload', '[]'), true);
+                    $fallbackPageImages = json_decode((string) $request->input('page_images_payload', '[]'), true);
                     $fallbackRows = is_array($fallbackRows) ? $fallbackRows : [];
                     $fallbackOcrLines = is_array($fallbackOcrLines) ? $fallbackOcrLines : [];
+                    $fallbackPageImages = collect(is_array($fallbackPageImages) ? $fallbackPageImages : [])
+                        ->filter(fn ($image) => is_string($image) && preg_match('/^data:image\/(?:png|jpe?g|webp);base64,/i', $image))
+                        ->take(3)
+                        ->values()
+                        ->all();
                     $structuredAliases = $fallbackRows !== []
                         ? $importer->prepareCustomAliasesForRows($fallbackRows, $customAliases)
                         : ['general' => [], 'items' => []];
@@ -1763,6 +1769,22 @@ class RfqController extends Controller
 
                         if ($visionPreview !== null) {
                             return response()->json($visionPreview);
+                        }
+                    }
+
+                    if ($extension === 'pdf' && $fallbackRows === [] && $fallbackPageImages !== []) {
+                        $pdfVisionPreview = $aiRefiner->extractFromDocumentImages(
+                            $fallbackPageImages,
+                            $validated['file']->getClientOriginalName(),
+                            $detectedSheetName,
+                            'pdf',
+                            $structuredAliases,
+                            $fallbackOcrLines,
+                            $fallbackRows
+                        );
+
+                        if ($pdfVisionPreview !== null) {
+                            return response()->json($pdfVisionPreview);
                         }
                     }
 
