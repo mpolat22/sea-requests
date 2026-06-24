@@ -68,14 +68,27 @@ const fieldLabels = computed(() => ({
     company_registration_documents: 'Company registration documents',
     tax_certificate_documents: 'Tax documents',
     service_authorization_documents: 'Authorization documents',
+    official_documents: 'Official documents',
 }));
 
+const formatFieldLabel = (field) => {
+    const mappedLabel = fieldLabels.value[field];
+
+    if (mappedLabel) {
+        return mappedLabel;
+    }
+
+    return String(field ?? '')
+        .replace(/_/g, ' ')
+        .replace(/\b\w/g, (character) => character.toUpperCase());
+};
+
 const rejectionFieldText = computed(() => (props.dashboard.rejection_feedback?.fields ?? [])
-    .map((field) => fieldLabels.value[field] ?? field)
+    .map((field) => formatFieldLabel(field))
     .join(', '));
 
 const updateFieldText = computed(() => (props.dashboard.update_request?.changed_fields ?? [])
-    .map((field) => fieldLabels.value[field] ?? field)
+    .map((field) => formatFieldLabel(field))
     .join(', '));
 
 const incomingTabLabel = computed(() => `${copy.value.incomingTab}(${Number(props.dashboard.navigation?.incoming_count ?? 0)})`);

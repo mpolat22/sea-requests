@@ -218,21 +218,48 @@ const rejectionUi = computed(() => ({
         service_ports_by_country: 'Service ports',
         country: 'Country',
         company_city: 'City',
+        company_district: 'District',
+        company_neighborhood: 'Neighborhood',
+        company_postal_code: 'Postal code',
         company_address_line: 'Address',
+        landline_phone: 'Landline',
+        contact_email: 'Contact email',
+        website_url: 'Website',
+        whatsapp_number: 'WhatsApp',
+        telegram_url: 'Telegram',
+        instagram_url: 'Instagram',
+        linkedin_url: 'LinkedIn',
+        facebook_url: 'Facebook',
+        twitter_url: 'X / Twitter',
         phone: 'Phone',
         company_overview: 'Company overview',
         registration_number: 'Registration number',
         company_logo: 'Logo',
+        company_registration_documents: 'Company registration documents',
+        tax_certificate_documents: 'Tax documents',
+        service_authorization_documents: 'Authorization documents',
         official_documents: 'Official documents',
     },
 }));
 
 const rejectionFeedback = computed(() => props.verification.rejection_feedback ?? {});
 
+const formatRevisionFieldLabel = (field) => {
+    const mappedLabel = rejectionUi.value.fieldsMap[field];
+
+    if (mappedLabel) {
+        return mappedLabel;
+    }
+
+    return String(field ?? '')
+        .replace(/_/g, ' ')
+        .replace(/\b\w/g, (character) => character.toUpperCase());
+};
+
 const rejectionFieldLabels = computed(() => (rejectionFeedback.value.fields ?? [])
     .map((field) => ({
         key: field,
-        label: rejectionUi.value.fieldsMap[field] ?? field,
+        label: formatRevisionFieldLabel(field),
     }))
     .filter((item) => Boolean(item.label)));
 
