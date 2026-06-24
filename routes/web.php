@@ -1910,8 +1910,8 @@ Route::get('/blog', fn () => Inertia::render('Static/Blog', [
 ]))->name('blog');
 Route::get('/about-us', fn () => Inertia::render('Static/AboutUs', [
     'meta' => $staticPageMeta(
-        'About Us | Sea Requests',
-        'Learn how Sea Requests connects maritime buyers and suppliers through RFQs, orders, invoices, payment proof, and direct messaging.',
+        'About Sea Requests | Maritime Procurement Platform',
+        'Learn how Sea Requests works as a maritime procurement platform for marine spare parts RFQ, ship spare parts RFQ, and marine service request workflows.',
         'about'
     ),
 ]))->name('about');
@@ -1926,8 +1926,8 @@ Route::get('/contact', fn () => Inertia::render('Static/Contact', [
 Route::post('/contact', [ContactMessageController::class, 'store'])->name('contact.send');
 Route::get('/faq', fn () => Inertia::render('Static/Faq', [
     'meta' => $staticPageMeta(
-        'FAQ | Sea Requests',
-        'Read the most important questions about how Sea Requests works for maritime buyers and suppliers.',
+        'FAQ | Marine Spare Parts RFQ and Maritime Service RFQ',
+        'Read common questions about marine spare parts RFQ, ship spares procurement, marine service request, and supplier workflows on Sea Requests.',
         'faq'
     ),
 ]))->name('faq');

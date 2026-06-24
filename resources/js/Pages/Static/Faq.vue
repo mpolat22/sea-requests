@@ -7,7 +7,7 @@ const props = defineProps({
     meta: {
         type: Object,
         default: () => ({
-            title: 'FAQ | Sea Requests',
+            title: 'FAQ | Marine Spare Parts RFQ and Maritime Service RFQ',
             description: '',
             canonical: '',
             robots: 'index, follow',
@@ -21,19 +21,25 @@ const sections = [
     {
         title: 'Do suppliers upload products to the platform?',
         paragraphs: [
-            'No. Sea Requests is not built like a classic e-commerce catalog. Suppliers define their capabilities, categories, ports, and company profile instead of maintaining public product shelves.',
+            'No. Sea Requests is not built like a classic e-commerce catalog. Suppliers define their capabilities, categories, ports, and company profile instead of maintaining public product shelves. This keeps the focus on real ship spares procurement and RFQ-based demand.',
         ],
     },
     {
-        title: 'How do buyers use the platform?',
+        title: 'How do buyers use the platform for spare parts and services?',
         paragraphs: [
-            'Buyers create spare parts RFQs or service requests, receive supplier offers, compare responses, and confirm the right award decision.',
+            'Buyers create marine spare parts RFQ, ship spare parts RFQ, marine service request, or maritime service RFQ records, receive supplier offers, compare responses, and confirm the right award decision.',
         ],
     },
     {
         title: 'Can a request be split between multiple suppliers?',
         paragraphs: [
             'Yes. The platform supports the real operational case where one buyer may select different suppliers for different items or scopes.',
+        ],
+    },
+    {
+        title: 'How do suppliers become visible in the directory?',
+        paragraphs: [
+            'Suppliers become visible by defining the right service categories, ports, and company profile details. This helps ship service suppliers and marine technical service suppliers appear in front of buyers whose RFQ or service scope matches their real capabilities.',
         ],
     },
     {
@@ -45,8 +51,8 @@ const sections = [
 ];
 
 const facts = [
-    'Suppliers define categories, ports, and service scope',
-    'Buyers can compare and split awards across multiple suppliers',
+    'Buyers can publish marine spare parts RFQ and marine service request workflows',
+    'Suppliers define categories, ports, and service scope for matching',
     'Reviews are tied to confirmed work relationships',
 ];
 
@@ -73,7 +79,7 @@ const cta = {
         <StaticPageLayout
             eyebrow="Company"
             title="FAQ"
-            intro="These are the most important questions for understanding how Sea Requests works for buyers and suppliers."
+            intro="These are the most important questions for understanding how Sea Requests works for marine spare parts RFQ, maritime service RFQ, and supplier matching workflows."
             :sections="sections"
             :facts="facts"
             panel-title="Quick takeaway"
