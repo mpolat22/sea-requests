@@ -202,7 +202,6 @@ const rejectionUi = computed(() => ({
     text: 'The admin team did not approve your application at this time. Please update your details based on the notes below and submit again.',
     reason: 'Rejection reason',
     note: 'Admin note',
-    fields: 'Fields to revise',
     reasons: {
         documents_incomplete: 'Documents are incomplete or insufficient',
         information_mismatch: 'The submitted information does not match',
@@ -210,58 +209,9 @@ const rejectionUi = computed(() => ({
         compliance_issue: 'There is a compliance or verification issue',
         other: 'Other',
     },
-    fieldsMap: {
-        company_name: 'Business name',
-        service_category_ids: 'Category and subcategory',
-        service_brand_ids: 'Brands',
-        service_country_codes: 'Service countries',
-        service_ports_by_country: 'Service ports',
-        country: 'Country',
-        company_city: 'City',
-        company_district: 'District',
-        company_neighborhood: 'Neighborhood',
-        company_postal_code: 'Postal code',
-        company_address_line: 'Address',
-        landline_phone: 'Landline',
-        contact_email: 'Contact email',
-        website_url: 'Website',
-        whatsapp_number: 'WhatsApp',
-        telegram_url: 'Telegram',
-        instagram_url: 'Instagram',
-        linkedin_url: 'LinkedIn',
-        facebook_url: 'Facebook',
-        twitter_url: 'X / Twitter',
-        phone: 'Phone',
-        company_overview: 'Company overview',
-        registration_number: 'Registration number',
-        company_logo: 'Logo',
-        company_registration_documents: 'Company registration documents',
-        tax_certificate_documents: 'Tax documents',
-        service_authorization_documents: 'Authorization documents',
-        official_documents: 'Official documents',
-    },
 }));
 
 const rejectionFeedback = computed(() => props.verification.rejection_feedback ?? {});
-
-const formatRevisionFieldLabel = (field) => {
-    const mappedLabel = rejectionUi.value.fieldsMap[field];
-
-    if (mappedLabel) {
-        return mappedLabel;
-    }
-
-    return String(field ?? '')
-        .replace(/_/g, ' ')
-        .replace(/\b\w/g, (character) => character.toUpperCase());
-};
-
-const rejectionFieldLabels = computed(() => (rejectionFeedback.value.fields ?? [])
-    .map((field) => ({
-        key: field,
-        label: formatRevisionFieldLabel(field),
-    }))
-    .filter((item) => Boolean(item.label)));
 
 const form = useForm({
     company_name: props.verification.company_name ?? '',
@@ -705,20 +655,6 @@ onBeforeUnmount(() => {
                             <div class="rejection-block">
                                 <span>{{ rejectionUi.reason }}</span>
                                 <strong>{{ rejectionUi.reasons[rejectionFeedback.reason] ?? rejectionFeedback.reason }}</strong>
-                            </div>
-                            <div v-if="rejectionFieldLabels.length" class="rejection-block">
-                                <span>{{ rejectionUi.fields }}</span>
-                                <div class="rejection-field-list">
-                                    <button
-                                        v-for="item in rejectionFieldLabels"
-                                        :key="item.key"
-                                        type="button"
-                                        class="rejection-field-chip"
-                                        @click="goToField(item.key)"
-                                    >
-                                        {{ item.label }}
-                                    </button>
-                                </div>
                             </div>
                         </div>
 
