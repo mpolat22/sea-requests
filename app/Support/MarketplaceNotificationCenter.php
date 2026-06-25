@@ -334,6 +334,52 @@ class MarketplaceNotificationCenter
         ]));
     }
 
+    public static function notifySellerVerificationOnboarding(User $user): void
+    {
+        $user->notify(new MarketplaceNotification([
+            'tone' => 'info',
+            'mail_profile' => 'admin',
+            'action_url' => route('seller.verification.create'),
+            'en' => [
+                'subject' => 'Sea Requests | Complete Your Supplier Verification',
+                'title' => 'Complete Your Supplier Verification',
+                'message' => 'Your email address has been verified successfully. To be published publicly and submit offers on RFQs, please complete your supplier verification form and upload the required documents.',
+                'details' => [
+                    ['label' => 'Current Status', 'value' => 'Your company is not public yet and cannot submit offers until verification is completed and approved.'],
+                    ['label' => 'Next Step', 'value' => 'Open the supplier verification page, complete your business information, and upload the required company documents.'],
+                ],
+                'action_label' => 'Complete Supplier Verification',
+            ],
+        ]));
+    }
+
+    public static function notifySellerVerificationReminder(User $user, int $hours): void
+    {
+        $isFinalReminder = $hours >= 72;
+
+        $user->notify(new MarketplaceNotification([
+            'tone' => $isFinalReminder ? 'warning' : 'info',
+            'mail_profile' => 'admin',
+            'action_url' => route('seller.verification.create'),
+            'en' => [
+                'subject' => $isFinalReminder
+                    ? 'Sea Requests | Final Reminder to Complete Supplier Verification'
+                    : 'Sea Requests | Reminder to Complete Supplier Verification',
+                'title' => $isFinalReminder
+                    ? 'Final Supplier Verification Reminder'
+                    : 'Supplier Verification Reminder',
+                'message' => $isFinalReminder
+                    ? 'Your email address was verified, but your supplier verification form is still not submitted. This is the final reminder in this onboarding sequence.'
+                    : 'Your email address was verified, but your supplier verification form is still not submitted.',
+                'details' => [
+                    ['label' => 'Why This Matters', 'value' => 'Your company will remain hidden from the public supplier directory and cannot submit offers until verification is completed and approved.'],
+                    ['label' => 'Next Step', 'value' => 'Please complete your supplier verification form and upload the required documents to continue.'],
+                ],
+                'action_label' => 'Complete Supplier Verification',
+            ],
+        ]));
+    }
+
     public static function notifySellerUpdateRequestSubmitted(User $user): void
     {
         $user->notify(new MarketplaceNotification([

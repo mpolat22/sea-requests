@@ -17,3 +17,8 @@ Schedule::command('outreach:dispatch-due')
     ->everyMinute()
     ->timezone('Europe/Istanbul')
     ->withoutOverlapping();
+
+Schedule::command('seller-verification:send-reminders')
+    ->everyFifteenMinutes()
+    ->timezone('Europe/Istanbul')
+    ->withoutOverlapping();

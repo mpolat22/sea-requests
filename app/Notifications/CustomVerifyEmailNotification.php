@@ -16,7 +16,7 @@ class CustomVerifyEmailNotification extends VerifyEmail
             ->subject('Sea Requests | Verify Your Email Address')
             ->greeting('Hello '.$notifiable->name.',')
             ->line('Please verify your email address to activate your Sea Requests account.')
-            ->line('Once your email address is verified, your account will move to the admin review stage.')
+            ->line('Once your email address is verified, you can complete your supplier verification form and upload the required documents for admin review.')
             ->action('Verify Email Address', $verifyUrl)
             ->line('If you did not create this account, no further action is required.')
             ->salutation('Sea Requests Team');
