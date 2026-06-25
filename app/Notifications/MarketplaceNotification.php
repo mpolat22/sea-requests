@@ -30,12 +30,11 @@ class MarketplaceNotification extends Notification implements ShouldQueue
     public function toMail(object $notifiable): MailMessage
     {
         $copy = $this->payload();
-        $fromAddress = (string) config('mail.requests_mail.from.address', config('mail.from.address'));
-        $fromName = (string) config('mail.requests_mail.from.name', config('mail.from.name'));
+        $mailProfile = $this->mailProfileConfig();
 
         $mail = (new MailMessage)
-            ->mailer('requests')
-            ->from($fromAddress, $fromName)
+            ->mailer($mailProfile['mailer'])
+            ->from($mailProfile['from_address'], $mailProfile['from_name'])
             ->subject($copy['subject'])
             ->greeting('Hello '.($notifiable->name ?? '').',')
             ->line($copy['message']);
@@ -78,6 +77,32 @@ class MarketplaceNotification extends Notification implements ShouldQueue
                 ],
             ],
         ];
+    }
+
+    /**
+     * @return array{mailer:string,from_address:string,from_name:string}
+     */
+    private function mailProfileConfig(): array
+    {
+        $profile = strtolower(trim((string) ($this->content['mail_profile'] ?? 'requests')));
+
+        return match ($profile) {
+            'admin', 'default' => [
+                'mailer' => (string) config('mail.default', 'smtp'),
+                'from_address' => (string) config('mail.from.address'),
+                'from_name' => (string) config('mail.from.name'),
+            ],
+            'support' => [
+                'mailer' => 'support',
+                'from_address' => (string) config('mail.support_mail.from.address', config('mail.from.address')),
+                'from_name' => (string) config('mail.support_mail.from.name', config('mail.from.name')),
+            ],
+            default => [
+                'mailer' => 'requests',
+                'from_address' => (string) config('mail.requests_mail.from.address', config('mail.from.address')),
+                'from_name' => (string) config('mail.requests_mail.from.name', config('mail.from.name')),
+            ],
+        };
     }
 
     /**

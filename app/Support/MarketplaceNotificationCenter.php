@@ -385,6 +385,7 @@ class MarketplaceNotificationCenter
 
         $user->notify(new MarketplaceNotification([
             'tone' => $isApproved ? 'success' : 'error',
+            'mail_profile' => 'admin',
             'action_url' => $isApproved ? route('dashboard') : route('seller.verification.create'),
             'en' => [
                 'subject' => $isApproved ? 'Sea Requests | Application Approved' : 'Sea Requests | Application Rejected',
