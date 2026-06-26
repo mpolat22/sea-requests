@@ -764,14 +764,21 @@ const chooseBusinessStatus = (status) => {
                         <p class="directory-eyebrow">{{ copy.businessesTitle }}</p>
                         <h2 class="directory-section-title">{{ copy.businessViewTitle }}</h2>
                         <div class="detail-grid">
-                            <div class="detail-item"><span>{{ copy.company }}</span><strong>{{ activeUser.company_name || copy.noValue }}</strong></div>
+                            <div class="detail-item"><span>{{ copy.fullName }}</span><strong>{{ activeUser.name || copy.noValue }}</strong></div>
                             <div class="detail-item"><span>{{ copy.email }}</span><strong>{{ activeUser.email || copy.noValue }}</strong></div>
+                            <div class="detail-item"><span>{{ copy.companyName }}</span><strong>{{ activeUser.company_name || copy.noValue }}</strong></div>
                             <div class="detail-item"><span>{{ copy.country }}</span><strong>{{ activeUser.country || copy.noValue }}</strong></div>
-                            <div class="detail-item"><span>{{ copy.city }}</span><strong>{{ activeUser.company_city || copy.noValue }}</strong></div>
                             <div class="detail-item"><span>{{ copy.phone }}</span><strong>{{ activeUser.phone || copy.noValue }}</strong></div>
+                            <div class="detail-item"><span>{{ copy.whatsapp }}</span><strong>{{ activeUser.whatsapp_number || copy.noValue }}</strong></div>
+                            <div class="detail-item"><span>{{ copy.rolesField }}</span><strong>{{ roleLabel(activeUser.role) }}</strong></div>
+                            <div class="detail-item"><span>{{ copy.verification }}</span><strong>{{ verificationLabel(activeUser) }}</strong></div>
+                            <div class="detail-item"><span>{{ copy.registeredAt }}</span><strong>{{ formatDate(activeUser.created_at) }}</strong></div>
+                            <div class="detail-item"><span>{{ copy.status }}</span><strong>{{ statusLabel(activeUser.approval_status) }}</strong></div>
+                            <div class="detail-item"><span>{{ copy.city }}</span><strong>{{ activeUser.company_city || copy.noValue }}</strong></div>
                             <div class="detail-item"><span>{{ copy.contactEmail }}</span><strong>{{ activeUser.contact_email || copy.noValue }}</strong></div>
                             <div class="detail-item"><span>{{ copy.website }}</span><strong>{{ activeUser.website_url || copy.noValue }}</strong></div>
                             <div class="detail-item detail-item-wide"><span>{{ copy.address }}</span><strong>{{ activeUser.company_address_line || copy.noValue }}</strong></div>
+                            <div class="detail-item detail-item-wide"><span>{{ copy.companyDescription }}</span><strong>{{ activeUser.company_description || copy.noValue }}</strong></div>
                         </div>
                     </template>
 
