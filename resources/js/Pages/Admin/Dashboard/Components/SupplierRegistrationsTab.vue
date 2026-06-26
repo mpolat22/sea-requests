@@ -184,9 +184,6 @@ watch(search, () => {
                                 <small v-if="user.seller_removal_requested_at" class="meta-note is-removal">
                                     {{ copy.removalRequest }}: {{ removalReasonLabel(user) }}
                                 </small>
-                                <small v-if="user.seller_rejected_at" class="meta-note is-rejected">
-                                    {{ copy.feedbackAvailable }}
-                                </small>
                                 <small v-if="user.has_pending_update_request" class="meta-note is-pending">
                                     {{ copy.updateRequest }}: {{ updateFieldText(user) }}
                                 </small>

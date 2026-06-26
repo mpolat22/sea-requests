@@ -206,7 +206,14 @@ const copy = computed(() => ({
     newValue: 'New value',
     reviewUpdate: 'Review update changes',
     reviewFeedback: 'Review rejection feedback',
-    feedbackAvailable: 'Rejection feedback available',
+    rejectionFeedbackIntro: 'Review the latest admin feedback shared for this supplier application and see exactly which areas need revision.',
+    updateFeedbackIntro: 'Review the latest admin feedback shared for this supplier update request and see which submitted changes were rejected.',
+    feedbackType: 'Feedback Type',
+    feedbackSentAt: 'Reviewed At',
+    feedbackTypeApplication: 'Initial supplier application',
+    feedbackTypeUpdate: 'Supplier update request',
+    noAdminNote: 'No admin note was added for this feedback.',
+    noRevisionFields: 'No specific revision fields were marked for this feedback.',
     verificationMailHistory: 'Verification Mail History',
     verificationMailHistoryIntro: 'Review which supplier verification onboarding emails were already sent to this supplier account and when each step happened.',
     reviewVerificationMailHistory: 'Review verification mail history',
@@ -267,24 +274,33 @@ const removalRequestPayload = (user) => ({
     note: user.seller_removal_request_note ?? '',
 });
 
-const rejectionFieldText = (user) => (user.seller_rejection_fields ?? [])
+const mappedRejectionFields = (fields = []) => fields
     .map((field) => copy.value.fields[field] ?? field)
-    .join(', ');
+    .filter(Boolean);
+
 const reviewFeedbackPayload = (user) => {
     if (user.seller_update_request_status === 'rejected') {
         return {
+            eyebrow: copy.value.reviewFeedback,
             title: copy.value.updateRejected,
+            intro: copy.value.updateFeedbackIntro,
+            feedback_type: copy.value.feedbackTypeUpdate,
+            reviewed_at: formatDate(user.seller_update_rejected_at),
             reason: copy.value.reasons[user.seller_update_rejection_reason] ?? user.seller_update_rejection_reason ?? '',
             note: user.seller_update_rejection_note ?? '',
-            fields: (user.seller_update_rejection_fields ?? []).map((field) => copy.value.fields[field] ?? field).join(', '),
+            fields: mappedRejectionFields(user.seller_update_rejection_fields ?? []),
         };
     }
 
     return {
+        eyebrow: copy.value.reviewFeedback,
         title: copy.value.rejectionReason,
+        intro: copy.value.rejectionFeedbackIntro,
+        feedback_type: copy.value.feedbackTypeApplication,
+        reviewed_at: formatDate(user.seller_rejected_at),
         reason: copy.value.reasons[user.seller_rejection_reason] ?? user.seller_rejection_reason ?? '',
         note: user.seller_rejection_note ?? '',
-        fields: rejectionFieldText(user),
+        fields: mappedRejectionFields(user.seller_rejection_fields ?? []),
     };
 };
 const updateFieldText = (user) => {
