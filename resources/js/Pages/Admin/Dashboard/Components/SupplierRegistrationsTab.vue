@@ -20,6 +20,7 @@ const emit = defineEmits([
     'open-removal',
     'open-feedback',
     'open-update-diff',
+    'open-mail-history',
     'view',
     'edit',
     'delete',
@@ -171,7 +172,9 @@ watch(search, () => {
                         <td class="order-index-cell">{{ rowNumber(index) }}</td>
                         <td>
                             <div class="identity-stack">
-                                <span class="identity-primary">{{ user.company_name || user.name }}</span>
+                                <button type="button" class="identity-primary-button" @click="emit('view', user)">
+                                    <span class="identity-primary">{{ user.company_name || user.name }}</span>
+                                </button>
                                 <span v-if="user.company_name && user.company_name !== user.name" class="identity-secondary">{{ user.name }}</span>
                                 <small v-if="user.seller_removal_requested_at" class="meta-note is-removal">
                                     {{ copy.removalRequest }}: {{ removalReasonLabel(user) }}
@@ -230,11 +233,8 @@ watch(search, () => {
                                 >
                                     <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path d="M4 12h7" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path d="M4 17h10" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path d="m15 13 2 2 4-4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
                                 </button>
-                                <Link v-if="user.preview_url" class="action-button" :title="copy.view" :href="user.preview_url">
-                                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6S2 12 2 12Z" fill="none" stroke="currentColor" stroke-width="1.8"/><circle cx="12" cy="12" r="3" fill="none" stroke="currentColor" stroke-width="1.8"/></svg>
-                                </Link>
-                                <button v-else type="button" class="action-button" :title="copy.view" @click="emit('view', user)">
-                                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6S2 12 2 12Z" fill="none" stroke="currentColor" stroke-width="1.8"/><circle cx="12" cy="12" r="3" fill="none" stroke="currentColor" stroke-width="1.8"/></svg>
+                                <button type="button" class="action-button action-button-info" :title="copy.reviewVerificationMailHistory" @click="emit('open-mail-history', user)">
+                                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16v12H4z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="m4 7 8 6 8-6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M12 10v7" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path d="M12 7.5h.01" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>
                                 </button>
                                 <Link v-if="user.edit_url" class="action-button" :title="copy.edit" :href="user.edit_url">
                                     <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20h4l10.5-10.5-4-4L4 16v4Z" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="m13.5 6.5 4 4" fill="none" stroke="currentColor" stroke-width="1.8"/></svg>
@@ -292,6 +292,7 @@ watch(search, () => {
 .dashboard-table tbody td{padding:16px 14px;border-top:1px solid rgba(4,21,31,.06);color:#0f172a;font-size:.94rem;line-height:1.55;vertical-align:top}
 .order-index-cell{font-weight:600;color:#0f172a}
 .identity-stack{display:grid;gap:5px}
+.identity-primary-button{display:inline-flex;align-items:flex-start;justify-content:flex-start;width:fit-content;padding:0;border:0;background:transparent;cursor:pointer;text-align:left}
 .identity-primary{color:#0f172a;font-size:.94rem;font-weight:500;line-height:1.45}
 .identity-secondary{color:#64748b;font-size:.88rem;line-height:1.45}
 .identity-stack small{color:#475569}

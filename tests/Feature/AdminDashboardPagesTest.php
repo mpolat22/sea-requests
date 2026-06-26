@@ -510,6 +510,37 @@ class AdminDashboardPagesTest extends TestCase
         $this->assertNull($user->fresh()->email_verified_at);
     }
 
+    public function test_admin_business_table_exposes_verification_mail_history_timestamps(): void
+    {
+        $admin = User::factory()->create([
+            'role' => 'admin',
+            'email' => 'admin@example.test',
+        ]);
+
+        $seller = User::factory()->create([
+            'role' => 'seller',
+            'company_name' => 'Reminder Supplier',
+            'approval_status' => 'pending',
+            'approved_at' => null,
+            'email_verified_at' => now()->subHours(80),
+            'seller_verification_submitted_at' => null,
+            'seller_verification_onboarding_sent_at' => now()->subHours(79),
+            'seller_verification_24h_reminder_sent_at' => now()->subHours(55),
+            'seller_verification_72h_reminder_sent_at' => now()->subHours(7),
+        ]);
+
+        $this->actingAs($admin)
+            ->get(route('admin.dashboard'))
+            ->assertOk()
+            ->assertInertia(fn (AssertableInertia $page) => $page
+                ->component('Admin/Dashboard/Dashboard')
+                ->where('businessTable.data.0.company_name', $seller->company_name)
+                ->where('businessTable.data.0.seller_verification_onboarding_sent_at', $seller->seller_verification_onboarding_sent_at?->toJSON())
+                ->where('businessTable.data.0.seller_verification_24h_reminder_sent_at', $seller->seller_verification_24h_reminder_sent_at?->toJSON())
+                ->where('businessTable.data.0.seller_verification_72h_reminder_sent_at', $seller->seller_verification_72h_reminder_sent_at?->toJSON())
+            );
+    }
+
     private function createAdminScenario(bool $confirmedAward = true): array
     {
         $admin = User::factory()->create([

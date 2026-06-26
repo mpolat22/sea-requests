@@ -10,6 +10,7 @@ import RejectModal from './Modals/RejectModal.vue';
 import RejectionFeedbackModal from './Modals/RejectionFeedbackModal.vue';
 import StatusModal from './Modals/StatusModal.vue';
 import UpdateRequestDiffModal from './Modals/UpdateRequestDiffModal.vue';
+import VerificationMailHistoryModal from './Modals/VerificationMailHistoryModal.vue';
 
 const props = defineProps({
     dashboard: {
@@ -206,6 +207,29 @@ const copy = computed(() => ({
     reviewUpdate: 'Review update changes',
     reviewFeedback: 'Review rejection feedback',
     feedbackAvailable: 'Rejection feedback available',
+    verificationMailHistory: 'Verification Mail History',
+    verificationMailHistoryIntro: 'Review which supplier verification onboarding emails were already sent to this supplier account and when each step happened.',
+    reviewVerificationMailHistory: 'Review verification mail history',
+    emailVerifiedAt: 'Email Verified',
+    latestMailSent: 'Latest Mail Sent',
+    reminderFlowStatus: 'Reminder Flow Status',
+    sentAt: 'Sent At',
+    mailNotSentYet: 'Not sent yet',
+    verificationMailSent: 'Sent',
+    verificationMailPending: 'Pending',
+    onboardingMailTitle: 'Initial verification mail',
+    reminder24hTitle: '24-hour reminder',
+    reminder72hTitle: '72-hour final reminder',
+    onboardingMailDescription: 'Sent immediately after email verification so the supplier can complete business verification before public listing and RFQ offers.',
+    reminder24hDescription: 'Sent 24 hours after email verification if the supplier verification form is still not submitted.',
+    reminder72hDescription: 'Sent 72 hours after email verification if the supplier verification form is still not submitted. No further reminder is sent after this step.',
+    reminderStatusNotVerified: 'Email not verified yet',
+    reminderStatusSubmitted: 'Verification submitted, reminder flow stopped',
+    reminderStatusRejected: 'Application rejected after submission',
+    reminderStatusFinalSent: 'Final 72-hour reminder sent, reminder flow stopped',
+    reminderStatus24hSent: '24-hour reminder sent, waiting for submission',
+    reminderStatusOnboardingSent: 'Initial verification mail sent, waiting for submission',
+    reminderStatusWaiting: 'Waiting to send onboarding mail',
 }));
 
 const regularUsers = computed(() => props.userTable.data ?? []);
@@ -323,6 +347,109 @@ const formatDate = (value) => {
     }).format(date);
 };
 
+const formatDateTime = (value) => {
+    if (!value) {
+        return copy.value.noValue;
+    }
+
+    const date = new Date(value);
+
+    if (Number.isNaN(date.getTime())) {
+        return value;
+    }
+
+    return new Intl.DateTimeFormat('en-GB', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+    }).format(date);
+};
+
+const latestVerificationMailTimestamp = (user) => {
+    const candidates = [
+        user?.seller_verification_onboarding_sent_at,
+        user?.seller_verification_24h_reminder_sent_at,
+        user?.seller_verification_72h_reminder_sent_at,
+    ]
+        .filter(Boolean)
+        .map((value) => new Date(value))
+        .filter((value) => !Number.isNaN(value.getTime()))
+        .sort((left, right) => right.getTime() - left.getTime());
+
+    return candidates[0] ? candidates[0].toISOString() : null;
+};
+
+const reminderFlowStatusText = (user) => {
+    if (!user?.email_verified_at) {
+        return copy.value.reminderStatusNotVerified;
+    }
+
+    if (user?.seller_verification_submitted_at) {
+        return user?.approval_status === 'rejected'
+            ? copy.value.reminderStatusRejected
+            : copy.value.reminderStatusSubmitted;
+    }
+
+    if (user?.seller_verification_72h_reminder_sent_at) {
+        return copy.value.reminderStatusFinalSent;
+    }
+
+    if (user?.seller_verification_24h_reminder_sent_at) {
+        return copy.value.reminderStatus24hSent;
+    }
+
+    if (user?.seller_verification_onboarding_sent_at) {
+        return copy.value.reminderStatusOnboardingSent;
+    }
+
+    return copy.value.reminderStatusWaiting;
+};
+
+const verificationMailHistoryPayload = (user) => ({
+    summary: [
+        {
+            label: copy.value.emailVerifiedAt,
+            value: formatDateTime(user?.email_verified_at),
+        },
+        {
+            label: copy.value.latestMailSent,
+            value: formatDateTime(latestVerificationMailTimestamp(user)),
+        },
+        {
+            label: copy.value.reminderFlowStatus,
+            value: reminderFlowStatusText(user),
+        },
+    ],
+    sequence: [
+        {
+            key: 'onboarding',
+            title: copy.value.onboardingMailTitle,
+            description: copy.value.onboardingMailDescription,
+            status: user?.seller_verification_onboarding_sent_at ? copy.value.verificationMailSent : copy.value.verificationMailPending,
+            sent_at: user?.seller_verification_onboarding_sent_at ? formatDateTime(user.seller_verification_onboarding_sent_at) : copy.value.mailNotSentYet,
+            is_sent: Boolean(user?.seller_verification_onboarding_sent_at),
+        },
+        {
+            key: '24h',
+            title: copy.value.reminder24hTitle,
+            description: copy.value.reminder24hDescription,
+            status: user?.seller_verification_24h_reminder_sent_at ? copy.value.verificationMailSent : copy.value.verificationMailPending,
+            sent_at: user?.seller_verification_24h_reminder_sent_at ? formatDateTime(user.seller_verification_24h_reminder_sent_at) : copy.value.mailNotSentYet,
+            is_sent: Boolean(user?.seller_verification_24h_reminder_sent_at),
+        },
+        {
+            key: '72h',
+            title: copy.value.reminder72hTitle,
+            description: copy.value.reminder72hDescription,
+            status: user?.seller_verification_72h_reminder_sent_at ? copy.value.verificationMailSent : copy.value.verificationMailPending,
+            sent_at: user?.seller_verification_72h_reminder_sent_at ? formatDateTime(user.seller_verification_72h_reminder_sent_at) : copy.value.mailNotSentYet,
+            is_sent: Boolean(user?.seller_verification_72h_reminder_sent_at),
+        },
+    ],
+});
+
 const closeModal = () => {
     modalType.value = null;
     activeUser.value = null;
@@ -407,6 +534,11 @@ const openRemovalRequestModal = (user) => {
 const openUpdateDiffModal = (user) => {
     activeUser.value = user;
     modalType.value = 'update-diff';
+};
+
+const openVerificationMailHistoryModal = (user) => {
+    activeUser.value = user;
+    modalType.value = 'verification-mail-history';
 };
 
 const submitUserEdit = () => {
@@ -518,6 +650,7 @@ const chooseBusinessStatus = (status) => {
                 @open-removal="openRemovalRequestModal"
                 @open-feedback="openRejectionFeedbackModal"
                 @open-update-diff="openUpdateDiffModal"
+                @open-mail-history="openVerificationMailHistoryModal"
                 @view="openBusinessView"
                 @edit="openBusinessEdit"
                 @delete="openDeleteModal($event, 'business')"
@@ -768,6 +901,13 @@ const chooseBusinessStatus = (status) => {
             :user="activeUser"
             :copy="copy"
             :items="activeUser ? updateDiffItems(activeUser) : []"
+            @close="closeModal"
+        />
+        <VerificationMailHistoryModal
+            :show="modalType === 'verification-mail-history'"
+            :user="activeUser"
+            :copy="copy"
+            :payload="activeUser ? verificationMailHistoryPayload(activeUser) : null"
             @close="closeModal"
         />
         <RejectionFeedbackModal
