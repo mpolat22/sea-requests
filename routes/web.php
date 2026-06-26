@@ -1541,7 +1541,7 @@ Route::get('/services/{category}/{subcategory}/{vendor}', function (Request $req
             ->whereHas('offer', fn ($query) => $query->where('seller_id', $user->id))
             ->exists()
         : false;
-    $canViewDirectContact = $isSellerOwnerView || $hasConfirmedBuyerAward;
+    $canViewDirectContact = ($viewer?->isAdmin() ?? false) || $isSellerOwnerView || $hasConfirmedBuyerAward;
     $contactAccessState = ! $viewer
         ? 'guest'
         : ($canViewDirectContact ? 'granted' : 'restricted');

@@ -113,6 +113,35 @@ class SupplierServiceListingLifecycleTest extends TestCase
         $this->assertSame(0, SupplierServiceListing::query()->where('seller_id', $seller->id)->count());
     }
 
+    public function test_admin_can_view_supplier_contact_details_on_public_service_profile(): void
+    {
+        $admin = User::factory()->create([
+            'role' => 'admin',
+        ]);
+
+        [$seller] = $this->createApprovedIndexedSeller();
+
+        $listing = SupplierServiceListing::query()
+            ->where('seller_id', $seller->id)
+            ->firstOrFail(['category_slug', 'subcategory_slug', 'vendor_slug']);
+
+        $this->actingAs($admin)
+            ->get(route('services.show', [
+                'category' => $listing->category_slug,
+                'subcategory' => $listing->subcategory_slug ?: $listing->category_slug,
+                'vendor' => $listing->vendor_slug,
+            ]))
+            ->assertOk()
+            ->assertInertia(fn (AssertableInertia $page) => $page
+                ->component('Service/ServiceShow')
+                ->where('service.can_view_contact_details', true)
+                ->where('service.contact_access_state', 'granted')
+                ->where('service.vendor.email', $seller->contact_email)
+                ->where('service.vendor.phone', $seller->phone)
+                ->where('service.vendor.address', $seller->company_address)
+            );
+    }
+
     /**
      * @return array{0: User, 1: Port}
      */
@@ -148,6 +177,11 @@ class SupplierServiceListingLifecycleTest extends TestCase
             'company_name' => 'Demo Supplier',
             'company_overview' => 'Engine overhaul services.',
             'country' => 'TR',
+            'company_city' => 'Istanbul',
+            'company_address' => 'Shipyard Avenue 12, Istanbul, Turkey',
+            'company_address_line' => 'Shipyard Avenue 12',
+            'phone' => '+905551112233',
+            'contact_email' => 'contact@demosupplier.test',
             'service_category_ids' => [$category->id],
             'service_subcategory_ids' => [$subcategory->id],
             'service_subcategories_by_category' => [(string) $category->id => [$subcategory->id]],
