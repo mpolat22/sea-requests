@@ -312,9 +312,9 @@ watch(search, () => {
 .status-pill{background:rgba(34,197,94,.12);color:#15803d}
 .status-pill.is-pending{background:rgba(59,130,246,.12);color:#2563eb}
 .status-pill.is-rejected{background:rgba(239,68,68,.12);color:#dc2626}
-.actions-cell{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
-.action-button{display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border:0;background:transparent;padding:0;color:#0f172a;text-decoration:none}
-.action-button svg{width:17px;height:17px;flex:0 0 17px}
+.actions-cell{display:flex;align-items:center;justify-content:flex-start;gap:5px;flex-wrap:nowrap;white-space:nowrap}
+.action-button{display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;border:0;background:transparent;padding:0;color:#0f172a;text-decoration:none;flex:0 0 24px}
+.action-button svg{width:16px;height:16px;flex:0 0 16px}
 .action-button-danger{color:#ef4444}
 .action-button-danger-soft{color:#b91c1c}
 .action-button-status{color:#2563eb}
