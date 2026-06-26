@@ -57,6 +57,11 @@ const paginationLabel = computed(() => {
 
 const rowNumber = (index) => totalRecords.value - (((pageNumber.value - 1) * 10) + index);
 
+const canShowVerificationMailHistory = (user) => (
+    user?.role === 'seller'
+    && user?.approval_status !== 'approved'
+);
+
 const formatDate = (value) => {
     if (!value) return '-';
 
@@ -233,7 +238,13 @@ watch(search, () => {
                                 >
                                     <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path d="M4 12h7" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path d="M4 17h10" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path d="m15 13 2 2 4-4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
                                 </button>
-                                <button type="button" class="action-button action-button-info" :title="copy.reviewVerificationMailHistory" @click="emit('open-mail-history', user)">
+                                <button
+                                    v-if="canShowVerificationMailHistory(user)"
+                                    type="button"
+                                    class="action-button action-button-info"
+                                    :title="copy.reviewVerificationMailHistory"
+                                    @click="emit('open-mail-history', user)"
+                                >
                                     <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16v12H4z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="m4 7 8 6 8-6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M12 10v7" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path d="M12 7.5h.01" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>
                                 </button>
                                 <Link v-if="user.edit_url" class="action-button" :title="copy.edit" :href="user.edit_url">
