@@ -166,6 +166,7 @@ watch(search, () => {
                     <tr>
                         <th>#</th>
                         <th>{{ copy.company }}</th>
+                        <th>{{ copy.email }}</th>
                         <th>Registered At</th>
                         <th>{{ copy.documents }}</th>
                         <th>{{ copy.status }}</th>
@@ -181,7 +182,6 @@ watch(search, () => {
                                     <span class="identity-primary">{{ user.company_name || user.name }}</span>
                                 </button>
                                 <span v-if="user.company_name && user.company_name !== user.name" class="identity-secondary">{{ user.name }}</span>
-                                <span v-if="user.email" class="identity-tertiary">{{ user.email }}</span>
                                 <small v-if="user.seller_removal_requested_at" class="meta-note is-removal">
                                     {{ copy.removalRequest }}: {{ removalReasonLabel(user) }}
                                 </small>
@@ -193,6 +193,7 @@ watch(search, () => {
                                 </small>
                             </div>
                         </td>
+                        <td>{{ user.email || copy.noValue }}</td>
                         <td>{{ formatDate(user.created_at) }}</td>
                         <td>
                             <span class="soft-pill" :class="{ 'is-warning': user.role === 'seller' && !user.seller_verification_submitted_at }">
@@ -304,7 +305,6 @@ watch(search, () => {
 .identity-primary-button{display:inline-flex;align-items:flex-start;justify-content:flex-start;width:fit-content;padding:0;border:0;background:transparent;cursor:pointer;text-align:left}
 .identity-primary{color:#0f172a;font-size:.94rem;font-weight:500;line-height:1.45}
 .identity-secondary{color:#64748b;font-size:.88rem;line-height:1.45}
-.identity-tertiary{color:#94a3b8;font-size:.84rem;line-height:1.45;word-break:break-word}
 .identity-stack small{color:#475569}
 .soft-pill,.status-pill{display:inline-flex;align-items:center;justify-content:center;min-height:34px;padding:0 12px;border-radius:10px;font-size:.8rem;font-weight:600;white-space:nowrap}
 .soft-pill{background:rgba(15,23,42,.06);color:#475569}
