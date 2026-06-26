@@ -2,12 +2,18 @@
 
 namespace Tests\Feature;
 
+use App\Models\User;
 use App\Notifications\MarketplaceNotification;
+use App\Support\MarketplaceNotificationCenter;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Notifications\Messages\MailMessage;
+use Illuminate\Support\Facades\Notification;
 use Tests\TestCase;
 
 class MarketplaceNotificationMailRoutingTest extends TestCase
 {
+    use RefreshDatabase;
+
     public function test_marketplace_notification_uses_requests_mailer_and_from_address(): void
     {
         config([
@@ -99,5 +105,89 @@ class MarketplaceNotificationMailRoutingTest extends TestCase
         $this->assertSame('smtp', $mail->mailer);
         $this->assertSame(['admin@searequests.ai', 'Sea Requests Admin'], $mail->from);
         $this->assertSame('Sea Requests | New Supplier Application', $mail->subject);
+    }
+
+    public function test_business_application_received_uses_admin_mail_profile_for_supplier(): void
+    {
+        Notification::fake();
+
+        config([
+            'mail.default' => 'smtp',
+            'mail.from.address' => 'admin@searequests.ai',
+            'mail.from.name' => 'Sea Requests Admin',
+            'mail.requests_mail.from.address' => 'requests@searequests.ai',
+            'mail.requests_mail.from.name' => 'Sea Requests Requests',
+        ]);
+
+        $seller = User::factory()->create([
+            'role' => 'seller',
+            'name' => 'Supplier User',
+            'company_name' => 'Demo Supplier',
+        ]);
+
+        MarketplaceNotificationCenter::notifySellerVerificationSubmitted($seller);
+
+        Notification::assertSentTo(
+            $seller,
+            MarketplaceNotification::class,
+            function (MarketplaceNotification $notification, array $channels) use ($seller) {
+                $mail = $notification->toMail($seller);
+
+                return in_array('mail', $channels, true)
+                    && $mail instanceof MailMessage
+                    && $mail->mailer === 'smtp'
+                    && $mail->from === ['admin@searequests.ai', 'Sea Requests Admin']
+                    && $mail->subject === 'Sea Requests | Business Application Received';
+            }
+        );
+    }
+
+    public function test_update_status_notifications_use_admin_mail_profile_for_supplier(): void
+    {
+        Notification::fake();
+
+        config([
+            'mail.default' => 'smtp',
+            'mail.from.address' => 'admin@searequests.ai',
+            'mail.from.name' => 'Sea Requests Admin',
+            'mail.requests_mail.from.address' => 'requests@searequests.ai',
+            'mail.requests_mail.from.name' => 'Sea Requests Requests',
+        ]);
+
+        $seller = User::factory()->create([
+            'role' => 'seller',
+            'name' => 'Supplier User',
+            'company_name' => 'Demo Supplier',
+        ]);
+
+        MarketplaceNotificationCenter::notifySellerUpdateRequestSubmitted($seller);
+        MarketplaceNotificationCenter::notifySellerUpdateRequestReviewed($seller, true);
+        MarketplaceNotificationCenter::notifySellerUpdateRequestReviewed($seller, false, [
+            'note' => 'Please update the business details.',
+        ]);
+
+        Notification::assertSentToTimes($seller, MarketplaceNotification::class, 3);
+
+        $sent = Notification::sent(
+            $seller,
+            MarketplaceNotification::class,
+            function (MarketplaceNotification $notification, array $channels) use ($seller) {
+            $mail = $notification->toMail($seller);
+
+            $this->assertInstanceOf(MailMessage::class, $mail);
+            $this->assertContains('mail', $channels);
+            $this->assertSame('smtp', $mail->mailer);
+            $this->assertSame(['admin@searequests.ai', 'Sea Requests Admin'], $mail->from);
+            $this->assertContains($mail->subject, [
+                'Sea Requests | Update Request Received',
+                'Sea Requests | Update Approved',
+                'Sea Requests | Update Rejected',
+            ]);
+
+                return true;
+            }
+        );
+
+        $this->assertCount(3, $sent);
     }
 }

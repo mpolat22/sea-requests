@@ -310,6 +310,7 @@ class MarketplaceNotificationCenter
     {
         $user->notify(new MarketplaceNotification([
             'tone' => 'success',
+            'mail_profile' => 'admin',
             'action_url' => route('approval.pending'),
             'en' => [
                 'subject' => 'Sea Requests | Business Application Received',
@@ -384,6 +385,7 @@ class MarketplaceNotificationCenter
     {
         $user->notify(new MarketplaceNotification([
             'tone' => 'success',
+            'mail_profile' => 'admin',
             'action_url' => route('seller.dashboard'),
             'en' => [
                 'subject' => 'Sea Requests | Update Request Received',
@@ -529,6 +531,7 @@ class MarketplaceNotificationCenter
 
         $user->notify(new MarketplaceNotification([
             'tone' => $approved ? 'success' : 'error',
+            'mail_profile' => 'admin',
             'action_url' => route('seller.verification.create'),
             'en' => [
                 'subject' => $approved ? 'Sea Requests | Update Approved' : 'Sea Requests | Update Rejected',
