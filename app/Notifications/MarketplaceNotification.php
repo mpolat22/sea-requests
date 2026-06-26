@@ -30,7 +30,7 @@ class MarketplaceNotification extends Notification implements ShouldQueue
     public function toMail(object $notifiable): MailMessage
     {
         $copy = $this->payload();
-        $mailProfile = $this->mailProfileConfig();
+        $mailProfile = $this->mailProfileConfig($notifiable);
 
         $mail = (new MailMessage)
             ->mailer($mailProfile['mailer'])
@@ -82,9 +82,12 @@ class MarketplaceNotification extends Notification implements ShouldQueue
     /**
      * @return array{mailer:string,from_address:string,from_name:string}
      */
-    private function mailProfileConfig(): array
+    private function mailProfileConfig(object $notifiable): array
     {
-        $profile = strtolower(trim((string) ($this->content['mail_profile'] ?? 'requests')));
+        $requestedProfile = strtolower(trim((string) ($this->content['mail_profile'] ?? '')));
+        $profile = $requestedProfile !== ''
+            ? $requestedProfile
+            : (($notifiable->role ?? null) === 'admin' ? 'admin' : 'requests');
 
         return match ($profile) {
             'admin', 'default' => [

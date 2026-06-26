@@ -68,4 +68,36 @@ class MarketplaceNotificationMailRoutingTest extends TestCase
         $this->assertSame(['admin@searequests.ai', 'Sea Requests Admin'], $mail->from);
         $this->assertSame('Sea Requests | Application Rejected', $mail->subject);
     }
+
+    public function test_marketplace_notification_defaults_to_admin_mail_for_admin_recipients(): void
+    {
+        config([
+            'mail.default' => 'smtp',
+            'mail.from.address' => 'admin@searequests.ai',
+            'mail.from.name' => 'Sea Requests Admin',
+            'mail.requests_mail.from.address' => 'requests@searequests.ai',
+            'mail.requests_mail.from.name' => 'Sea Requests Requests',
+        ]);
+
+        $notification = new MarketplaceNotification([
+            'en' => [
+                'subject' => 'Sea Requests | New Supplier Application',
+                'title' => 'New Supplier Application',
+                'message' => 'A new supplier application has been submitted.',
+                'details' => [],
+                'action_label' => 'Review Application',
+            ],
+            'action_url' => 'https://searequests.ai/dashboard/admin',
+        ]);
+
+        $mail = $notification->toMail((object) [
+            'name' => 'Admin User',
+            'role' => 'admin',
+        ]);
+
+        $this->assertInstanceOf(MailMessage::class, $mail);
+        $this->assertSame('smtp', $mail->mailer);
+        $this->assertSame(['admin@searequests.ai', 'Sea Requests Admin'], $mail->from);
+        $this->assertSame('Sea Requests | New Supplier Application', $mail->subject);
+    }
 }
