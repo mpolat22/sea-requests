@@ -82,8 +82,7 @@ class AdminDashboardController extends Controller
 
     private function buildBusinessesPaginator(array $filters): LengthAwarePaginator
     {
-        $query = User::query()
-            ->where('role', 'seller');
+        $query = $this->supplierRegistrationQuery();
 
         if ($filters['filter'] === 'pending') {
             $query->where('approval_status', 'pending');
@@ -184,7 +183,7 @@ class AdminDashboardController extends Controller
 
     private function businessFilterCounts(): array
     {
-        $query = User::query()->where('role', 'seller');
+        $query = $this->supplierRegistrationQuery();
 
         return [
             'all' => (clone $query)->count(),
@@ -194,6 +193,21 @@ class AdminDashboardController extends Controller
             'update-pending' => (clone $query)->where('seller_update_request_status', 'pending')->count(),
             'removal' => (clone $query)->whereNotNull('seller_removal_requested_at')->count(),
         ];
+    }
+
+    private function supplierRegistrationQuery(): Builder
+    {
+        return User::query()
+            ->where('role', 'seller')
+            ->where(function (Builder $builder) {
+                $builder
+                    ->whereNotNull('company_name')
+                    ->orWhereNotNull('seller_verification_onboarding_sent_at')
+                    ->orWhereNotNull('seller_verification_submitted_at')
+                    ->orWhere('approval_status', '!=', 'pending')
+                    ->orWhereNotNull('seller_update_request_status')
+                    ->orWhereNotNull('seller_removal_requested_at');
+            });
     }
 
     private function decorateUsers($users): void

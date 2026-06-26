@@ -541,6 +541,55 @@ class AdminDashboardPagesTest extends TestCase
             );
     }
 
+    public function test_deleting_business_record_removes_seller_from_supplier_company_registrations_but_keeps_user_account(): void
+    {
+        $admin = User::factory()->create([
+            'role' => 'admin',
+            'email' => 'admin@example.test',
+        ]);
+
+        $seller = User::factory()->create([
+            'role' => 'seller',
+            'name' => 'Test Supplier',
+            'company_name' => 'Test Supplier Company',
+            'email' => 'supplier@example.test',
+            'approval_status' => 'pending',
+            'email_verified_at' => now(),
+            'seller_verification_onboarding_sent_at' => now(),
+            'phone' => '+90 5550000000',
+            'country' => 'Turkey',
+        ]);
+
+        $this->actingAs($admin)
+            ->delete(route('admin.users.business.delete', $seller))
+            ->assertRedirect()
+            ->assertSessionHas('success', 'admin-business-deleted');
+
+        $seller->refresh();
+
+        $this->assertSame('seller', $seller->role);
+        $this->assertNull($seller->company_name);
+        $this->assertNull($seller->seller_verification_onboarding_sent_at);
+        $this->assertSame('pending', $seller->approval_status);
+
+        $this->actingAs($admin)
+            ->get(route('admin.dashboard'))
+            ->assertOk()
+            ->assertInertia(fn (AssertableInertia $page) => $page
+                ->component('Admin/Dashboard/Dashboard')
+                ->where('businessTable.counts.all', 0)
+                ->where('businessTable.data', [])
+            );
+
+        $this->actingAs($admin)
+            ->get(route('admin.dashboard', ['tab' => 'users']))
+            ->assertOk()
+            ->assertInertia(fn (AssertableInertia $page) => $page
+                ->component('Admin/Dashboard/Dashboard')
+                ->where('userTable.data.0.email', 'supplier@example.test')
+            );
+    }
+
     private function createAdminScenario(bool $confirmedAward = true): array
     {
         $admin = User::factory()->create([
