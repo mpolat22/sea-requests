@@ -1454,7 +1454,7 @@ onBeforeUnmount(() => {
 
                 <div class="identity-surface official-documents-surface">
                     <div class="section-form section-form-narrow official-documents-stack">
-                        <p class="helper-copy">You can submit any one of these document sets, but uploading all three is recommended for a faster and smoother approval review.</p>
+                        <p class="helper-copy">Provide your company registration number and upload your company registration documents so the approval review can be completed accurately.</p>
 
                         <label class="field" data-section-field="registration_number">
                             <span v-html="formatRequiredLabel(ui.registrationNumber)"></span>
@@ -1546,7 +1546,7 @@ onBeforeUnmount(() => {
                             aria-label="Previous file"
                             @click="goToPreviousDocument"
                         >
-                            ‹
+                            â€¹
                         </button>
 
                         <div class="gallery-stage">
@@ -1583,7 +1583,7 @@ onBeforeUnmount(() => {
                             aria-label="Next file"
                             @click="goToNextDocument"
                         >
-                            ›
+                            â€º
                         </button>
                     </div>
                 </div>
