@@ -185,6 +185,8 @@ class SellerVerificationController extends Controller
             return redirect()->route('dashboard.seller')->with('success', 'seller-update-request-pending-lock');
         }
 
+        $request->merge($this->normalizeOptionalUrlInputs($request));
+
         $validator = Validator::make($request->all(), [
             'company_name' => ['required', 'string', 'min:2', 'max:255'],
             'country' => ['required', 'string', 'max:255'],
@@ -465,6 +467,41 @@ class SellerVerificationController extends Controller
         }
 
         return redirect()->route('admin.dashboard')->with('success', 'seller-verification-updated-admin');
+    }
+
+    private function normalizeOptionalUrlInputs(Request $request): array
+    {
+        $fields = [
+            'website_url',
+            'instagram_url',
+            'linkedin_url',
+            'facebook_url',
+            'twitter_url',
+            'telegram_url',
+        ];
+
+        $normalized = [];
+
+        foreach ($fields as $field) {
+            $normalized[$field] = $this->normalizeOptionalHttpUrl($request->input($field));
+        }
+
+        return $normalized;
+    }
+
+    private function normalizeOptionalHttpUrl(mixed $value): ?string
+    {
+        $input = trim((string) ($value ?? ''));
+
+        if ($input === '') {
+            return null;
+        }
+
+        $candidate = preg_match('/^[a-z][a-z0-9+\-.]*:\/\//i', $input)
+            ? $input
+            : 'https://'.ltrim($input, '/');
+
+        return filter_var($candidate, FILTER_VALIDATE_URL) ? $candidate : $input;
     }
 
     private function verificationDataFromUser(\App\Models\User $user): array

@@ -73,8 +73,23 @@ const resolveErrorFields = (field) => {
     return [field];
 };
 
-const isValidUrl = (value) => {
+const normalizeUrlLikeInput = (value) => {
     const input = String(value ?? '').trim();
+
+    if (!input) {
+        return '';
+    }
+
+    if (/^[a-z][a-z0-9+.-]*:\/\//i.test(input)) {
+        return input;
+    }
+
+    return `https://${input.replace(/^\/+/, '')}`;
+};
+
+const isValidUrl = (value) => {
+    const input = normalizeUrlLikeInput(value);
+
     if (!input) return true;
 
     try {
@@ -82,6 +97,27 @@ const isValidUrl = (value) => {
         return ['http:', 'https:'].includes(url.protocol);
     } catch {
         return false;
+    }
+};
+
+const normalizeUrlField = (field) => {
+    const normalized = normalizeUrlLikeInput(props.form[field]);
+
+    if (!normalized) {
+        return;
+    }
+
+    try {
+        const url = new URL(normalized);
+
+        if (!['http:', 'https:'].includes(url.protocol)) {
+            return;
+        }
+
+        props.form[field] = url.toString();
+        clearFieldErrorIfValid(field);
+    } catch {
+        // Leave the user's original value in place so validation can explain the issue.
     }
 };
 
@@ -671,16 +707,71 @@ const portsForCountry = (countryCode) => (
         .sort((left, right) => left.port_name.localeCompare(right.port_name))
 );
 
+const allPortIdsForCountry = (countryCode) => (
+    portsForCountry(countryCode)
+        .map((port) => Number(port.id))
+        .filter(Boolean)
+);
+
 const inlinePortCountForCountry = (countryCode) => servicePortDraftSelections.value[String(countryCode).toUpperCase()]?.length ?? 0;
 const isInlinePortChecked = (countryCode, portId) => (
     (servicePortDraftSelections.value[String(countryCode).toUpperCase()] ?? []).includes(Number(portId))
 );
 
+const isServiceCountryFullySelected = (countryCode) => {
+    const allPortIds = allPortIdsForCountry(countryCode);
+
+    if (!allPortIds.length) {
+        return false;
+    }
+
+    const selectedPortIds = new Set(
+        (servicePortDraftSelections.value[String(countryCode).toUpperCase()] ?? [])
+            .map((value) => Number(value))
+            .filter(Boolean)
+    );
+
+    return allPortIds.every((portId) => selectedPortIds.has(portId));
+};
+
+const isServiceCountryPartiallySelected = (countryCode) => {
+    const allPortIds = allPortIdsForCountry(countryCode);
+
+    if (!allPortIds.length) {
+        return false;
+    }
+
+    const selectedPortIds = new Set(
+        (servicePortDraftSelections.value[String(countryCode).toUpperCase()] ?? [])
+            .map((value) => Number(value))
+            .filter(Boolean)
+    );
+
+    const selectedCount = allPortIds.filter((portId) => selectedPortIds.has(portId)).length;
+
+    return selectedCount > 0 && selectedCount < allPortIds.length;
+};
+
+const serviceCountryPortSummary = (countryCode) => {
+    const count = inlinePortCountForCountry(countryCode);
+
+    if (!count) {
+        return '';
+    }
+
+    if (isServiceCountryFullySelected(countryCode)) {
+        return `All ${count} ports selected`;
+    }
+
+    return `${count} port${count === 1 ? '' : 's'} selected`;
+};
+
 const toggleServiceCountryDraftSelection = (countryCode) => {
     const code = String(countryCode).toUpperCase();
     const next = { ...servicePortDraftSelections.value };
+    const allPortIds = allPortIdsForCountry(code);
 
-    if (next[code]) {
+    if (isServiceCountryFullySelected(code)) {
         delete next[code];
         if (expandedServiceCountryCode.value === code) {
             expandedServiceCountryCode.value = null;
@@ -691,11 +782,12 @@ const toggleServiceCountryDraftSelection = (countryCode) => {
             return;
         }
 
-        next[code] = [];
+        next[code] = allPortIds;
         expandedServiceCountryCode.value = code;
     }
 
     servicePortDraftSelections.value = next;
+    clearFieldError(...resolveErrorFields('service_ports_by_country'));
 };
 
 const toggleServiceCountryExpansion = (countryCode) => {
@@ -1166,16 +1258,16 @@ onBeforeUnmount(() => {
                                 <span v-html="formatRequiredLabel(ui.city)"></span>
                                 <div class="input-shell" :class="{ invalid: hasVisualInvalid('company_city') }">
                                     <span class="input-icon" aria-hidden="true"><svg viewBox="0 0 20 20" fill="none"><path d="M5.5 16.5h9M6.5 16.5V5a1 1 0 0 1 1-1h5a1 1 0 0 1 1 1v11.5M8.5 7h3M8.5 10h3M8.5 13h3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></span>
-                                    <input v-model="form.company_city" type="text" placeholder="Istanbul" @input="clearFieldErrorIfValid('company_city')" />
+                                    <input v-model="form.company_city" type="text" placeholder="Please enter your city" @input="clearFieldErrorIfValid('company_city')" />
                                 </div>
                                 <span class="field-feedback">{{ visibleFieldError('company_city') }}</span>
                             </label>
 
                             <label class="field">
-                                <span>{{ ui.neighborhood }}</span>
+                                <span>District</span>
                                 <div class="input-shell" :class="{ invalid: form.errors.company_neighborhood }">
                                     <span class="input-icon" aria-hidden="true"><svg viewBox="0 0 20 20" fill="none"><path d="M4.5 14.5h11M4.5 10h11M4.5 5.5h11" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></span>
-                                    <input v-model="form.company_neighborhood" type="text" placeholder="Icmeler" @input="clearFieldErrorIfValid('company_neighborhood')" />
+                                    <input v-model="form.company_neighborhood" type="text" placeholder="Please enter your district" @input="clearFieldErrorIfValid('company_neighborhood')" />
                                 </div>
                                 <span class="field-feedback">{{ visibleFieldError('company_neighborhood') }}</span>
                             </label>
@@ -1184,7 +1276,7 @@ onBeforeUnmount(() => {
                                 <span v-html="formatRequiredLabel(ui.postalCode)"></span>
                                 <div class="input-shell" :class="{ invalid: hasVisualInvalid('company_postal_code') }">
                                     <span class="input-icon" aria-hidden="true"><svg viewBox="0 0 20 20" fill="none"><path d="M4.5 6.5h11v7h-11z" stroke="currentColor" stroke-width="1.5"/><path d="M7 9.5h6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></span>
-                                    <input v-model="form.company_postal_code" type="text" placeholder="34947" @input="clearFieldErrorIfValid('company_postal_code')" />
+                                    <input v-model="form.company_postal_code" type="text" placeholder="Please enter your postal code" @input="clearFieldErrorIfValid('company_postal_code')" />
                                 </div>
                                 <span class="field-feedback">{{ visibleFieldError('company_postal_code') }}</span>
                             </label>
@@ -1194,7 +1286,7 @@ onBeforeUnmount(() => {
                             <span v-html="formatRequiredLabel(ui.fullAddress)"></span>
                             <div class="input-shell input-shell-textarea" :class="{ invalid: hasVisualInvalid('company_address_line') }">
                                 <span class="input-icon input-icon-textarea" aria-hidden="true"><svg viewBox="0 0 20 20" fill="none"><path d="M10 16.5s4.5-3.5 4.5-7a4.5 4.5 0 1 0-9 0c0 3.5 4.5 7 4.5 7Z" stroke="currentColor" stroke-width="1.5"/><circle cx="10" cy="9.5" r="1.5" stroke="currentColor" stroke-width="1.5"/></svg></span>
-                                <textarea :ref="fieldRefs.company_address_line" v-model="form.company_address_line" rows="4" :placeholder="ui.fullAddressPlaceholder" @input="clearFieldErrorIfValid('company_address_line')"></textarea>
+                                <textarea :ref="fieldRefs.company_address_line" v-model="form.company_address_line" rows="4" placeholder="Please enter your full business address" @input="clearFieldErrorIfValid('company_address_line')"></textarea>
                             </div>
                                 <span class="field-feedback">{{ visibleFieldError('company_address_line') }}</span>
                         </label>
@@ -1233,7 +1325,7 @@ onBeforeUnmount(() => {
                                 <span>{{ ui.landlinePhone }}</span>
                                 <div class="input-shell" :class="{ invalid: hasVisualInvalid('landline_phone') }">
                                     <span class="input-icon" aria-hidden="true"><svg viewBox="0 0 20 20" fill="none"><path d="M6 3.5h8A1.5 1.5 0 0 1 15.5 5v10A1.5 1.5 0 0 1 14 16.5H6A1.5 1.5 0 0 1 4.5 15V5A1.5 1.5 0 0 1 6 3.5Z" stroke="currentColor" stroke-width="1.5"/><path d="M7 6.5h6M7 9.5h6M8.5 13h3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></span>
-                                    <input v-model="form.landline_phone" type="text" :placeholder="ui.landlinePlaceholder" @input="handleLandlineInput(); clearFieldErrorIfValid('landline_phone')" />
+                                    <input v-model="form.landline_phone" type="text" placeholder="5550000000" @input="handleLandlineInput(); clearFieldErrorIfValid('landline_phone')" />
                                 </div>
                                 <span class="field-feedback">{{ visibleFieldError('landline_phone') }}</span>
                             </label>
@@ -1261,7 +1353,7 @@ onBeforeUnmount(() => {
                                 <span>{{ ui.telegram }}</span>
                                 <div class="input-shell" :class="{ invalid: hasVisualInvalid('telegram_url') }">
                                     <span class="input-icon" aria-hidden="true"><svg viewBox="0 0 20 20" fill="none"><path d="m16.5 4.5-2 10.5c-.15.74-.54.92-1.1.57l-3.04-2.24-1.47 1.41c-.16.16-.3.3-.61.3l.22-3.11 5.66-5.11c.25-.22-.05-.35-.38-.13L6.78 11.1 3.8 10.17c-.65-.2-.66-.65.14-.96l11.65-4.49c.54-.2 1.01.13.84.78Z" fill="currentColor"/></svg></span>
-                                    <input v-model="form.telegram_url" type="url" :placeholder="ui.socialPlaceholder" @input="clearFieldErrorIfValid('telegram_url')" />
+                                    <input v-model="form.telegram_url" type="text" :placeholder="ui.socialPlaceholder" @input="clearFieldErrorIfValid('telegram_url')" @blur="normalizeUrlField('telegram_url')" />
                                 </div>
                                 <span class="field-feedback">{{ visibleFieldError('telegram_url') }}</span>
                             </label>
@@ -1281,7 +1373,7 @@ onBeforeUnmount(() => {
                                 <span>{{ ui.website }}</span>
                                 <div class="input-shell" :class="{ invalid: hasVisualInvalid('website_url') }">
                                     <span class="input-icon" aria-hidden="true"><svg viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="7" stroke="currentColor" stroke-width="1.5"/><path d="M3 10h14M10 3c1.8 2 2.7 4.333 2.7 7S11.8 15 10 17c-1.8-2-2.7-4.333-2.7-7S8.2 5 10 3Z" stroke="currentColor" stroke-width="1.5"/></svg></span>
-                                    <input v-model="form.website_url" type="url" :placeholder="ui.websitePlaceholder" @input="clearFieldErrorIfValid('website_url')" />
+                                    <input v-model="form.website_url" type="text" :placeholder="ui.websitePlaceholder" @input="clearFieldErrorIfValid('website_url')" @blur="normalizeUrlField('website_url')" />
                                 </div>
                                 <span class="field-feedback">{{ visibleFieldError('website_url') }}</span>
                             </label>
@@ -1292,7 +1384,7 @@ onBeforeUnmount(() => {
                                 <span>{{ ui.instagram }}</span>
                                 <div class="input-shell" :class="{ invalid: hasVisualInvalid('instagram_url') }">
                                     <span class="input-icon" aria-hidden="true"><svg viewBox="0 0 20 20" fill="none"><rect x="4" y="4" width="12" height="12" rx="3" stroke="currentColor" stroke-width="1.5"/><circle cx="10" cy="10" r="2.75" stroke="currentColor" stroke-width="1.5"/><circle cx="13.4" cy="6.6" r=".8" fill="currentColor"/></svg></span>
-                                    <input v-model="form.instagram_url" type="url" :placeholder="ui.socialPlaceholder" @input="clearFieldErrorIfValid('instagram_url')" />
+                                    <input v-model="form.instagram_url" type="text" :placeholder="ui.socialPlaceholder" @input="clearFieldErrorIfValid('instagram_url')" @blur="normalizeUrlField('instagram_url')" />
                                 </div>
                                 <span class="field-feedback">{{ visibleFieldError('instagram_url') }}</span>
                             </label>
@@ -1301,7 +1393,7 @@ onBeforeUnmount(() => {
                                 <span>{{ ui.linkedin }}</span>
                                 <div class="input-shell" :class="{ invalid: hasVisualInvalid('linkedin_url') }">
                                     <span class="input-icon" aria-hidden="true"><svg viewBox="0 0 20 20" fill="none"><path d="M6 8.25V14M6 6a.75.75 0 1 0 0-1.5A.75.75 0 0 0 6 6ZM9 14V8.25h2.75c1.24 0 2.25 1 2.25 2.25V14M9 10.25c0-1.1.9-2 2-2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
-                                    <input v-model="form.linkedin_url" type="url" :placeholder="ui.socialPlaceholder" @input="clearFieldErrorIfValid('linkedin_url')" />
+                                    <input v-model="form.linkedin_url" type="text" :placeholder="ui.socialPlaceholder" @input="clearFieldErrorIfValid('linkedin_url')" @blur="normalizeUrlField('linkedin_url')" />
                                 </div>
                                 <span class="field-feedback">{{ visibleFieldError('linkedin_url') }}</span>
                             </label>
@@ -1312,7 +1404,7 @@ onBeforeUnmount(() => {
                                 <span>{{ ui.facebook }}</span>
                                 <div class="input-shell" :class="{ invalid: hasVisualInvalid('facebook_url') }">
                                     <span class="input-icon" aria-hidden="true"><svg viewBox="0 0 20 20" fill="none"><path d="M11.25 16V10.5H13l.25-2h-2V7.25c0-.58.16-.97 1-.97H13.4V4.5c-.2-.03-.88-.08-1.68-.08-1.67 0-2.82 1.02-2.82 2.9V8.5H7.25v2h1.65V16h2.35Z" fill="currentColor"/></svg></span>
-                                    <input v-model="form.facebook_url" type="url" :placeholder="ui.socialPlaceholder" @input="clearFieldErrorIfValid('facebook_url')" />
+                                    <input v-model="form.facebook_url" type="text" :placeholder="ui.socialPlaceholder" @input="clearFieldErrorIfValid('facebook_url')" @blur="normalizeUrlField('facebook_url')" />
                                 </div>
                                 <span class="field-feedback">{{ visibleFieldError('facebook_url') }}</span>
                             </label>
@@ -1321,7 +1413,7 @@ onBeforeUnmount(() => {
                                 <span>{{ ui.twitter }}</span>
                                 <div class="input-shell" :class="{ invalid: hasVisualInvalid('twitter_url') }">
                                     <span class="input-icon" aria-hidden="true"><svg viewBox="0 0 20 20" fill="none"><path d="M4.5 4h2.76l2.17 3.1L12.2 4h3.3l-4.34 4.96L16 16h-2.77l-2.45-3.5L7.7 16H4.4l4.61-5.27L4.5 4Z" fill="currentColor"/></svg></span>
-                                    <input v-model="form.twitter_url" type="url" :placeholder="ui.socialPlaceholder" @input="clearFieldErrorIfValid('twitter_url')" />
+                                    <input v-model="form.twitter_url" type="text" :placeholder="ui.socialPlaceholder" @input="clearFieldErrorIfValid('twitter_url')" @blur="normalizeUrlField('twitter_url')" />
                                 </div>
                                 <span class="field-feedback">{{ visibleFieldError('twitter_url') }}</span>
                             </label>
@@ -1592,11 +1684,17 @@ onBeforeUnmount(() => {
                                 <button type="button" class="picker-expand" @click="toggleServiceCountryExpansion(country.code)">{{ expandedServiceCountryCode === country.code ? 'v' : '>' }}</button>
                                 <div class="picker-copy-block">
                                     <strong>{{ country.name }}</strong>
-                                    <span v-if="inlinePortCountForCountry(country.code)">{{ inlinePortCountForCountry(country.code) }} selected</span>
+                                    <span v-if="serviceCountryPortSummary(country.code)">{{ serviceCountryPortSummary(country.code) }}</span>
                                 </div>
-                                <label class="picker-check">
-                                    <input type="checkbox" :checked="country.checked" @change="toggleServiceCountryDraftSelection(country.code)" />
+                                <label class="picker-check picker-check-country">
+                                    <input
+                                        type="checkbox"
+                                        :checked="isServiceCountryFullySelected(country.code)"
+                                        :indeterminate.prop="isServiceCountryPartiallySelected(country.code)"
+                                        @change="toggleServiceCountryDraftSelection(country.code)"
+                                    />
                                     <span></span>
+                                    <small class="picker-check-copy">Select All</small>
                                 </label>
                             </div>
 
@@ -2413,6 +2511,16 @@ onBeforeUnmount(() => {
 .picker-check {
     display: inline-flex;
     align-items: center;
+}
+
+.picker-check-country {
+    gap: 8px;
+}
+
+.picker-check-copy {
+    color: #64748b;
+    font-size: 0.78rem;
+    white-space: nowrap;
 }
 
 .picker-check input,
