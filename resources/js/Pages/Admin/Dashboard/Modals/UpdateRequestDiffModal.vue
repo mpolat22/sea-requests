@@ -10,7 +10,7 @@ const props = defineProps({
 
 const emit = defineEmits(['close']);
 
-const listDiffKeys = ['service_category_ids', 'service_brand_ids', 'service_country_codes', 'service_ports_by_country', 'official_documents', ];
+const listDiffKeys = ['service_category_ids', 'service_brand_ids', 'service_country_codes', 'service_ports_by_country', 'company_registration_documents'];
 
 const normalizeList = (value) => String(value ?? '')
     .split(/\s*\|\s*|\s*,\s*|\n+/)

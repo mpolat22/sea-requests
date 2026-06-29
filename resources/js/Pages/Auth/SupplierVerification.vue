@@ -113,7 +113,7 @@ const ui = computed(() => ({
     title: 'Supplier Application | Sea Requests',
     eyebrow: 'Corporate application',
     heading: 'Submit your business in one complete application',
-    text: 'Complete your business identity, location, contact details and official documents. Your profile goes live after approval.',
+    text: 'Complete your business identity, location, contact details and company registration documents. Your profile goes live after approval.',
     identityHeading: 'Business Identity',
     locationHeading: 'Location',
     galleryHeading: 'Gallery',
@@ -126,7 +126,9 @@ const ui = computed(() => ({
     selectCategory: 'Select category',
     selectSubcategory: 'Select subcategory',
     brandSearchPlaceholder: 'Search and add brands',
-    brandHelper: 'Add the brands you actively supply or service. This will later improve RFQ matching quality.',
+    categoryHelper: 'Select the categories and subcategories your company truly serves. Based on these selections, relevant requests will be matched and sent to you.',
+    brandHelper: 'Select the brands you actively supply or service. These selections help the platform match and send more relevant brand-specific requests to you.',
+    serviceCoverageHelper: 'Select the countries and ports where you actively provide service. Requests from matching locations will be routed to your company.',
     brandEmpty: 'No matching brands were found.',
     serviceCoverageHeading: 'Service Countries and Ports',
     serviceCountries: 'Service Countries *',
@@ -165,8 +167,7 @@ const ui = computed(() => ({
     socialPlaceholder: 'https://',
     registrationNumber: 'Company Registration Number *',
     registrationDocuments: 'Company Registration Documents *',
-    taxDocuments: 'Tax Documents *',
-    authorizationDocuments: 'Authorization Documents',
+
     fileRules: 'PDF, JPG, JPEG, PNG or WEBP. Each file can be up to 10 MB.',
     submit: 'Submit Application',
     submitting: 'Submitting Application...',
@@ -245,12 +246,8 @@ const form = useForm({
     registration_number: props.verification.registration_number ?? '',
     keep_company_logo_path: props.verification.company_logo?.path ?? '',
     existing_company_registration_documents: (props.verification.company_registration_documents ?? []).map((item) => item.path),
-    existing_tax_certificate_documents: (props.verification.tax_certificate_documents ?? []).map((item) => item.path),
-    existing_service_authorization_documents: (props.verification.service_authorization_documents ?? []).map((item) => item.path),
     company_logo: null,
     company_registration_documents: [],
-    tax_certificate_documents: [],
-    service_authorization_documents: [],
 });
 
 const fieldRefs = {
@@ -445,8 +442,6 @@ watch(categoryGroups, syncCategoryForm, { deep: true, immediate: true });
 
 const existingDocuments = reactive({
     company_registration_documents: (props.verification.company_registration_documents ?? []).map(normalizeDocumentFile).filter(Boolean),
-    tax_certificate_documents: (props.verification.tax_certificate_documents ?? []).map(normalizeDocumentFile).filter(Boolean),
-    service_authorization_documents: (props.verification.service_authorization_documents ?? []).map(normalizeDocumentFile).filter(Boolean),
 });
 
 const singleMedia = reactive({
@@ -455,8 +450,6 @@ const singleMedia = reactive({
 
 const newDocuments = reactive({
     company_registration_documents: [],
-    tax_certificate_documents: [],
-    service_authorization_documents: [],
 });
 
 const newSingles = reactive({
@@ -471,22 +464,6 @@ const documentConfigs = computed(() => [
         fresh: newDocuments.company_registration_documents,
         error: form.errors.company_registration_documents,
         itemError: form.errors['company_registration_documents.0'],
-    },
-    {
-        key: 'tax_certificate_documents',
-        label: ui.value.taxDocuments,
-        existing: existingDocuments.tax_certificate_documents,
-        fresh: newDocuments.tax_certificate_documents,
-        error: form.errors.tax_certificate_documents,
-        itemError: form.errors['tax_certificate_documents.0'],
-    },
-    {
-        key: 'service_authorization_documents',
-        label: ui.value.authorizationDocuments,
-        existing: existingDocuments.service_authorization_documents,
-        fresh: newDocuments.service_authorization_documents,
-        error: form.errors.service_authorization_documents,
-        itemError: form.errors['service_authorization_documents.0'],
     },
 ]);
 
@@ -600,8 +577,6 @@ const submit = () => {
         ? `${form.whatsapp_country_code} ${String(form.whatsapp_local_number ?? '').replace(/\D+/g, '')}`.trim()
         : '';
     form.company_registration_documents = newDocuments.company_registration_documents.map((item) => item.file);
-    form.tax_certificate_documents = newDocuments.tax_certificate_documents.map((item) => item.file);
-    form.service_authorization_documents = newDocuments.service_authorization_documents.map((item) => item.file);
 
     form.post(props.actionUrls.submit, {
         forceFormData: true,

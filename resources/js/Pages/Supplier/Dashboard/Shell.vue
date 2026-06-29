@@ -66,29 +66,37 @@ const fieldLabels = computed(() => ({
     registration_number: 'Registration number',
     company_logo: 'Logo',
     company_registration_documents: 'Company registration documents',
-    tax_certificate_documents: 'Tax documents',
-    service_authorization_documents: 'Authorization documents',
-    official_documents: 'Official documents',
 }));
 
+const hiddenFieldLabels = new Set(['tax_certificate_documents', 'service_authorization_documents']);
+const normalizeFieldLabelKey = (field) => field === 'official_documents' ? 'company_registration_documents' : field;
+
 const formatFieldLabel = (field) => {
-    const mappedLabel = fieldLabels.value[field];
+    const normalizedField = normalizeFieldLabelKey(field);
+
+    if (hiddenFieldLabels.has(normalizedField)) {
+        return null;
+    }
+
+    const mappedLabel = fieldLabels.value[normalizedField];
 
     if (mappedLabel) {
         return mappedLabel;
     }
 
-    return String(field ?? '')
+    return String(normalizedField ?? '')
         .replace(/_/g, ' ')
         .replace(/\b\w/g, (character) => character.toUpperCase());
 };
 
-const rejectionFieldText = computed(() => (props.dashboard.rejection_feedback?.fields ?? [])
+const uniqueFieldLabels = (fields = []) => Array.from(new Set(fields
     .map((field) => formatFieldLabel(field))
+    .filter(Boolean)));
+
+const rejectionFieldText = computed(() => uniqueFieldLabels(props.dashboard.rejection_feedback?.fields ?? [])
     .join(', '));
 
-const updateFieldText = computed(() => (props.dashboard.update_request?.changed_fields ?? [])
-    .map((field) => formatFieldLabel(field))
+const updateFieldText = computed(() => uniqueFieldLabels(props.dashboard.update_request?.changed_fields ?? [])
     .join(', '));
 
 const incomingTabLabel = computed(() => `${copy.value.incomingTab}(${Number(props.dashboard.navigation?.incoming_count ?? 0)})`);

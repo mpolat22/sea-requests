@@ -140,9 +140,6 @@ const copy = computed(() => ({
         registration_number: 'Registration number',
         company_logo: 'Logo',
         company_registration_documents: 'Company registration documents',
-        tax_certificate_documents: 'Tax documents',
-        service_authorization_documents: 'Authorization documents',
-        official_documents: 'Official documents',
     },
     roles: {
         buyer: 'Buyer',
@@ -241,6 +238,8 @@ const copy = computed(() => ({
 
 const regularUsers = computed(() => props.userTable.data ?? []);
 const businessUsers = computed(() => props.businessTable.data ?? []);
+const hiddenRejectionFields = new Set(['tax_certificate_documents', 'service_authorization_documents']);
+const normalizeRejectionField = (field) => field === 'official_documents' ? 'company_registration_documents' : field;
 const feedbackFields = computed(() => Object.entries(copy.value.fields).map(([key, label]) => ({ key, label })));
 
 const roleLabel = (role) => copy.value.roles[role] ?? role;
@@ -274,9 +273,11 @@ const removalRequestPayload = (user) => ({
     note: user.seller_removal_request_note ?? '',
 });
 
-const mappedRejectionFields = (fields = []) => fields
-    .map((field) => copy.value.fields[field] ?? field)
-    .filter(Boolean);
+const mappedRejectionFields = (fields = []) => Array.from(new Set(fields
+    .map((field) => normalizeRejectionField(field))
+    .filter((field) => !hiddenRejectionFields.has(field))
+    .map((field) => copy.value.fields[field] ?? null)
+    .filter(Boolean)));
 
 const reviewFeedbackPayload = (user) => {
     if (user.seller_update_request_status === 'rejected') {

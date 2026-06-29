@@ -200,9 +200,7 @@ class User extends Authenticatable implements MustVerifyEmail
 
     public function hasSubmittedSellerVerification(): bool
     {
-        $hasOfficialDocument = filled($this->company_registration_documents)
-            || filled($this->tax_certificate_documents)
-            || filled($this->service_authorization_documents);
+        $hasOfficialDocument = filled($this->company_registration_documents);
 
         return $this->seller_verification_submitted_at !== null
             && filled($this->company_name)

@@ -616,7 +616,8 @@ class MarketplaceNotificationCenter
             'company_overview' => 'Company overview',
             'registration_number' => 'Registration number',
             'company_logo' => 'Logo',
-            'official_documents' => 'Official documents',
+            'company_registration_documents' => 'Company registration documents',
+            'official_documents' => 'Company registration documents',
         ];
 
         return collect($fields)

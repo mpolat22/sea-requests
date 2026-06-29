@@ -147,11 +147,7 @@ class SellerDashboardData
                 'categories' => $categories->count(),
                 'countries' => collect($user->service_country_codes ?? [])->filter()->count(),
                 'ports' => $user->servicePorts()->count(),
-                'documents' => collect([
-                    ...($user->company_registration_documents ?? []),
-                    ...($user->tax_certificate_documents ?? []),
-                    ...($user->service_authorization_documents ?? []),
-                ])->count(),
+                'documents' => collect($user->company_registration_documents ?? [])->count(),
                 'notifications' => $user->unreadNotifications()->count(),
             ],
             'categories' => $categories->map(fn (Category $category) => [

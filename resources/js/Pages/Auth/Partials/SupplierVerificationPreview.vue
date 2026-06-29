@@ -21,15 +21,13 @@ const copy = computed(() => ({
     noCompleted: 'No completed items yet.',
     noMissing: 'No critical missing items right now.',
     overview: 'Company Overview',
-    officialDocuments: 'Official Documents',
+    officialDocuments: 'Company Registration Documents',
 }));
 
 const hasLogo = computed(() => Boolean(props.newSingles.company_logo || props.singleMedia.company_logo));
 
 const hasOfficialDocument = computed(() => (
     (props.existingDocuments.company_registration_documents?.length ?? 0) + (props.newDocuments.company_registration_documents?.length ?? 0) > 0
-    || (props.existingDocuments.tax_certificate_documents?.length ?? 0) + (props.newDocuments.tax_certificate_documents?.length ?? 0) > 0
-    || (props.existingDocuments.service_authorization_documents?.length ?? 0) + (props.newDocuments.service_authorization_documents?.length ?? 0) > 0
 ));
 
 const checks = computed(() => {

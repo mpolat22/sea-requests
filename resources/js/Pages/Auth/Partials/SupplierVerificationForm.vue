@@ -52,7 +52,7 @@ const servicePortDraftLimitRequested = ref(false);
 const documentViewer = ref(null);
 const documentViewerIndex = ref(0);
 
-const serviceCoverageSectionHelper = computed(() => 'Choose the countries you serve and add at least 1 port for each country.');
+const serviceCoverageSectionHelper = computed(() => props.ui.serviceCoverageHelper || 'Select the countries and ports where you actively provide service. Requests from matching locations will be routed to your company.');
 
 const formatRequiredLabel = (label) => String(label ?? '').replace(/\*/g, '<span class="required-star">*</span>');
 
@@ -854,12 +854,8 @@ const documentGuide = (key) => {
     switch (key) {
         case 'company_registration_documents':
             return 'Upload the official company registration files that confirm your legal business entity.';
-        case 'tax_certificate_documents':
-            return 'Upload the tax documents buyers and admins can use to verify your active tax status.';
-        case 'service_authorization_documents':
-            return 'Upload any authorization, dealership, class, or service approval documents relevant to your operation.';
         default:
-            return 'Upload the files needed to verify this document set.';
+            return 'Upload the official company registration files that confirm your legal business entity.';
     }
 };
 
@@ -1062,7 +1058,7 @@ onBeforeUnmount(() => {
                             <span class="field-hint">Enter the business name exactly as buyers should see it on your profile and offers.</span>
                             <div class="input-shell" :class="{ invalid: hasVisualInvalid('company_name') }">
                                 <span class="input-icon" aria-hidden="true"><svg viewBox="0 0 20 20" fill="none"><path d="M3 7.5h14v8A1.5 1.5 0 0 1 15.5 17h-11A1.5 1.5 0 0 1 3 15.5v-8Z" stroke="currentColor" stroke-width="1.5"/><path d="m4.5 7.5 1.4-2.8A1.5 1.5 0 0 1 7.24 4h5.52c.57 0 1.08.32 1.34.83l1.4 2.67" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></span>
-                                <input :ref="fieldRefs.company_name" v-model="form.company_name" type="text" placeholder="MaritimeSOFT" @input="clearFieldErrorIfValid('company_name')" />
+                                <input :ref="fieldRefs.company_name" v-model="form.company_name" type="text" placeholder="Please enter your full business name" @input="clearFieldErrorIfValid('company_name')" />
                             </div>
                             <span class="field-feedback">{{ visibleFieldError('company_name') }}</span>
                         </label>
@@ -1137,7 +1133,7 @@ onBeforeUnmount(() => {
                             <div class="section-form section-form-narrow">
                                 <div class="brand-selector" data-section-field="service_category_ids">
                                     <span class="brand-selector-label" v-html="formatRequiredLabel('Category and Subcategory *')"></span>
-                                    <span class="field-hint">Choose the main service categories you cover and add the matching subcategories below them.</span>
+                                    <span class="field-hint">{{ ui.categoryHelper }}</span>
                                     <div class="brand-selector-shell" :class="{ invalid: hasVisualInvalid('service_category_ids') || hasVisualInvalid('service_subcategory_ids') }">
                                         <button
                                             :ref="(el) => { if (fieldRefs.service_category_ids) fieldRefs.service_category_ids.value = el; if (fieldRefs.service_subcategory_ids) fieldRefs.service_subcategory_ids.value = el; }"
@@ -1171,7 +1167,7 @@ onBeforeUnmount(() => {
                             <div class="section-form section-form-narrow">
                                 <div class="brand-selector" data-section-field="service_brand_ids">
                                     <span class="brand-selector-label">{{ ui.brands }}</span>
-                                    <span class="field-hint">Select the brands you actively supply or service so matching can become more precise later.</span>
+                                    <span class="field-hint">{{ ui.brandHelper }}</span>
                                     <div class="brand-selector-shell" :class="{ invalid: hasVisualInvalid('service_brand_ids') }">
                                         <button
                                             :ref="fieldRefs.service_brand_ids"

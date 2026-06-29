@@ -20,7 +20,7 @@ class UserApprovalController extends Controller
             'rejection_reason' => ['nullable', 'string', 'in:documents_incomplete,information_mismatch,service_scope_unclear,compliance_issue,other'],
             'rejection_note' => ['nullable', 'string', 'min:10', 'max:1000'],
             'rejection_fields' => ['nullable', 'array'],
-            'rejection_fields.*' => ['string', 'in:company_name,service_category_ids,service_brand_ids,service_country_codes,service_ports_by_country,country,company_city,company_district,company_neighborhood,company_postal_code,company_address_line,phone,landline_phone,contact_email,website_url,whatsapp_number,telegram_url,instagram_url,linkedin_url,facebook_url,twitter_url,company_overview,port_coverage,registration_number,company_logo,company_registration_documents,tax_certificate_documents,service_authorization_documents,official_documents'],
+            'rejection_fields.*' => ['string', 'in:company_name,service_category_ids,service_brand_ids,service_country_codes,service_ports_by_country,country,company_city,company_district,company_neighborhood,company_postal_code,company_address_line,phone,landline_phone,contact_email,website_url,whatsapp_number,telegram_url,instagram_url,linkedin_url,facebook_url,twitter_url,company_overview,port_coverage,registration_number,company_logo,company_registration_documents'],
         ]);
 
         if ($user->isSeller() && $validated['action'] === 'approve' && ! $user->hasSubmittedSellerVerification()) {
@@ -108,8 +108,6 @@ class UserApprovalController extends Controller
         ])->filter()->implode(', ');
 
         $companyRegistrationDocuments = $payload['company_registration_documents'] ?? [];
-        $taxCertificateDocuments = $payload['tax_certificate_documents'] ?? [];
-        $serviceAuthorizationDocuments = $payload['service_authorization_documents'] ?? [];
 
         $user->forceFill([
             'company_name' => $payload['company_name'] ?? $user->company_name,
@@ -142,11 +140,11 @@ class UserApprovalController extends Controller
             'service_brand_ids' => $payload['service_brand_ids'] ?? [],
             'company_logo_path' => $payload['company_logo']['path'] ?? $user->company_logo_path,
             'company_registration_documents' => $companyRegistrationDocuments,
-            'tax_certificate_documents' => $taxCertificateDocuments,
-            'service_authorization_documents' => $serviceAuthorizationDocuments,
+            'tax_certificate_documents' => [],
+            'service_authorization_documents' => [],
             'company_registration_document_path' => $companyRegistrationDocuments[0]['path'] ?? null,
-            'tax_certificate_document_path' => $taxCertificateDocuments[0]['path'] ?? null,
-            'service_authorization_document_path' => $serviceAuthorizationDocuments[0]['path'] ?? null,
+            'tax_certificate_document_path' => null,
+            'service_authorization_document_path' => null,
             'approval_status' => 'approved',
             'approved_at' => $user->approved_at ?: now(),
             'seller_update_request_status' => null,

@@ -225,17 +225,9 @@ class SellerVerificationController extends Controller
             'keep_company_logo_path' => ['nullable', 'string'],
             'existing_company_registration_documents' => ['nullable', 'array'],
             'existing_company_registration_documents.*' => ['string'],
-            'existing_tax_certificate_documents' => ['nullable', 'array'],
-            'existing_tax_certificate_documents.*' => ['string'],
-            'existing_service_authorization_documents' => ['nullable', 'array'],
-            'existing_service_authorization_documents.*' => ['string'],
             'company_logo' => [$user->company_logo_path ? 'nullable' : 'required', 'file', 'mimes:jpg,jpeg,png,webp', 'max:10240'],
             'company_registration_documents' => ['nullable', 'array'],
             'company_registration_documents.*' => ['file', 'mimes:pdf,jpg,jpeg,png', 'max:10240'],
-            'tax_certificate_documents' => ['nullable', 'array'],
-            'tax_certificate_documents.*' => ['file', 'mimes:pdf,jpg,jpeg,png', 'max:10240'],
-            'service_authorization_documents' => ['nullable', 'array'],
-            'service_authorization_documents.*' => ['file', 'mimes:pdf,jpg,jpeg,png', 'max:10240'],
         ], $this->messages(), $this->attributes());
 
         $validator->after(function ($validator) use ($request, $user) {
@@ -320,28 +312,11 @@ class SellerVerificationController extends Controller
 
             $keptRegistrationDocuments = collect($request->input('existing_company_registration_documents', []))
                 ->filter(fn ($path) => filled($path));
-            $keptTaxDocuments = collect($request->input('existing_tax_certificate_documents', []))
-                ->filter(fn ($path) => filled($path));
-            $keptAuthorizationDocuments = collect($request->input('existing_service_authorization_documents', []))
-                ->filter(fn ($path) => filled($path));
 
             $newRegistrationDocuments = count($request->file('company_registration_documents', []));
-            $newTaxDocuments = count($request->file('tax_certificate_documents', []));
-            $newAuthorizationDocuments = count($request->file('service_authorization_documents', []));
 
-            if (
-                $keptRegistrationDocuments->isEmpty()
-                && $keptTaxDocuments->isEmpty()
-                && $keptAuthorizationDocuments->isEmpty()
-                && $newRegistrationDocuments === 0
-                && $newTaxDocuments === 0
-                && $newAuthorizationDocuments === 0
-            ) {
-                $message = 'Please upload at least one official document. Any company registration, tax or authorization document is acceptable.';
-
-                $validator->errors()->add('company_registration_documents', $message);
-                $validator->errors()->add('tax_certificate_documents', $message);
-                $validator->errors()->add('service_authorization_documents', $message);
+            if ($keptRegistrationDocuments->isEmpty() && $newRegistrationDocuments === 0) {
+                $validator->errors()->add('company_registration_documents', 'Please upload at least one company registration document.');
             }
 
             $hasLogo = filled($request->input('keep_company_logo_path'))
@@ -362,8 +337,6 @@ class SellerVerificationController extends Controller
             $currentUpdatePayload = is_array($user->seller_update_request_payload) ? $user->seller_update_request_payload : [];
             $basePath = "seller-verifications/{$user->id}/update-request";
             $sourceRegistrationDocuments = $currentUpdatePayload['company_registration_documents'] ?? $this->documentSet($user->company_registration_documents);
-            $sourceTaxDocuments = $currentUpdatePayload['tax_certificate_documents'] ?? $this->documentSet($user->tax_certificate_documents);
-            $sourceAuthorizationDocuments = $currentUpdatePayload['service_authorization_documents'] ?? $this->documentSet($user->service_authorization_documents);
 
             $companyLogoPath = $this->storeUpdateRequestSingleFile(
                 $request,
@@ -381,28 +354,10 @@ class SellerVerificationController extends Controller
                 'company_registration_documents',
             );
 
-            $taxCertificateDocuments = $this->syncUpdateRequestDocumentSet(
-                $request,
-                $basePath.'/tax-certificates',
-                $sourceTaxDocuments,
-                collect($validated['existing_tax_certificate_documents'] ?? []),
-                'tax_certificate_documents',
-            );
-
-            $serviceAuthorizationDocuments = $this->syncUpdateRequestDocumentSet(
-                $request,
-                $basePath.'/service-authorizations',
-                $sourceAuthorizationDocuments,
-                collect($validated['existing_service_authorization_documents'] ?? []),
-                'service_authorization_documents',
-            );
-
             $payload = $this->buildVerificationPayload(
                 $validated,
                 $companyLogoPath,
                 $companyRegistrationDocuments,
-                $taxCertificateDocuments,
-                $serviceAuthorizationDocuments,
             );
 
             $user->forceFill([
@@ -436,26 +391,10 @@ class SellerVerificationController extends Controller
             collect($validated['existing_company_registration_documents'] ?? []),
             'company_registration_documents',
         );
-        $taxCertificateDocuments = $this->syncDocumentSet(
-            $request,
-            $basePath.'/tax-certificates',
-            $user->tax_certificate_documents ?? [],
-            collect($validated['existing_tax_certificate_documents'] ?? []),
-            'tax_certificate_documents',
-        );
-        $serviceAuthorizationDocuments = $this->syncDocumentSet(
-            $request,
-            $basePath.'/service-authorizations',
-            $user->service_authorization_documents ?? [],
-            collect($validated['existing_service_authorization_documents'] ?? []),
-            'service_authorization_documents',
-        );
         $payload = $this->buildVerificationPayload(
             $validated,
             $companyLogoPath,
             $companyRegistrationDocuments,
-            $taxCertificateDocuments,
-            $serviceAuthorizationDocuments,
         );
 
         $this->applyVerificationPayloadToUser($user, $payload, $adminMode);
@@ -542,8 +481,6 @@ class SellerVerificationController extends Controller
                 ->toArray(),
             'company_logo' => $this->singleFile($user->company_logo_path),
             'company_registration_documents' => $this->documentSet($user->company_registration_documents),
-            'tax_certificate_documents' => $this->documentSet($user->tax_certificate_documents),
-            'service_authorization_documents' => $this->documentSet($user->service_authorization_documents),
         ];
     }
 
@@ -551,8 +488,6 @@ class SellerVerificationController extends Controller
         array $validated,
         ?string $companyLogoPath,
         array $companyRegistrationDocuments,
-        array $taxCertificateDocuments,
-        array $serviceAuthorizationDocuments,
     ): array {
         return [
             'company_name' => trim((string) $validated['company_name']),
@@ -592,8 +527,6 @@ class SellerVerificationController extends Controller
                 ->toArray(),
             'company_logo' => $this->singleFile($companyLogoPath),
             'company_registration_documents' => $this->documentSet($companyRegistrationDocuments),
-            'tax_certificate_documents' => $this->documentSet($taxCertificateDocuments),
-            'service_authorization_documents' => $this->documentSet($serviceAuthorizationDocuments),
         ];
     }
 
@@ -614,8 +547,6 @@ class SellerVerificationController extends Controller
 
         $logoPath = $payload['company_logo']['path'] ?? null;
         $companyRegistrationDocuments = $payload['company_registration_documents'] ?? [];
-        $taxCertificateDocuments = $payload['tax_certificate_documents'] ?? [];
-        $serviceAuthorizationDocuments = $payload['service_authorization_documents'] ?? [];
 
         $user->forceFill([
             'company_name' => $payload['company_name'] ?? null,
@@ -648,11 +579,11 @@ class SellerVerificationController extends Controller
             'service_brand_ids' => $payload['service_brand_ids'] ?? [],
             'company_logo_path' => $logoPath,
             'company_registration_documents' => $companyRegistrationDocuments,
-            'tax_certificate_documents' => $taxCertificateDocuments,
-            'service_authorization_documents' => $serviceAuthorizationDocuments,
+            'tax_certificate_documents' => [],
+            'service_authorization_documents' => [],
             'company_registration_document_path' => $companyRegistrationDocuments[0]['path'] ?? null,
-            'tax_certificate_document_path' => $taxCertificateDocuments[0]['path'] ?? null,
-            'service_authorization_document_path' => $serviceAuthorizationDocuments[0]['path'] ?? null,
+            'tax_certificate_document_path' => null,
+            'service_authorization_document_path' => null,
             'seller_verification_submitted_at' => $submittedAt,
             'approval_status' => $approvalStatus,
             'approved_at' => $approvedAt,
@@ -716,8 +647,6 @@ class SellerVerificationController extends Controller
             'registration_number',
             'company_logo',
             'company_registration_documents',
-            'tax_certificate_documents',
-            'service_authorization_documents',
         ];
 
         $diff = [];
@@ -754,10 +683,6 @@ class SellerVerificationController extends Controller
                 => basename((string) ($data['company_logo']['path'] ?? '')),
             'company_registration_documents'
                 => collect($data['company_registration_documents'] ?? [])->pluck('name')->filter()->implode(', '),
-            'tax_certificate_documents'
-                => collect($data['tax_certificate_documents'] ?? [])->pluck('name')->filter()->implode(', '),
-            'service_authorization_documents'
-                => collect($data['service_authorization_documents'] ?? [])->pluck('name')->filter()->implode(', '),
             default => '',
         };
     }
@@ -1006,8 +931,6 @@ class SellerVerificationController extends Controller
             'company_logo.required' => 'Company logo is required.',
             'company_logo.mimes' => 'Company logo must be a JPG, JPEG, PNG or WEBP file.',
             'company_registration_documents.*.mimes' => 'Company registration documents must be PDF, JPG, JPEG or PNG files.',
-            'tax_certificate_documents.*.mimes' => 'Tax certificates must be PDF, JPG, JPEG or PNG files.',
-            'service_authorization_documents.*.mimes' => 'Authorization documents must be PDF, JPG, JPEG or PNG files.',
         ];
     }
 
@@ -1040,8 +963,6 @@ class SellerVerificationController extends Controller
             'service_ports_by_country' => 'service ports',
             'company_logo' => 'company logo',
             'company_registration_documents' => 'company registration documents',
-            'tax_certificate_documents' => 'tax certificates',
-            'service_authorization_documents' => 'authorization documents',
         ];
     }
 }
