@@ -1,3 +1,5 @@
+const countryNameFromDialLabel = (label) => String(label ?? '').replace(/\s*\(\+\d+\)$/, '').trim();
+
 export const dialCodes = [
     { label: 'Afghanistan (+93)', value: '+93' }, { label: 'Albania (+355)', value: '+355' },
     { label: 'Algeria (+213)', value: '+213' }, { label: 'Andorra (+376)', value: '+376' },
@@ -46,10 +48,10 @@ export const dialCodes = [
     { label: 'United States (+1)', value: '+1' }, { label: 'Uruguay (+598)', value: '+598' },
     { label: 'Uzbekistan (+998)', value: '+998' }, { label: 'Vietnam (+84)', value: '+84' },
     { label: 'Yemen (+967)', value: '+967' },
-];
+].slice().sort((left, right) => countryNameFromDialLabel(left.label).localeCompare(countryNameFromDialLabel(right.label), 'en', { sensitivity: 'base' }));
 
 export const countryOptions = dialCodes.map((item) => {
-    const country = item.label.replace(/\s*\(\+\d+\)$/, '');
+    const country = countryNameFromDialLabel(item.label);
 
     return {
         label: country,
