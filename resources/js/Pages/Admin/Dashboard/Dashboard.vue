@@ -238,9 +238,31 @@ const copy = computed(() => ({
 
 const regularUsers = computed(() => props.userTable.data ?? []);
 const businessUsers = computed(() => props.businessTable.data ?? []);
-const hiddenRejectionFields = new Set(['tax_certificate_documents', 'service_authorization_documents']);
+const visibleRejectionFieldKeys = [
+    'company_name',
+    'service_category_ids',
+    'service_country_codes',
+    'service_ports_by_country',
+    'country',
+    'company_city',
+    'company_postal_code',
+    'company_address_line',
+    'phone',
+    'contact_email',
+    'company_overview',
+    'registration_number',
+    'company_logo',
+];
+const visibleRejectionFieldSet = new Set(visibleRejectionFieldKeys);
 const normalizeRejectionField = (field) => field === 'official_documents' ? 'company_registration_documents' : field;
-const feedbackFields = computed(() => Object.entries(copy.value.fields).map(([key, label]) => ({ key, label })));
+const sanitizeRejectionFields = (fields = []) => Array.from(new Set(
+    fields
+        .map((field) => normalizeRejectionField(field))
+        .filter((field) => visibleRejectionFieldSet.has(field))
+));
+const feedbackFields = computed(() => visibleRejectionFieldKeys
+    .map((key) => ({ key, label: copy.value.fields[key] ?? null }))
+    .filter((field) => Boolean(field.label)));
 
 const roleLabel = (role) => copy.value.roles[role] ?? role;
 const statusLabel = (status) => copy.value.statuses[status] ?? status;
@@ -273,9 +295,7 @@ const removalRequestPayload = (user) => ({
     note: user.seller_removal_request_note ?? '',
 });
 
-const mappedRejectionFields = (fields = []) => Array.from(new Set(fields
-    .map((field) => normalizeRejectionField(field))
-    .filter((field) => !hiddenRejectionFields.has(field))
+const mappedRejectionFields = (fields = []) => Array.from(new Set(sanitizeRejectionFields(fields)
     .map((field) => copy.value.fields[field] ?? null)
     .filter(Boolean)));
 
@@ -528,7 +548,7 @@ const openRejectModal = (user) => {
     rejectForm.action = 'reject';
     rejectForm.rejection_reason = user.seller_rejection_reason ?? '';
     rejectForm.rejection_note = user.seller_rejection_note ?? '';
-    rejectForm.rejection_fields = [...(user.seller_rejection_fields ?? [])];
+    rejectForm.rejection_fields = sanitizeRejectionFields(user.seller_rejection_fields ?? []);
     modalType.value = 'reject-business';
 };
 
@@ -579,6 +599,7 @@ const submitBusinessEdit = () => {
 const submitReject = () => {
     if (!activeUser.value) return;
 
+    rejectForm.rejection_fields = sanitizeRejectionFields(rejectForm.rejection_fields ?? []);
     rejectForm.patch(`/admin/users/${activeUser.value.id}/approval`, {
         preserveScroll: true,
         onSuccess: closeModal,
@@ -1033,4 +1054,5 @@ const chooseBusinessStatus = (status) => {
 @media (max-width: 900px){.detail-grid,.field-grid{grid-template-columns:1fr}.admin-modal{width:min(640px,100%)}}
 @media (max-width: 720px){.detail-grid,.field-grid,.subfilter-grid{grid-template-columns:1fr}.admin-modal-backdrop{padding:16px}.admin-modal{width:100%;max-height:calc(100vh - 32px);padding:20px}.action-primary,.action-secondary,.action-danger,.action-warning{width:100%}}
 </style>
+
 
