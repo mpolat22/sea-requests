@@ -586,6 +586,23 @@ const serviceCountryResults = computed(() => {
         }));
 });
 
+const matchesServiceCountrySearch = (countryCode) => {
+    const query = servicePortSearch.value.trim().toLowerCase();
+
+    if (!query) {
+        return false;
+    }
+
+    const normalizedCode = String(countryCode).toUpperCase();
+    const country = normalizedServiceCountries.value.find((item) => item.code === normalizedCode);
+
+    if (!country) {
+        return false;
+    }
+
+    return country.name.toLowerCase().includes(query) || country.code.toLowerCase().includes(query);
+};
+
 const filteredPortsForCountry = (countryCode) => {
     const ports = portsForCountry(countryCode);
     const query = servicePortSearch.value.trim().toLowerCase();
@@ -594,7 +611,14 @@ const filteredPortsForCountry = (countryCode) => {
         return ports;
     }
 
-    return ports.filter((port) => String(port.port_name ?? '').toLowerCase().includes(query));
+    if (matchesServiceCountrySearch(countryCode)) {
+        return ports;
+    }
+
+    return ports.filter((port) => (
+        String(port.port_name ?? '').toLowerCase().includes(query)
+        || String(port.unlocode ?? '').toLowerCase().includes(query)
+    ));
 };
 
 const missingDraftPortCountryCodes = computed(() => (
