@@ -1,5 +1,5 @@
 <script setup>
-import { computed, nextTick, onBeforeUnmount, ref } from 'vue';
+import { computed, onBeforeUnmount, ref } from 'vue';
 
 const props = defineProps({
     ui: { type: Object, required: true },
@@ -324,21 +324,7 @@ const buildCategoryDraftSelections = () => Object.fromEntries(
         ])
 );
 
-const missingDraftSubcategoryCategoryIds = computed(() => (
-    Object.entries(categoryDraftSelections.value)
-        .filter(([, subcategoryIds]) => !Array.isArray(subcategoryIds) || subcategoryIds.length === 0)
-        .map(([categoryId]) => Number(categoryId))
-));
 
-const missingDraftSubcategoryCategories = computed(() => (
-    missingDraftSubcategoryCategoryIds.value
-        .map((categoryId) => props.categoryOptions.find((category) => Number(category.id) === categoryId))
-        .filter(Boolean)
-        .map((category) => ({
-            id: Number(category.id),
-            name: String(category.name ?? ''),
-        }))
-));
 
 const categoryLetters = computed(() => {
     const letters = new Set(
@@ -394,19 +380,11 @@ const filteredSubcategoriesForCategory = (categoryId) => {
 };
 
 const categoryDraftErrorMessage = computed(() => {
-    if (!categoryDraftValidationRequested.value || !missingDraftSubcategoryCategories.value.length) {
+    if (!categoryDraftValidationRequested.value || categoryDraftCounts.value.subcategoryCount > 0) {
         return '';
     }
 
-    const names = missingDraftSubcategoryCategories.value
-        .map((category) => category.name)
-        .filter(Boolean);
-
-    if (names.length === 1) {
-        return `Select at least 1 subcategory for ${names[0]}.`;
-    }
-
-    return `Select at least 1 subcategory for each highlighted primary category: ${names.join(', ')}.`;
+    return 'Select at least 1 subcategory to continue.';
 });
 
 const openCategoryPicker = () => {
@@ -433,18 +411,9 @@ const inlineSubcategoryCountForCategory = (categoryId) => categoryDraftSelection
 const isInlineSubcategoryChecked = (categoryId, subcategoryId) => (
     (categoryDraftSelections.value[String(Number(categoryId))] ?? []).includes(Number(subcategoryId))
 );
-const categoryNeedsSubcategory = (categoryId) => (
-    Object.prototype.hasOwnProperty.call(categoryDraftSelections.value, String(Number(categoryId)))
-    && inlineSubcategoryCountForCategory(categoryId) === 0
-);
-const categoryHasValidationError = (categoryId) => (
-    categoryDraftValidationRequested.value
-    && missingDraftSubcategoryCategoryIds.value.includes(Number(categoryId))
-);
 const categoryStatusClass = (categoryId) => {
-    if (categoryHasValidationError(categoryId)) return 'is-error';
-    if (categoryNeedsSubcategory(categoryId)) return 'is-pending';
     if (inlineSubcategoryCountForCategory(categoryId) > 0) return 'is-success';
+    if (expandedCategoryId.value === Number(categoryId)) return 'is-hint';
     return '';
 };
 const categoryStatusText = (categoryId) => {
@@ -454,47 +423,18 @@ const categoryStatusText = (categoryId) => {
         return `${selectedCount} selected`;
     }
 
-    if (categoryNeedsSubcategory(categoryId)) {
-        return categoryHasValidationError(categoryId)
-            ? 'Choose at least 1 subcategory before saving'
-            : 'Subcategory selection required';
+    if (expandedCategoryId.value === Number(categoryId)) {
+        return 'Select subcategories below';
     }
 
     return '';
 };
-const focusCategoryIssue = async (categoryId) => {
-    const numericCategoryId = Number(categoryId);
-
-    if (!numericCategoryId) {
-        return;
-    }
-
-    categorySearch.value = '';
-    categoryLetter.value = BRAND_SELECTED_FILTER;
-    expandedCategoryId.value = numericCategoryId;
-
-    await nextTick();
-
-    document
-        .getElementById(`category-picker-block-${numericCategoryId}`)
-        ?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-};
-
-const toggleCategoryDraftSelection = (categoryId) => {
-    const key = String(Number(categoryId));
+const clearCategorySelection = (categoryId) => {
+    const categoryKey = String(Number(categoryId));
     const next = { ...categoryDraftSelections.value };
-
-    if (next[key]) {
-        delete next[key];
-        if (Number(expandedCategoryId.value) === Number(categoryId)) {
-            expandedCategoryId.value = null;
-        }
-    } else {
-        next[key] = [];
-        expandedCategoryId.value = Number(categoryId);
-    }
-
+    delete next[categoryKey];
     categoryDraftSelections.value = next;
+    clearFieldError(...resolveErrorFields('service_subcategory_ids'));
 };
 
 const toggleCategoryExpansion = (categoryId) => {
@@ -508,17 +448,18 @@ const toggleInlineSubcategorySelection = (categoryId, subcategoryId) => {
     const next = { ...categoryDraftSelections.value };
     const current = new Set((next[categoryKey] ?? []).map((id) => Number(id)));
 
-    if (!next[categoryKey]) {
-        next[categoryKey] = [];
-    }
-
     if (current.has(numericSubcategoryId)) {
         current.delete(numericSubcategoryId);
     } else {
         current.add(numericSubcategoryId);
     }
 
-    next[categoryKey] = Array.from(current);
+    if (current.size === 0) {
+        delete next[categoryKey];
+    } else {
+        next[categoryKey] = Array.from(current);
+    }
+
     categoryDraftSelections.value = next;
     expandedCategoryId.value = Number(categoryId);
     clearFieldError(...resolveErrorFields('service_subcategory_ids'));
@@ -527,8 +468,7 @@ const toggleInlineSubcategorySelection = (categoryId, subcategoryId) => {
 const saveCategorySelection = () => {
     categoryDraftValidationRequested.value = true;
 
-    if (missingDraftSubcategoryCategoryIds.value.length > 0) {
-        focusCategoryIssue(missingDraftSubcategoryCategoryIds.value[0]);
+    if (categoryDraftCounts.value.subcategoryCount === 0) {
         return;
     }
 
@@ -1671,40 +1611,14 @@ onBeforeUnmount(() => {
                         </div>
                     </div>
 
-                    <div v-if="categoryDraftErrorMessage" class="picker-error-stack">
-                        <p class="picker-error">{{ categoryDraftErrorMessage }}</p>
-                        <div class="picker-error-summary">
-                            <strong>
-                                {{
-                                    missingDraftSubcategoryCategories.length === 1
-                                        ? '1 selected category still needs a subcategory.'
-                                        : `${missingDraftSubcategoryCategories.length} selected categories still need subcategories.`
-                                }}
-                            </strong>
-                            <div class="picker-error-chip-list">
-                                <button
-                                    v-for="category in missingDraftSubcategoryCategories"
-                                    :key="`missing-category-${category.id}`"
-                                    type="button"
-                                    class="picker-error-chip"
-                                    @click="focusCategoryIssue(category.id)"
-                                >
-                                    {{ category.name }}
-                                </button>
-                            </div>
-                        </div>
-                    </div>
+                    <p v-if="categoryDraftErrorMessage" class="picker-error">{{ categoryDraftErrorMessage }}</p>
 
                     <div class="picker-results">
                         <div
                             v-for="category in categoryResults"
-                            :id="`category-picker-block-${Number(category.id)}`"
                             :key="category.id"
                             class="picker-block"
-                            :class="{
-                                'picker-block-is-pending': categoryNeedsSubcategory(category.id),
-                                'picker-block-has-error': categoryHasValidationError(category.id),
-                            }"
+                            :class="{ 'picker-block-is-selected': inlineSubcategoryCountForCategory(category.id) > 0 }"
                         >
                             <div class="picker-row">
                                 <button type="button" class="picker-expand" @click="toggleCategoryExpansion(category.id)">{{ expandedCategoryId === Number(category.id) ? 'v' : '>' }}</button>
@@ -1718,10 +1632,14 @@ onBeforeUnmount(() => {
                                         {{ categoryStatusText(category.id) }}
                                     </span>
                                 </div>
-                                <label class="picker-check">
-                                    <input type="checkbox" :checked="category.checked" @change="toggleCategoryDraftSelection(category.id)" />
-                                    <span></span>
-                                </label>
+                                <button
+                                    v-if="inlineSubcategoryCountForCategory(category.id)"
+                                    type="button"
+                                    class="picker-row-action"
+                                    @click="clearCategorySelection(category.id)"
+                                >
+                                    Clear
+                                </button>
                             </div>
 
                             <div v-if="expandedCategoryId === Number(category.id) || (categorySearch.trim() && filteredSubcategoriesForCategory(category.id).length)" class="picker-children">
@@ -1729,9 +1647,7 @@ onBeforeUnmount(() => {
                                     <input type="checkbox" :checked="isInlineSubcategoryChecked(category.id, subcategory.id)" @change="toggleInlineSubcategorySelection(category.id, subcategory.id)" />
                                     <span>{{ subcategory.name }}</span>
                                 </label>
-                                <p v-if="categoryHasValidationError(category.id)" class="picker-inline-error">
-                                    Select at least 1 subcategory for this primary category.
-                                </p>
+
                             </div>
                         </div>
                     </div>
@@ -2328,44 +2244,6 @@ onBeforeUnmount(() => {
     letter-spacing: 0 !important;
 }
 
-.picker-error-stack {
-    display: grid;
-    gap: 10px;
-}
-
-.picker-error-summary {
-    display: grid;
-    gap: 10px;
-    padding: 12px 14px;
-    border: 1px solid rgba(180, 35, 24, 0.14);
-    border-radius: 10px;
-    background: #fff7ed;
-}
-
-.picker-error-summary strong {
-    color: #7a271a;
-    font-size: 0.9rem;
-    font-weight: 600;
-}
-
-.picker-error-chip-list {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-}
-
-.picker-error-chip {
-    border: 1px solid rgba(180, 35, 24, 0.18);
-    border-radius: 999px;
-    background: #fff;
-    color: #b42318;
-    font: inherit;
-    font-size: 0.84rem;
-    font-weight: 600;
-    line-height: 1.4;
-    padding: 6px 10px;
-    cursor: pointer;
-}
 
 .document-group .field-feedback {
     color: #b42318 !important;
@@ -2632,15 +2510,9 @@ onBeforeUnmount(() => {
     background: rgba(248, 250, 252, 0.8);
 }
 
-.picker-block-is-pending {
-    border-color: rgba(194, 65, 12, 0.14);
-    background: #fffaf5;
-}
-
-.picker-block-has-error {
-    border-color: rgba(180, 35, 24, 0.24);
-    background: #fff5f5;
-    box-shadow: inset 0 0 0 1px rgba(180, 35, 24, 0.05);
+.picker-block-is-selected {
+    border-color: rgba(54, 92, 255, 0.16);
+    background: rgba(239, 244, 255, 0.82);
 }
 
 .picker-row,
@@ -2683,17 +2555,27 @@ onBeforeUnmount(() => {
     font-size: 0.82rem;
 }
 
-.picker-copy-status.is-pending {
-    color: #b54708;
-}
-
-.picker-copy-status.is-error {
-    color: #b42318;
-    font-weight: 600;
+.picker-copy-status.is-hint {
+    color: #64748b;
 }
 
 .picker-copy-status.is-success {
     color: #0b7a52;
+}
+
+.picker-row-action {
+    border: 0;
+    background: transparent;
+    color: #365cff;
+    font: inherit;
+    font-size: 0.84rem;
+    font-weight: 600;
+    line-height: 1.4;
+    cursor: pointer;
+}
+
+.picker-row-action:hover {
+    color: #223cff;
 }
 
 .picker-check {
@@ -2724,13 +2606,6 @@ onBeforeUnmount(() => {
     padding-left: 42px;
 }
 
-.picker-inline-error {
-    margin: 0;
-    color: #b42318;
-    font-size: 0.84rem;
-    font-weight: 600;
-    line-height: 1.5;
-}
 
 .picker-child {
     display: flex;
@@ -2977,4 +2852,5 @@ onBeforeUnmount(() => {
     }
 }
 </style>
+
 
