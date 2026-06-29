@@ -43,7 +43,7 @@ const checks = computed(() => {
         { key: 'address', label: props.ui.fullAddress.replace(' *', ''), done: String(props.form.company_address_line ?? '').trim().length > 0 },
         { key: 'phone', label: props.ui.mobilePhone.replace(' *', ''), done: String(props.form.phone_local_number ?? '').trim().length >= 6 },
         { key: 'contact_email', label: props.ui.email.replace(' *', ''), done: String(props.form.contact_email ?? '').trim().length > 0 },
-        { key: 'overview', label: copy.value.overview, done: String(props.form.company_overview ?? '').trim().length >= 200 },
+        { key: 'overview', label: copy.value.overview, done: String(props.form.company_overview ?? '').trim().length > 0 },
         { key: 'registration_number', label: props.ui.registrationNumber.replace(' *', ''), done: String(props.form.registration_number ?? '').trim().length > 0 },
         { key: 'logo', label: props.ui.logo.replace(' *', ''), done: hasLogo.value },
         { key: 'official_documents', label: copy.value.officialDocuments, done: hasOfficialDocument.value },
