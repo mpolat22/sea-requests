@@ -219,7 +219,7 @@ class SellerVerificationController extends Controller
             'facebook_url' => ['nullable', 'url', 'max:255'],
             'twitter_url' => ['nullable', 'url', 'max:255'],
             'telegram_url' => ['nullable', 'url', 'max:255'],
-            'company_overview' => ['required', 'string', 'min:200', 'max:4000'],
+            'company_overview' => ['required', 'string', 'max:4000'],
             'port_coverage' => ['nullable', 'string', 'max:2000'],
             'registration_number' => ['required', 'string', 'min:3', 'max:255'],
             'keep_company_logo_path' => ['nullable', 'string'],
@@ -294,8 +294,6 @@ class SellerVerificationController extends Controller
 
             if (! filled($trimmedCompanyOverview)) {
                 $validator->errors()->add('company_overview', 'Company overview is required.');
-            } elseif (Str::length($trimmedCompanyOverview) < 200) {
-                $validator->errors()->add('company_overview', 'Company overview must be at least 200 characters.');
             }
 
             if ($selectedPortIds->isNotEmpty()) {
@@ -912,7 +910,6 @@ class SellerVerificationController extends Controller
             'company_city.required' => 'City is required.',
             'company_postal_code.required' => 'Postal code is required.',
             'company_overview.required' => 'Company overview is required.',
-            'company_overview.min' => 'Company overview must be at least 200 characters.',
             'registration_number.required' => 'Company registration number is required.',
             'contact_email.required' => 'Company email is required.',
             'contact_email.email' => 'Please enter a valid email address.',

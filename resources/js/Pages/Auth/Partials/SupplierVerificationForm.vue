@@ -158,7 +158,7 @@ const isFieldValid = (field) => {
         case 'company_address_line':
             return String(props.form.company_address_line ?? '').trim().length > 0;
         case 'company_overview':
-            return String(props.form.company_overview ?? '').trim().length >= 200 && String(props.form.company_overview ?? '').length <= 4000;
+            return String(props.form.company_overview ?? '').trim().length > 0 && String(props.form.company_overview ?? '').length <= 4000;
         case 'phone':
             return /^\+\d{1,4}\s[0-9]{6,15}$/.test(`${props.form.phone_country_code} ${String(props.form.phone_local_number ?? '').replace(/\D+/g, '')}`.trim());
         case 'landline_phone': {
