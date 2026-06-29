@@ -303,6 +303,18 @@ const selectedCategoryCounts = computed(() => {
     };
 });
 
+const categoryDraftCounts = computed(() => {
+    const entries = Object.entries(categoryDraftSelections.value)
+        .filter(([categoryId]) => String(categoryId ?? '').trim() !== '');
+
+    return {
+        categoryCount: entries.length,
+        subcategoryCount: entries.reduce((total, [, subcategoryIds]) => (
+            total + [...new Set((subcategoryIds ?? []).map((value) => Number(value)).filter(Boolean))].length
+        ), 0),
+    };
+});
+
 const buildCategoryDraftSelections = () => Object.fromEntries(
     props.categoryGroups
         .filter((group) => String(group.category_id ?? '').trim() !== '')
@@ -560,6 +572,18 @@ const selectedServicePortCounts = computed(() => {
             (total, group) => total + [...new Set((group.port_ids ?? []).map((value) => Number(value)).filter(Boolean))].length,
             0,
         ),
+    };
+});
+
+const servicePortDraftCounts = computed(() => {
+    const entries = Object.entries(servicePortDraftSelections.value)
+        .filter(([countryCode]) => String(countryCode ?? '').trim() !== '');
+
+    return {
+        countryCount: entries.length,
+        portCount: entries.reduce((total, [, portIds]) => (
+            total + [...new Set((portIds ?? []).map((value) => Number(value)).filter(Boolean))].length
+        ), 0),
     };
 });
 
@@ -1577,7 +1601,7 @@ onBeforeUnmount(() => {
                             <button type="button" class="picker-search-clear" :disabled="!categorySearch" @click="categorySearch = ''">Clear</button>
                         </div>
                         <div class="picker-letters">
-                            <button type="button" class="picker-letter" :class="{ active: categoryLetter === BRAND_SELECTED_FILTER }" @click="categoryLetter = BRAND_SELECTED_FILTER">Selected ({{ selectedCategoryCounts.categoryCount }})</button>
+                            <button type="button" class="picker-letter" :class="{ active: categoryLetter === BRAND_SELECTED_FILTER }" @click="categoryLetter = BRAND_SELECTED_FILTER">Selected ({{ categoryDraftCounts.categoryCount }})</button>
                             <button v-for="letter in categoryLetters" :key="`category-${letter}`" type="button" class="picker-letter" :class="{ active: categoryLetter === letter }" @click="categoryLetter = letter">{{ letter }}</button>
                         </div>
                     </div>
@@ -1667,7 +1691,7 @@ onBeforeUnmount(() => {
                             <button type="button" class="picker-search-clear" :disabled="!servicePortSearch" @click="servicePortSearch = ''">Clear</button>
                         </div>
                         <div class="picker-letters">
-                            <button type="button" class="picker-letter" :class="{ active: servicePortLetter === BRAND_SELECTED_FILTER }" @click="servicePortLetter = BRAND_SELECTED_FILTER">Selected ({{ selectedServicePortCounts.countryCount }})</button>
+                            <button type="button" class="picker-letter" :class="{ active: servicePortLetter === BRAND_SELECTED_FILTER }" @click="servicePortLetter = BRAND_SELECTED_FILTER">Selected ({{ servicePortDraftCounts.countryCount }})</button>
                             <button v-for="letter in serviceCountryLetters" :key="`country-${letter}`" type="button" class="picker-letter" :class="{ active: servicePortLetter === letter }" @click="servicePortLetter = letter">{{ letter }}</button>
                         </div>
                     </div>
