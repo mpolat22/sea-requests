@@ -1,6 +1,7 @@
 <script setup>
 import { computed } from 'vue';
 import { Head, useForm } from '@inertiajs/vue3';
+import AuthPasswordInput from '../../Components/AuthPasswordInput.vue';
 import MainLayout from '../../Layouts/MainLayout.vue';
 
 const props = defineProps({
@@ -65,12 +66,20 @@ const submit = () => {
                     <div class="field-grid">
                         <label>
                             {{ copy.password }}
-                            <input v-model="form.password" type="password" :placeholder="copy.passwordPlaceholder" />
+                            <AuthPasswordInput
+                                v-model="form.password"
+                                autocomplete="new-password"
+                                :placeholder="copy.passwordPlaceholder"
+                            />
                         </label>
 
                         <label>
                             {{ copy.passwordConfirmation }}
-                            <input v-model="form.password_confirmation" type="password" :placeholder="copy.passwordConfirmationPlaceholder" />
+                            <AuthPasswordInput
+                                v-model="form.password_confirmation"
+                                autocomplete="new-password"
+                                :placeholder="copy.passwordConfirmationPlaceholder"
+                            />
                         </label>
                     </div>
 

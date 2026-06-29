@@ -1,5 +1,6 @@
 <script setup>
 import { Head, Link, useForm } from '@inertiajs/vue3';
+import AuthPasswordInput from '../../Components/AuthPasswordInput.vue';
 import MainLayout from '../../Layouts/MainLayout.vue';
 
 const emailPattern = /^[^\s@]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/;
@@ -67,7 +68,11 @@ const submit = () => {
 
                     <label>
                         {{ copy.password }}
-                        <input v-model="form.password" type="password" :placeholder="copy.passwordPlaceholder" />
+                        <AuthPasswordInput
+                            v-model="form.password"
+                            autocomplete="current-password"
+                            :placeholder="copy.passwordPlaceholder"
+                        />
                         <small v-if="form.errors.password">{{ form.errors.password }}</small>
                     </label>
 

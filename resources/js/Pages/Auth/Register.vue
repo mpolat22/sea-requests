@@ -1,6 +1,7 @@
 <script setup>
 import { computed, nextTick, ref, watch } from 'vue';
 import { Head, Link, useForm } from '@inertiajs/vue3';
+import AuthPasswordInput from '../../Components/AuthPasswordInput.vue';
 import MainLayout from '../../Layouts/MainLayout.vue';
 import { countryOptions, dialCodes } from '../../lib/accountContactOptions';
 
@@ -393,11 +394,11 @@ const submit = () => {
                         <div class="field-grid">
                             <label>
                                 <span v-html="formatRequiredLabel(copy.password)"></span>
-                                <input
+                                <AuthPasswordInput
                                     :ref="setFieldRef('password')"
                                     v-model="form.password"
                                     :class="inputClass('password')"
-                                    type="password"
+                                    autocomplete="new-password"
                                     :placeholder="copy.passwordPlaceholder"
                                     @input="clearFieldError('password')"
                                 />
@@ -405,11 +406,11 @@ const submit = () => {
 
                             <label>
                                 <span v-html="formatRequiredLabel(copy.passwordConfirmation)"></span>
-                                <input
+                                <AuthPasswordInput
                                     :ref="setFieldRef('password_confirmation')"
                                     v-model="form.password_confirmation"
                                     :class="inputClass('password_confirmation')"
-                                    type="password"
+                                    autocomplete="new-password"
                                     :placeholder="copy.passwordConfirmationPlaceholder"
                                     @input="clearFieldError('password_confirmation')"
                                 />
