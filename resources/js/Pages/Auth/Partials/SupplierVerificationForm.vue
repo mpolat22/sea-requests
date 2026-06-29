@@ -429,12 +429,31 @@ const categoryStatusText = (categoryId) => {
 
     return '';
 };
+const syncCategoryDraftSelections = () => {
+    const selectedCategoryIds = new Set(Object.keys(categoryDraftSelections.value));
+    const nextGroups = props.categoryOptions
+        .filter((category) => selectedCategoryIds.has(String(Number(category.id))))
+        .map((category) => ({
+            category_id: String(category.id),
+            subcategory_ids: [...new Set((categoryDraftSelections.value[String(Number(category.id))] ?? []).map((value) => Number(value)).filter(Boolean))],
+        }));
+
+    props.categoryGroups.splice(
+        0,
+        props.categoryGroups.length,
+        ...(nextGroups.length ? nextGroups : [{ category_id: '', subcategory_ids: [] }]),
+    );
+
+    clearFieldError(...resolveErrorFields('service_category_ids'));
+    clearFieldError(...resolveErrorFields('service_subcategory_ids'));
+};
+
 const clearCategorySelection = (categoryId) => {
     const categoryKey = String(Number(categoryId));
     const next = { ...categoryDraftSelections.value };
     delete next[categoryKey];
     categoryDraftSelections.value = next;
-    clearFieldError(...resolveErrorFields('service_subcategory_ids'));
+    syncCategoryDraftSelections();
 };
 
 const toggleCategoryExpansion = (categoryId) => {
@@ -462,32 +481,10 @@ const toggleInlineSubcategorySelection = (categoryId, subcategoryId) => {
 
     categoryDraftSelections.value = next;
     expandedCategoryId.value = Number(categoryId);
-    clearFieldError(...resolveErrorFields('service_subcategory_ids'));
+    syncCategoryDraftSelections();
 };
 
 const saveCategorySelection = () => {
-    categoryDraftValidationRequested.value = true;
-
-    if (categoryDraftCounts.value.subcategoryCount === 0) {
-        return;
-    }
-
-    const selectedCategoryIds = new Set(Object.keys(categoryDraftSelections.value));
-    const nextGroups = props.categoryOptions
-        .filter((category) => selectedCategoryIds.has(String(Number(category.id))))
-        .map((category) => ({
-            category_id: String(category.id),
-            subcategory_ids: [...new Set((categoryDraftSelections.value[String(Number(category.id))] ?? []).map((value) => Number(value)).filter(Boolean))],
-        }));
-
-    props.categoryGroups.splice(
-        0,
-        props.categoryGroups.length,
-        ...(nextGroups.length ? nextGroups : [{ category_id: '', subcategory_ids: [] }]),
-    );
-
-    clearFieldError(...resolveErrorFields('service_category_ids'));
-    clearFieldError(...resolveErrorFields('service_subcategory_ids'));
     closeCategoryPicker();
 };
 
@@ -549,6 +546,11 @@ const closeBrandPicker = () => {
     setBodyLock(false);
 };
 
+const syncBrandDraftIds = () => {
+    props.form.service_brand_ids = [...brandDraftIds.value].sort((left, right) => left - right);
+    clearFieldError(...resolveErrorFields('service_brand_ids'));
+};
+
 const toggleBrandDraftSelection = (brandId) => {
     const numericBrandId = Number(brandId);
     const current = new Set((brandDraftIds.value ?? []).map((id) => Number(id)));
@@ -560,11 +562,10 @@ const toggleBrandDraftSelection = (brandId) => {
     }
 
     brandDraftIds.value = Array.from(current);
+    syncBrandDraftIds();
 };
 
 const saveBrandSelection = () => {
-    props.form.service_brand_ids = [...brandDraftIds.value].sort((left, right) => left - right);
-    clearFieldError(...resolveErrorFields('service_brand_ids'));
     closeBrandPicker();
 };
 
@@ -795,6 +796,24 @@ const serviceCountryPortSummary = (countryCode) => {
     return `${count} port${count === 1 ? '' : 's'} selected`;
 };
 
+const syncServicePortDraftSelections = () => {
+    const nextGroups = normalizedServiceCountries.value
+        .filter((country) => Object.prototype.hasOwnProperty.call(servicePortDraftSelections.value, country.code))
+        .map((country) => ({
+            country_code: country.code,
+            port_ids: [...new Set((servicePortDraftSelections.value[country.code] ?? []).map((value) => Number(value)).filter(Boolean))],
+        }));
+
+    props.servicePortGroups.splice(
+        0,
+        props.servicePortGroups.length,
+        ...(nextGroups.length ? nextGroups : [{ country_code: '', port_ids: [] }]),
+    );
+
+    clearFieldError(...resolveErrorFields('service_country_codes'));
+    clearFieldError(...resolveErrorFields('service_ports_by_country'));
+};
+
 const toggleServiceCountryDraftSelection = (countryCode) => {
     const code = String(countryCode).toUpperCase();
     const next = { ...servicePortDraftSelections.value };
@@ -816,7 +835,7 @@ const toggleServiceCountryDraftSelection = (countryCode) => {
     }
 
     servicePortDraftSelections.value = next;
-    clearFieldError(...resolveErrorFields('service_ports_by_country'));
+    syncServicePortDraftSelections();
 };
 
 const toggleServiceCountryExpansion = (countryCode) => {
@@ -846,35 +865,18 @@ const toggleInlinePortSelection = (countryCode, portId) => {
         current.add(numericPortId);
     }
 
-    next[code] = Array.from(current);
+    if (current.size === 0) {
+        delete next[code];
+    } else {
+        next[code] = Array.from(current);
+    }
+
     servicePortDraftSelections.value = next;
     expandedServiceCountryCode.value = code;
-    clearFieldError(...resolveErrorFields('service_ports_by_country'));
+    syncServicePortDraftSelections();
 };
 
 const saveServicePortSelection = () => {
-    servicePortDraftValidationRequested.value = true;
-    servicePortDraftLimitRequested.value = true;
-
-    if (Object.keys(servicePortDraftSelections.value).length > 10 || missingDraftPortCountryCodes.value.length > 0) {
-        return;
-    }
-
-    const nextGroups = normalizedServiceCountries.value
-        .filter((country) => Object.prototype.hasOwnProperty.call(servicePortDraftSelections.value, country.code))
-        .map((country) => ({
-            country_code: country.code,
-            port_ids: [...new Set((servicePortDraftSelections.value[country.code] ?? []).map((value) => Number(value)).filter(Boolean))],
-        }));
-
-    props.servicePortGroups.splice(
-        0,
-        props.servicePortGroups.length,
-        ...(nextGroups.length ? nextGroups : [{ country_code: '', port_ids: [] }]),
-    );
-
-    clearFieldError(...resolveErrorFields('service_country_codes'));
-    clearFieldError(...resolveErrorFields('service_ports_by_country'));
     closeServicePortPicker();
 };
 
@@ -1545,9 +1547,7 @@ onBeforeUnmount(() => {
                             class="gallery-nav-button is-left"
                             aria-label="Previous file"
                             @click="goToPreviousDocument"
-                        >
-                            â€¹
-                        </button>
+                        >&#8249;</button>
 
                         <div class="gallery-stage">
                             <img
@@ -1582,16 +1582,14 @@ onBeforeUnmount(() => {
                             class="gallery-nav-button is-right"
                             aria-label="Next file"
                             @click="goToNextDocument"
-                        >
-                            â€º
-                        </button>
+                        >&#8250;</button>
                     </div>
                 </div>
             </div>
         </Transition>
 
         <Transition name="fade">
-            <div v-if="categoryModalOpen" class="picker-modal-backdrop" @click="closeCategoryPicker">
+            <div v-if="categoryModalOpen" class="picker-modal-backdrop">
                 <div class="picker-modal" @click.stop>
                     <button type="button" class="picker-close" @click="closeCategoryPicker">&times;</button>
                     <div class="picker-head">
@@ -1653,15 +1651,14 @@ onBeforeUnmount(() => {
                     </div>
 
                     <div class="picker-actions">
-                        <button type="button" class="secondary-button" @click="closeCategoryPicker">Cancel</button>
-                        <button type="button" class="primary-button small" @click="saveCategorySelection">Save Selection</button>
+                        <button type="button" class="primary-button small" @click="closeCategoryPicker">Done</button>
                     </div>
                 </div>
             </div>
         </Transition>
 
         <Transition name="fade">
-            <div v-if="brandModalOpen" class="picker-modal-backdrop" @click="closeBrandPicker">
+            <div v-if="brandModalOpen" class="picker-modal-backdrop">
                 <div class="picker-modal" @click.stop>
                     <button type="button" class="picker-close" @click="closeBrandPicker">&times;</button>
                     <div class="picker-head">
@@ -1689,15 +1686,14 @@ onBeforeUnmount(() => {
                     </div>
 
                     <div class="picker-actions">
-                        <button type="button" class="secondary-button" @click="closeBrandPicker">Cancel</button>
-                        <button type="button" class="primary-button small" @click="saveBrandSelection">Save Brands</button>
+                        <button type="button" class="primary-button small" @click="closeBrandPicker">Done</button>
                     </div>
                 </div>
             </div>
         </Transition>
 
         <Transition name="fade">
-            <div v-if="servicePortModalOpen" class="picker-modal-backdrop" @click="closeServicePortPicker">
+            <div v-if="servicePortModalOpen" class="picker-modal-backdrop">
                 <div class="picker-modal" @click.stop>
                     <button type="button" class="picker-close" @click="closeServicePortPicker">&times;</button>
                     <div class="picker-head">
@@ -1749,8 +1745,7 @@ onBeforeUnmount(() => {
                     </div>
 
                     <div class="picker-actions">
-                        <button type="button" class="secondary-button" @click="closeServicePortPicker">Cancel</button>
-                        <button type="button" class="primary-button small" @click="saveServicePortSelection">Save Selection</button>
+                        <button type="button" class="primary-button small" @click="closeServicePortPicker">Done</button>
                     </div>
                 </div>
             </div>
