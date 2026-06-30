@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
+use App\Support\EmailInputNormalizer;
 use App\Support\UserFacingMail;
 use App\Models\User;
 use App\Support\MarketplaceNotificationCenter;
@@ -102,13 +103,7 @@ class RegisterController extends Controller
 
     private function normalizeEmail(?string $value): ?string
     {
-        if ($value === null) {
-            return null;
-        }
-
-        $email = strtolower(trim($value));
-
-        return $email === '' ? null : $email;
+        return EmailInputNormalizer::normalize($value);
     }
 
     private function validationMessages(): array

@@ -2,8 +2,10 @@
 import { computed, onBeforeUnmount, ref, watch } from 'vue';
 import { Head, Link, useForm, usePage } from '@inertiajs/vue3';
 import MainLayout from '../../Layouts/MainLayout.vue';
+import { normalizeEmailInput } from '../../lib/normalizeEmailInput';
 
 const page = usePage();
+const emailPattern = /^[^\s@]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/;
 
 const copy = {
     eyebrow: 'Forgot Password',
@@ -94,6 +96,14 @@ const submitButtonLabel = computed(() => {
 const inputReadonly = computed(() => hasSentState.value && cooldown.value > 0);
 const submitDisabled = computed(() => form.processing || (hasSentState.value && cooldown.value > 0));
 
+const handleEmailInput = (value) => {
+    form.email = normalizeEmailInput(value);
+
+    if (emailPattern.test(form.email)) {
+        form.clearErrors('email');
+    }
+};
+
 const submit = () => {
     form.post('/forgot-password', {
         preserveScroll: true,
@@ -137,13 +147,14 @@ onBeforeUnmount(() => {
                     <label>
                         {{ copy.email }}
                         <input
-                            v-model="form.email"
+                            :value="form.email"
                             type="email"
                             inputmode="email"
                             autocomplete="email"
                             :placeholder="copy.emailPlaceholder"
                             :readonly="inputReadonly"
                             :class="{ 'is-readonly': inputReadonly }"
+                            @input="handleEmailInput($event.target.value)"
                         />
                         <small v-if="form.errors.email">{{ form.errors.email }}</small>
                     </label>

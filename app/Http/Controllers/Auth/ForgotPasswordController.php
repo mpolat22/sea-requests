@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
+use App\Support\EmailInputNormalizer;
 use App\Support\UserFacingMail;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -20,7 +21,7 @@ class ForgotPasswordController extends Controller
     public function store(Request $request, UserFacingMail $mail): RedirectResponse
     {
         $request->merge([
-            'email' => strtolower(trim((string) $request->input('email'))),
+            'email' => EmailInputNormalizer::normalize($request->input('email')),
         ]);
 
         $request->validate([

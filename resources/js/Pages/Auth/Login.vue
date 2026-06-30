@@ -2,6 +2,7 @@
 import { Head, Link, useForm } from '@inertiajs/vue3';
 import AuthPasswordInput from '../../Components/AuthPasswordInput.vue';
 import MainLayout from '../../Layouts/MainLayout.vue';
+import { normalizeEmailInput } from '../../lib/normalizeEmailInput';
 
 const emailPattern = /^[^\s@]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/;
 
@@ -35,7 +36,7 @@ const form = useForm({
 });
 
 const handleEmailInput = (value) => {
-    form.email = value.trim().toLowerCase();
+    form.email = normalizeEmailInput(value);
 
     if (emailPattern.test(form.email)) {
         form.clearErrors('email');

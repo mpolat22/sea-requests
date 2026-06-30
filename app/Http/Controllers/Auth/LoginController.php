@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Support\DashboardRedirector;
+use App\Support\EmailInputNormalizer;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -32,6 +33,7 @@ class LoginController extends Controller
             'remember' => ['nullable', 'boolean'],
             'next' => ['nullable', 'string', 'max:255'],
         ], [
+            'email.email' => 'Please enter a valid email address.',
             'email.regex' => 'Please enter a valid email address.',
         ]);
 
@@ -71,12 +73,6 @@ class LoginController extends Controller
 
     private function normalizeEmail(?string $value): ?string
     {
-        if ($value === null) {
-            return null;
-        }
-
-        $email = strtolower(trim($value));
-
-        return $email === '' ? null : $email;
+        return EmailInputNormalizer::normalize($value);
     }
 }

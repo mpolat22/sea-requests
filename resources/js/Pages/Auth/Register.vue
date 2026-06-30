@@ -4,6 +4,7 @@ import { Head, Link, useForm } from '@inertiajs/vue3';
 import AuthPasswordInput from '../../Components/AuthPasswordInput.vue';
 import MainLayout from '../../Layouts/MainLayout.vue';
 import { countryOptions, dialCodes } from '../../lib/accountContactOptions';
+import { normalizeEmailInput } from '../../lib/normalizeEmailInput';
 
 const props = defineProps({
     next: {
@@ -108,7 +109,7 @@ const handlePhoneInput = (field, value) => {
 };
 
 const handleEmailInput = (value) => {
-    form.email = value.trim().toLowerCase();
+    form.email = normalizeEmailInput(value);
 
     if (emailPattern.test(form.email)) {
         clearFieldError('email');
