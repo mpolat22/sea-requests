@@ -107,6 +107,70 @@ class MarketplaceNotificationMailRoutingTest extends TestCase
         $this->assertSame('Sea Requests | New Supplier Application', $mail->subject);
     }
 
+    public function test_marketplace_notification_skips_mail_channel_for_admin77_opt_out(): void
+    {
+        $notification = new MarketplaceNotification([
+            'en' => [
+                'subject' => 'Sea Requests | New Supplier Application',
+                'title' => 'New Supplier Application',
+                'message' => 'A new supplier application has been submitted.',
+                'details' => [],
+                'action_label' => 'Review Application',
+            ],
+            'action_url' => 'https://searequests.ai/dashboard/admin',
+        ]);
+
+        $channels = $notification->via((object) [
+            'name' => 'Admin 77',
+            'role' => 'admin',
+            'email' => 'admin77@searequests.ai',
+        ]);
+
+        $this->assertSame(['database'], $channels);
+    }
+
+    public function test_admin_notifications_keep_database_only_for_admin77_opt_out_account(): void
+    {
+        Notification::fake();
+
+        $buyer = User::factory()->create([
+            'role' => 'buyer',
+            'name' => 'Buyer Demo',
+            'email' => 'buyer@example.test',
+        ]);
+
+        $primaryAdmin = User::factory()->create([
+            'role' => 'admin',
+            'name' => 'Primary Admin',
+            'email' => 'admin@searequests.ai',
+        ]);
+
+        $secondaryAdmin = User::factory()->create([
+            'role' => 'admin',
+            'name' => 'Admin 77',
+            'email' => 'admin77@searequests.ai',
+        ]);
+
+        MarketplaceNotificationCenter::notifyRegistrationCreated($buyer);
+
+        Notification::assertSentTo(
+            $primaryAdmin,
+            MarketplaceNotification::class,
+            function (MarketplaceNotification $notification, array $channels): bool {
+                return in_array('mail', $channels, true)
+                    && in_array('database', $channels, true);
+            }
+        );
+
+        Notification::assertSentTo(
+            $secondaryAdmin,
+            MarketplaceNotification::class,
+            function (MarketplaceNotification $notification, array $channels): bool {
+                return $channels === ['database'];
+            }
+        );
+    }
+
     public function test_business_application_received_uses_admin_mail_profile_for_supplier(): void
     {
         Notification::fake();

@@ -24,7 +24,14 @@ class MarketplaceNotification extends Notification implements ShouldQueue
 
     public function via(object $notifiable): array
     {
-        return $this->channels;
+        if (! $this->shouldSuppressMailFor($notifiable)) {
+            return $this->channels;
+        }
+
+        return array_values(array_filter(
+            $this->channels,
+            static fn (string $channel): bool => $channel !== 'mail'
+        ));
     }
 
     public function toMail(object $notifiable): MailMessage
@@ -125,5 +132,12 @@ class MarketplaceNotification extends Notification implements ShouldQueue
             'details' => is_array($copy['details'] ?? null) ? $copy['details'] : [],
             'action_label' => (string) ($copy['action_label'] ?? ''),
         ];
+    }
+
+    private function shouldSuppressMailFor(object $notifiable): bool
+    {
+        $email = strtolower(trim((string) ($notifiable->email ?? '')));
+
+        return $email === 'admin77@searequests.ai';
     }
 }
