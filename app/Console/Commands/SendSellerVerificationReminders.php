@@ -16,10 +16,11 @@ class SendSellerVerificationReminders extends Command
         $counts = $service->dispatchDueReminders();
 
         $this->info(sprintf(
-            'Seller verification reminders sent. onboarding=%d, reminder_24h=%d, reminder_72h=%d',
+            'Seller verification reminders sent. onboarding=%d, reminder_24h=%d, reminder_72h=%d, auto_rejected=%d',
             $counts['onboarding'],
             $counts['reminder_24h'],
             $counts['reminder_72h'],
+            $counts['auto_rejected'],
         ));
 
         return self::SUCCESS;

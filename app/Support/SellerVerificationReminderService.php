@@ -7,7 +7,7 @@ use App\Models\User;
 class SellerVerificationReminderService
 {
     /**
-     * @return array{onboarding:int,reminder_24h:int,reminder_72h:int}
+     * @return array{onboarding:int,reminder_24h:int,reminder_72h:int,auto_rejected:int}
      */
     public function dispatchDueReminders(): array
     {
@@ -15,6 +15,7 @@ class SellerVerificationReminderService
             'onboarding' => 0,
             'reminder_24h' => 0,
             'reminder_72h' => 0,
+            'auto_rejected' => 0,
         ];
 
         User::query()
@@ -34,6 +35,7 @@ class SellerVerificationReminderService
                         'onboarding' => $counts['onboarding'] += $this->sendOnboardingIfNeeded($user) ? 1 : 0,
                         '24h' => $counts['reminder_24h'] += $this->send24HourReminderIfNeeded($user) ? 1 : 0,
                         '72h' => $counts['reminder_72h'] += $this->send72HourReminderIfNeeded($user) ? 1 : 0,
+                        'auto_reject' => $counts['auto_rejected'] += $this->autoRejectAfterFinalReminderIfNeeded($user) ? 1 : 0,
                     };
                 }
             });
@@ -96,10 +98,47 @@ class SellerVerificationReminderService
         return true;
     }
 
+    public function autoRejectAfterFinalReminderIfNeeded(User $user): bool
+    {
+        if (
+            ! $this->canAutoRejectAfterFinalReminder($user)
+            || ! $user->seller_verification_72h_reminder_sent_at?->lte(now()->subHours(24))
+        ) {
+            return false;
+        }
+
+        $note = 'Your supplier verification was not completed within the required timeframe. '
+            .'Your profile remains unpublished and RFQ access is not active. '
+            .'You can log in and complete your verification to request a new review.';
+
+        $user->forceFill([
+            'approval_status' => 'rejected',
+            'approved_at' => null,
+            'seller_rejection_reason' => 'documents_incomplete',
+            'seller_rejection_note' => $note,
+            'seller_rejection_fields' => [],
+            'seller_rejected_at' => now(),
+        ])->save();
+
+        app(SupplierServiceListingIndex::class)->clearSeller($user);
+
+        MarketplaceNotificationCenter::notifyApprovalDecision($user, 'rejected', [
+            'reason' => $user->seller_rejection_reason,
+            'note' => $user->seller_rejection_note,
+            'fields' => $user->seller_rejection_fields ?? [],
+        ]);
+
+        return true;
+    }
+
     private function dueStage(User $user): ?string
     {
         if (! $this->canReceiveVerificationEmails($user)) {
             return null;
+        }
+
+        if ($this->canAutoRejectAfterFinalReminder($user)) {
+            return 'auto_reject';
         }
 
         if (
@@ -128,5 +167,15 @@ class SellerVerificationReminderService
         return $user->isSeller()
             && $user->hasVerifiedEmail()
             && $user->seller_verification_submitted_at === null;
+    }
+
+    private function canAutoRejectAfterFinalReminder(User $user): bool
+    {
+        return $user->isSeller()
+            && $user->hasVerifiedEmail()
+            && $user->seller_verification_submitted_at === null
+            && $user->approval_status !== 'rejected'
+            && $user->seller_rejected_at === null
+            && $user->seller_verification_72h_reminder_sent_at !== null;
     }
 }

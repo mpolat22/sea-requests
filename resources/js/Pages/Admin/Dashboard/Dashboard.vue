@@ -224,12 +224,15 @@ const copy = computed(() => ({
     onboardingMailTitle: 'Initial verification mail',
     reminder24hTitle: '24-hour reminder',
     reminder72hTitle: '72-hour final reminder',
+    autoRejectTitle: '96-hour automatic rejection',
     onboardingMailDescription: 'Sent immediately after email verification so the supplier can complete business verification before public listing and RFQ offers.',
     reminder24hDescription: 'Sent 24 hours after email verification if the supplier verification form is still not submitted.',
     reminder72hDescription: 'Sent 72 hours after email verification if the supplier verification form is still not submitted. No further reminder is sent after this step.',
+    autoRejectDescription: 'Triggered 24 hours after the final reminder if the supplier verification form is still not submitted. The standard rejection feedback and email are sent automatically.',
     reminderStatusNotVerified: 'Email not verified yet',
     reminderStatusSubmitted: 'Verification submitted, reminder flow stopped',
-    reminderStatusRejected: 'Application rejected after submission',
+    reminderStatusRejected: 'Application rejected, reminder flow stopped',
+    reminderStatusAutoRejected: 'Automatically rejected after the final reminder, waiting for a new submission',
     reminderStatusFinalSent: 'Final 72-hour reminder sent, reminder flow stopped',
     reminderStatus24hSent: '24-hour reminder sent, waiting for submission',
     reminderStatusOnboardingSent: 'Initial verification mail sent, waiting for submission',
@@ -409,6 +412,7 @@ const latestVerificationMailTimestamp = (user) => {
         user?.seller_verification_onboarding_sent_at,
         user?.seller_verification_24h_reminder_sent_at,
         user?.seller_verification_72h_reminder_sent_at,
+        user?.seller_rejected_at,
     ]
         .filter(Boolean)
         .map((value) => new Date(value))
@@ -421,6 +425,10 @@ const latestVerificationMailTimestamp = (user) => {
 const reminderFlowStatusText = (user) => {
     if (!user?.email_verified_at) {
         return copy.value.reminderStatusNotVerified;
+    }
+
+    if (user?.approval_status === 'rejected' && !user?.seller_verification_submitted_at) {
+        return copy.value.reminderStatusAutoRejected;
     }
 
     if (user?.seller_verification_submitted_at) {
@@ -483,6 +491,18 @@ const verificationMailHistoryPayload = (user) => ({
             status: user?.seller_verification_72h_reminder_sent_at ? copy.value.verificationMailSent : copy.value.verificationMailPending,
             sent_at: user?.seller_verification_72h_reminder_sent_at ? formatDateTime(user.seller_verification_72h_reminder_sent_at) : copy.value.mailNotSentYet,
             is_sent: Boolean(user?.seller_verification_72h_reminder_sent_at),
+        },
+        {
+            key: '96h-auto-reject',
+            title: copy.value.autoRejectTitle,
+            description: copy.value.autoRejectDescription,
+            status: user?.approval_status === 'rejected' && !user?.seller_verification_submitted_at
+                ? copy.value.verificationMailSent
+                : copy.value.verificationMailPending,
+            sent_at: user?.approval_status === 'rejected' && !user?.seller_verification_submitted_at
+                ? formatDateTime(user.seller_rejected_at)
+                : copy.value.mailNotSentYet,
+            is_sent: Boolean(user?.approval_status === 'rejected' && !user?.seller_verification_submitted_at),
         },
     ],
 });

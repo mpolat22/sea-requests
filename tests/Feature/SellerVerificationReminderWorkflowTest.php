@@ -137,8 +137,21 @@ class SellerVerificationReminderWorkflowTest extends TestCase
             'seller_verification_72h_reminder_sent_at' => now()->subHours(18),
         ]);
 
+        $autoRejectedSeller = User::factory()->create([
+            'role' => 'seller',
+            'email' => 'seller-auto-reject@example.test',
+            'email_verified_at' => now()->subHours(100),
+            'approval_status' => 'pending',
+            'approved_at' => null,
+            'seller_verification_submitted_at' => null,
+            'seller_verification_onboarding_sent_at' => now()->subHours(99),
+            'seller_verification_24h_reminder_sent_at' => now()->subHours(76),
+            'seller_verification_72h_reminder_sent_at' => now()->subHours(26),
+            'seller_rejected_at' => null,
+        ]);
+
         $this->artisan('seller-verification:send-reminders')
-            ->expectsOutput('Seller verification reminders sent. onboarding=1, reminder_24h=1, reminder_72h=1')
+            ->expectsOutput('Seller verification reminders sent. onboarding=1, reminder_24h=1, reminder_72h=1, auto_rejected=1')
             ->assertExitCode(0);
 
         $fallbackOnboardingSeller->refresh();
@@ -152,6 +165,15 @@ class SellerVerificationReminderWorkflowTest extends TestCase
         $this->assertNotNull($seller72->seller_verification_72h_reminder_sent_at);
         $this->assertNull($submittedSeller->seller_verification_72h_reminder_sent_at);
         $this->assertNotNull($finalAlreadySentSeller->seller_verification_72h_reminder_sent_at);
+        $autoRejectedSeller->refresh();
+        $this->assertSame('rejected', $autoRejectedSeller->approval_status);
+        $this->assertSame('documents_incomplete', $autoRejectedSeller->seller_rejection_reason);
+        $this->assertSame(
+            'Your supplier verification was not completed within the required timeframe. Your profile remains unpublished and RFQ access is not active. You can log in and complete your verification to request a new review.',
+            $autoRejectedSeller->seller_rejection_note
+        );
+        $this->assertSame([], $autoRejectedSeller->seller_rejection_fields);
+        $this->assertNotNull($autoRejectedSeller->seller_rejected_at);
 
         Notification::assertSentTo(
             $fallbackOnboardingSeller,
@@ -194,12 +216,25 @@ class SellerVerificationReminderWorkflowTest extends TestCase
         Notification::assertNotSentTo($submittedSeller, MarketplaceNotification::class);
         Notification::assertNotSentTo($finalAlreadySentSeller, MarketplaceNotification::class);
 
+        Notification::assertSentTo(
+            $autoRejectedSeller,
+            MarketplaceNotification::class,
+            function (MarketplaceNotification $notification, array $channels) use ($autoRejectedSeller): bool {
+                $payload = $notification->toArray($autoRejectedSeller);
+
+                return in_array('mail', $channels, true)
+                    && in_array('database', $channels, true)
+                    && ($payload['title'] ?? null) === 'Application Rejected';
+            }
+        );
+
         $this->artisan('seller-verification:send-reminders')
-            ->expectsOutput('Seller verification reminders sent. onboarding=0, reminder_24h=0, reminder_72h=0')
+            ->expectsOutput('Seller verification reminders sent. onboarding=0, reminder_24h=0, reminder_72h=0, auto_rejected=0')
             ->assertExitCode(0);
 
         $this->assertCount(1, Notification::sent($fallbackOnboardingSeller, MarketplaceNotification::class));
         $this->assertCount(1, Notification::sent($seller24, MarketplaceNotification::class));
         $this->assertCount(1, Notification::sent($seller72, MarketplaceNotification::class));
+        $this->assertCount(1, Notification::sent($autoRejectedSeller, MarketplaceNotification::class));
     }
 }
