@@ -341,19 +341,17 @@ const syncServicePortForm = () => {
 
 watch(servicePortGroups, syncServicePortForm, { deep: true, immediate: true });
 
-const dialCodeOptions = dialCodes;
+const countryNameFromDialLabel = (label) => String(label ?? '').replace(/\s*\(\+\d+\)$/, '').trim();
+const countryOptions = computed(() => serviceCountries.value.map((country) => country.name));
+const dialCodeOptions = computed(() => {
+    const allowedCountries = new Set(countryOptions.value);
 
-const countryOptions = [
-    'Albania', 'Algeria', 'Argentina', 'Australia', 'Austria', 'Azerbaijan', 'Bahrain', 'Bangladesh', 'Belgium',
-    'Brazil', 'Bulgaria', 'Canada', 'Chile', 'China', 'Colombia', 'Croatia', 'Cyprus', 'Czech Republic', 'Denmark',
-    'Egypt', 'Estonia', 'Finland', 'France', 'Georgia', 'Germany', 'Greece', 'Hong Kong', 'Hungary', 'India',
-    'Indonesia', 'Iraq', 'Ireland', 'Israel', 'Italy', 'Japan', 'Jordan', 'Kazakhstan', 'Kuwait', 'Latvia',
-    'Lebanon', 'Libya', 'Lithuania', 'Luxembourg', 'Malaysia', 'Malta', 'Mexico', 'Moldova', 'Montenegro', 'Morocco',
-    'Netherlands', 'New Zealand', 'Nigeria', 'Norway', 'Oman', 'Pakistan', 'Panama', 'Philippines', 'Poland',
-    'Portugal', 'Qatar', 'Romania', 'Russia', 'Saudi Arabia', 'Serbia', 'Singapore', 'Slovakia', 'Slovenia',
-    'South Africa', 'South Korea', 'Spain', 'Sri Lanka', 'Sweden', 'Switzerland', 'Tunisia', 'Turkey', 'Ukraine',
-    'United Arab Emirates', 'United Kingdom', 'United States', 'Uruguay', 'Vietnam', 'Yemen',
-];
+    if (!allowedCountries.size) {
+        return dialCodes;
+    }
+
+    return dialCodes.filter((item) => allowedCountries.has(countryNameFromDialLabel(item.label)));
+});
 
 const buildCategoryGroups = () => {
     const categories = props.verification.service_category_ids ?? [];
@@ -739,7 +737,3 @@ onBeforeUnmount(() => {
     .removal-actions > .removal-primary,.removal-actions > .removal-secondary,.removal-button{width:100%;min-width:0}
 }
 </style>
-
-
-
-

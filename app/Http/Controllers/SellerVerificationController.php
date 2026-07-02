@@ -5,6 +5,7 @@ use App\Models\Brand;
 use App\Models\Category;
 use App\Models\Port;
 use App\Models\Subcategory;
+use App\Support\AuthCountryCatalog;
 use App\Support\MarketplaceNotificationCenter;
 use App\Support\SupplierServiceListingIndex;
 use Illuminate\Http\RedirectResponse;
@@ -12,6 +13,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
+use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -65,17 +67,7 @@ class SellerVerificationController extends Controller
 
     private function renderForm(Request $request, \App\Models\User $user, bool $adminMode): Response
     {
-        $serviceCountries = Port::query()
-            ->active()
-            ->select('country_code', 'country_name')
-            ->distinct()
-            ->orderBy('country_code')
-            ->get()
-            ->map(fn (Port $port) => [
-                'code' => $port->country_code,
-                'name' => $port->country_name,
-            ])
-            ->values();
+        $serviceCountries = AuthCountryCatalog::serviceCountries();
 
         $portsByCountry = Port::query()
             ->active()
@@ -189,7 +181,7 @@ class SellerVerificationController extends Controller
 
         $validator = Validator::make($request->all(), [
             'company_name' => ['required', 'string', 'min:2', 'max:255'],
-            'country' => ['required', 'string', 'max:255'],
+            'country' => ['required', 'string', 'max:255', Rule::in(AuthCountryCatalog::countryNames())],
             'company_city' => ['required', 'string', 'min:2', 'max:120'],
             'company_district' => ['nullable', 'string', 'max:120'],
             'company_neighborhood' => ['nullable', 'string', 'max:120'],
@@ -904,6 +896,7 @@ class SellerVerificationController extends Controller
         return [
             'company_name.required' => 'Business name is required.',
             'country.required' => 'Country is required.',
+            'country.in' => 'Please select a valid country.',
             'phone.required' => 'Phone number is required.',
             'phone.regex' => 'Phone number must include the country code.',
             'company_address_line.required' => 'Address line is required.',
@@ -963,5 +956,3 @@ class SellerVerificationController extends Controller
         ];
     }
 }
-
-

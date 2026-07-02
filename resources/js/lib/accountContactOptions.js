@@ -16,23 +16,24 @@ export const dialCodes = [
     { label: 'Denmark (+45)', value: '+45' }, { label: 'Egypt (+20)', value: '+20' },
     { label: 'Estonia (+372)', value: '+372' }, { label: 'Finland (+358)', value: '+358' },
     { label: 'France (+33)', value: '+33' }, { label: 'Georgia (+995)', value: '+995' },
-    { label: 'Germany (+49)', value: '+49' }, { label: 'Greece (+30)', value: '+30' },
-    { label: 'Hong Kong (+852)', value: '+852' }, { label: 'Hungary (+36)', value: '+36' },
-    { label: 'India (+91)', value: '+91' }, { label: 'Indonesia (+62)', value: '+62' },
-    { label: 'Iran (+98)', value: '+98' }, { label: 'Iraq (+964)', value: '+964' },
-    { label: 'Ireland (+353)', value: '+353' }, { label: 'Israel (+972)', value: '+972' },
-    { label: 'Italy (+39)', value: '+39' }, { label: 'Japan (+81)', value: '+81' },
-    { label: 'Jordan (+962)', value: '+962' }, { label: 'Russia (+7)', value: '+7' },
-    { label: 'Kuwait (+965)', value: '+965' }, { label: 'Latvia (+371)', value: '+371' },
-    { label: 'Lebanon (+961)', value: '+961' }, { label: 'Libya (+218)', value: '+218' },
-    { label: 'Lithuania (+370)', value: '+370' }, { label: 'Luxembourg (+352)', value: '+352' },
-    { label: 'Malaysia (+60)', value: '+60' }, { label: 'Malta (+356)', value: '+356' },
-    { label: 'Mexico (+52)', value: '+52' }, { label: 'Moldova (+373)', value: '+373' },
-    { label: 'Montenegro (+382)', value: '+382' }, { label: 'Morocco (+212)', value: '+212' },
-    { label: 'Netherlands (+31)', value: '+31' }, { label: 'New Zealand (+64)', value: '+64' },
-    { label: 'Nigeria (+234)', value: '+234' }, { label: 'North Macedonia (+389)', value: '+389' },
-    { label: 'Norway (+47)', value: '+47' }, { label: 'Oman (+968)', value: '+968' },
-    { label: 'Pakistan (+92)', value: '+92' }, { label: 'Philippines (+63)', value: '+63' },
+    { label: 'Germany (+49)', value: '+49' }, { label: 'Ghana (+233)', value: '+233' },
+    { label: 'Greece (+30)', value: '+30' }, { label: 'Hong Kong (+852)', value: '+852' },
+    { label: 'Hungary (+36)', value: '+36' }, { label: 'India (+91)', value: '+91' },
+    { label: 'Indonesia (+62)', value: '+62' }, { label: 'Iran (+98)', value: '+98' },
+    { label: 'Iraq (+964)', value: '+964' }, { label: 'Ireland (+353)', value: '+353' },
+    { label: 'Israel (+972)', value: '+972' }, { label: 'Italy (+39)', value: '+39' },
+    { label: 'Japan (+81)', value: '+81' }, { label: 'Jordan (+962)', value: '+962' },
+    { label: 'Russia (+7)', value: '+7' }, { label: 'Kuwait (+965)', value: '+965' },
+    { label: 'Latvia (+371)', value: '+371' }, { label: 'Lebanon (+961)', value: '+961' },
+    { label: 'Libya (+218)', value: '+218' }, { label: 'Lithuania (+370)', value: '+370' },
+    { label: 'Luxembourg (+352)', value: '+352' }, { label: 'Malaysia (+60)', value: '+60' },
+    { label: 'Malta (+356)', value: '+356' }, { label: 'Mexico (+52)', value: '+52' },
+    { label: 'Moldova (+373)', value: '+373' }, { label: 'Montenegro (+382)', value: '+382' },
+    { label: 'Morocco (+212)', value: '+212' }, { label: 'Netherlands (+31)', value: '+31' },
+    { label: 'New Zealand (+64)', value: '+64' }, { label: 'Nigeria (+234)', value: '+234' },
+    { label: 'North Macedonia (+389)', value: '+389' }, { label: 'Norway (+47)', value: '+47' },
+    { label: 'Oman (+968)', value: '+968' }, { label: 'Pakistan (+92)', value: '+92' },
+    { label: 'Panama (+507)', value: '+507' }, { label: 'Philippines (+63)', value: '+63' },
     { label: 'Poland (+48)', value: '+48' }, { label: 'Portugal (+351)', value: '+351' },
     { label: 'Qatar (+974)', value: '+974' }, { label: 'Romania (+40)', value: '+40' },
     { label: 'Kazakhstan (+7)', value: '+7' }, { label: 'Saudi Arabia (+966)', value: '+966' },
@@ -50,14 +51,12 @@ export const dialCodes = [
     { label: 'Yemen (+967)', value: '+967' },
 ].slice().sort((left, right) => countryNameFromDialLabel(left.label).localeCompare(countryNameFromDialLabel(right.label), 'en', { sensitivity: 'base' }));
 
-export const countryOptions = dialCodes.map((item) => {
-    const country = countryNameFromDialLabel(item.label);
+export const countryNames = [...new Set(dialCodes.map((item) => countryNameFromDialLabel(item.label)))];
 
-    return {
-        label: country,
-        value: country,
-    };
-});
+export const countryOptions = countryNames.map((country) => ({
+    label: country,
+    value: country,
+}));
 
 export const sanitizePhoneDigits = (value) => String(value ?? '').replace(/\D+/g, '').slice(0, 15);
 

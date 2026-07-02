@@ -3,10 +3,11 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
-use App\Support\EmailInputNormalizer;
-use App\Support\UserFacingMail;
 use App\Models\User;
+use App\Support\AuthCountryCatalog;
+use App\Support\EmailInputNormalizer;
 use App\Support\MarketplaceNotificationCenter;
+use App\Support\UserFacingMail;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -24,6 +25,7 @@ class RegisterController extends Controller
             'role' => in_array($request->query('role'), ['buyer', 'seller'], true)
                 ? $request->query('role')
                 : null,
+            'countryOptions' => AuthCountryCatalog::countryOptions(),
         ]);
     }
 
@@ -38,11 +40,13 @@ class RegisterController extends Controller
             'company_description' => trim((string) $request->input('company_description')),
         ]);
 
+        $allowedCountries = AuthCountryCatalog::countryNames();
+
         $validated = $request->validate([
             'account_type' => ['required', 'in:buyer,seller'],
             'name' => ['required', 'string', 'min:2', 'max:255'],
             'company_name' => [Rule::requiredIf($request->input('account_type') === 'seller'), 'nullable', 'string', 'min:2', 'max:255'],
-            'country' => ['required', 'string', 'max:255'],
+            'country' => ['required', 'string', 'max:255', Rule::in($allowedCountries)],
             'phone_country_code' => ['required', 'string', 'regex:/^\+\d{1,4}$/'],
             'phone' => ['required', 'string', 'regex:/^[0-9]{6,15}$/'],
             'whatsapp_country_code' => [Rule::requiredIf(filled($request->input('whatsapp_number'))), 'nullable', 'string', 'regex:/^\+\d{1,4}$/'],
@@ -114,6 +118,7 @@ class RegisterController extends Controller
             'company_name.required' => 'Company Name is required.',
             'company_name.min' => 'Company Name must be at least 2 characters.',
             'country.required' => 'Country is required.',
+            'country.in' => 'Please select a valid country.',
             'phone_country_code.required' => 'Please select a country code.',
             'phone_country_code.regex' => 'Please select a valid country code.',
             'phone.required' => 'Phone Number is required.',

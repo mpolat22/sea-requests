@@ -3,7 +3,7 @@ import { computed, nextTick, ref, watch } from 'vue';
 import { Head, Link, useForm } from '@inertiajs/vue3';
 import AuthPasswordInput from '../../Components/AuthPasswordInput.vue';
 import MainLayout from '../../Layouts/MainLayout.vue';
-import { countryOptions, dialCodes } from '../../lib/accountContactOptions';
+import { dialCodes } from '../../lib/accountContactOptions';
 import { normalizeEmailInput } from '../../lib/normalizeEmailInput';
 
 const props = defineProps({
@@ -14,6 +14,10 @@ const props = defineProps({
     role: {
         type: String,
         default: '',
+    },
+    countryOptions: {
+        type: Array,
+        default: () => [],
     },
 });
 
@@ -91,6 +95,17 @@ const fieldRefs = ref({});
 const emailPattern = /^[^\s@]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/;
 const passwordPattern = /^(?=.*[A-Za-z])(?=.*\d).{8,}$/;
 const sanitizePhoneValue = (value) => value.replace(/\D+/g, '').slice(0, 15);
+const countryNameFromDialLabel = (label) => String(label ?? '').replace(/\s*\(\+\d+\)$/, '').trim();
+const countrySelectOptions = computed(() => Array.isArray(props.countryOptions) ? props.countryOptions : []);
+const dialCodeOptions = computed(() => {
+    const allowedCountries = new Set(countrySelectOptions.value.map((item) => String(item.value ?? item.label ?? '').trim()).filter(Boolean));
+
+    if (!allowedCountries.size) {
+        return dialCodes;
+    }
+
+    return dialCodes.filter((item) => allowedCountries.has(countryNameFromDialLabel(item.label)));
+});
 const passwordChecks = computed(() => ({
     length: form.password.length >= 8,
     letter: /[A-Za-z]/.test(form.password),
@@ -292,7 +307,7 @@ const submit = () => {
                             @change="clearFieldError('country')"
                         >
                             <option value="" disabled>{{ copy.selectCountry }}</option>
-                            <option v-for="item in countryOptions" :key="item.value" :value="item.value">{{ item.label }}</option>
+                            <option v-for="item in countrySelectOptions" :key="item.value" :value="item.value">{{ item.label }}</option>
                         </select>
                         <small v-if="form.errors.country">{{ form.errors.country }}</small>
                     </label>
@@ -320,7 +335,7 @@ const submit = () => {
                                 @change="clearFieldError('country')"
                             >
                                 <option value="" disabled>{{ copy.selectCountry }}</option>
-                                <option v-for="item in countryOptions" :key="item.value" :value="item.value">{{ item.label }}</option>
+                                <option v-for="item in countrySelectOptions" :key="item.value" :value="item.value">{{ item.label }}</option>
                             </select>
                             <small v-if="form.errors.country">{{ form.errors.country }}</small>
                         </label>
@@ -336,7 +351,7 @@ const submit = () => {
                                 @change="clearFieldError('phone_country_code')"
                             >
                                 <option value="" disabled>{{ copy.selectCode }}</option>
-                                <option v-for="item in dialCodes" :key="`phone-${item.value}`" :value="item.value">{{ item.label }}</option>
+                                <option v-for="item in dialCodeOptions" :key="`phone-${item.value}`" :value="item.value">{{ item.label }}</option>
                             </select>
                             <input
                                 :ref="setFieldRef('phone')"
@@ -362,7 +377,7 @@ const submit = () => {
                                 @change="clearFieldError('whatsapp_country_code')"
                             >
                                 <option value="" disabled>{{ copy.selectCode }}</option>
-                                <option v-for="item in dialCodes" :key="`wa-${item.value}`" :value="item.value">{{ item.label }}</option>
+                                <option v-for="item in dialCodeOptions" :key="`wa-${item.value}`" :value="item.value">{{ item.label }}</option>
                             </select>
                             <input
                                 :ref="setFieldRef('whatsapp_number')"
@@ -783,5 +798,3 @@ const submit = () => {
     }
 }
 </style>
-
-
