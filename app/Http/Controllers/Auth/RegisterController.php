@@ -26,6 +26,7 @@ class RegisterController extends Controller
                 ? $request->query('role')
                 : null,
             'countryOptions' => AuthCountryCatalog::countryOptions(),
+            'dialCodeOptions' => AuthCountryCatalog::dialCodeOptions(),
         ]);
     }
 

@@ -19,6 +19,10 @@ const props = defineProps({
         type: Array,
         default: () => [],
     },
+    dialCodeOptions: {
+        type: Array,
+        default: () => [],
+    },
 });
 
 const copy = {
@@ -95,17 +99,8 @@ const fieldRefs = ref({});
 const emailPattern = /^[^\s@]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/;
 const passwordPattern = /^(?=.*[A-Za-z])(?=.*\d).{8,}$/;
 const sanitizePhoneValue = (value) => value.replace(/\D+/g, '').slice(0, 15);
-const countryNameFromDialLabel = (label) => String(label ?? '').replace(/\s*\(\+\d+\)$/, '').trim();
 const countrySelectOptions = computed(() => Array.isArray(props.countryOptions) ? props.countryOptions : []);
-const dialCodeOptions = computed(() => {
-    const allowedCountries = new Set(countrySelectOptions.value.map((item) => String(item.value ?? item.label ?? '').trim()).filter(Boolean));
-
-    if (!allowedCountries.size) {
-        return dialCodes;
-    }
-
-    return dialCodes.filter((item) => allowedCountries.has(countryNameFromDialLabel(item.label)));
-});
+const registerDialCodeOptions = computed(() => Array.isArray(props.dialCodeOptions) ? props.dialCodeOptions : []);
 const passwordChecks = computed(() => ({
     length: form.password.length >= 8,
     letter: /[A-Za-z]/.test(form.password),
@@ -351,7 +346,7 @@ const submit = () => {
                                 @change="clearFieldError('phone_country_code')"
                             >
                                 <option value="" disabled>{{ copy.selectCode }}</option>
-                                <option v-for="item in dialCodeOptions" :key="`phone-${item.value}`" :value="item.value">{{ item.label }}</option>
+                                <option v-for="item in registerDialCodeOptions" :key="`phone-${item.label}`" :value="item.value">{{ item.label }}</option>
                             </select>
                             <input
                                 :ref="setFieldRef('phone')"
@@ -377,7 +372,7 @@ const submit = () => {
                                 @change="clearFieldError('whatsapp_country_code')"
                             >
                                 <option value="" disabled>{{ copy.selectCode }}</option>
-                                <option v-for="item in dialCodeOptions" :key="`wa-${item.value}`" :value="item.value">{{ item.label }}</option>
+                                <option v-for="item in registerDialCodeOptions" :key="`wa-${item.label}`" :value="item.value">{{ item.label }}</option>
                             </select>
                             <input
                                 :ref="setFieldRef('whatsapp_number')"

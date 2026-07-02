@@ -139,6 +139,7 @@ class SellerVerificationController extends Controller
                 ])
                 ->values(),
             'serviceCountries' => $serviceCountries,
+            'dialCodeOptions' => AuthCountryCatalog::dialCodeOptions(),
             'portsByCountry' => $portsByCountry,
             'adminContext' => [
                 'enabled' => $adminMode,

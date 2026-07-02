@@ -59,4 +59,31 @@ class AuthCountryCatalog
             ->values()
             ->all();
     }
+
+    /**
+     * @return array<int, array{label: string, value: string}>
+     */
+    public static function dialCodeOptions(): array
+    {
+        $dialingCodes = CountryDialingCodeCatalog::byIsoCode();
+
+        return collect(self::serviceCountries())
+            ->map(function (array $country) use ($dialingCodes): ?array {
+                $code = strtoupper(trim((string) ($country['code'] ?? '')));
+                $name = trim((string) ($country['name'] ?? ''));
+                $dialCode = $dialingCodes[$code] ?? null;
+
+                if ($name === '' || ! is_string($dialCode) || $dialCode === '') {
+                    return null;
+                }
+
+                return [
+                    'label' => sprintf('%s (%s)', $name, $dialCode),
+                    'value' => $dialCode,
+                ];
+            })
+            ->filter()
+            ->values()
+            ->all();
+    }
 }

@@ -10,6 +10,7 @@ const props = defineProps({
     categories: { type: Array, required: true },
     brands: { type: Array, required: true },
     serviceCountries: { type: Array, required: true },
+    dialCodeOptions: { type: Array, required: true },
     portsByCountry: { type: Object, required: true },
     verification: { type: Object, required: true },
     actionUrls: {
@@ -341,17 +342,8 @@ const syncServicePortForm = () => {
 
 watch(servicePortGroups, syncServicePortForm, { deep: true, immediate: true });
 
-const countryNameFromDialLabel = (label) => String(label ?? '').replace(/\s*\(\+\d+\)$/, '').trim();
 const countryOptions = computed(() => serviceCountries.value.map((country) => country.name));
-const dialCodeOptions = computed(() => {
-    const allowedCountries = new Set(countryOptions.value);
-
-    if (!allowedCountries.size) {
-        return dialCodes;
-    }
-
-    return dialCodes.filter((item) => allowedCountries.has(countryNameFromDialLabel(item.label)));
-});
+const verificationDialCodeOptions = computed(() => Array.isArray(props.dialCodeOptions) ? props.dialCodeOptions : []);
 
 const buildCategoryGroups = () => {
     const categories = props.verification.service_category_ids ?? [];
@@ -593,7 +585,7 @@ onBeforeUnmount(() => {
                     <SupplierVerificationForm
                         :ui="ui"
                         :form="form"
-                        :dial-code-options="dialCodeOptions"
+                        :dial-code-options="verificationDialCodeOptions"
                         :category-options="categoryOptions"
                         :brand-options="brandOptions"
                         :service-countries="serviceCountries"

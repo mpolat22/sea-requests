@@ -12,7 +12,7 @@ class AuthCountrySourceConsistencyTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_register_page_uses_active_port_countries_for_country_dropdown(): void
+    public function test_register_page_uses_active_port_countries_for_country_and_dial_code_dropdowns(): void
     {
         Port::query()->create([
             'country_code' => 'GH',
@@ -37,10 +37,11 @@ class AuthCountrySourceConsistencyTest extends TestCase
             ->assertInertia(fn (AssertableInertia $page) => $page
                 ->component('Auth/Register')
                 ->where('countryOptions', fn ($options) => collect($options)->pluck('value')->all() === ['Ghana', 'Panama'])
+                ->where('dialCodeOptions', fn ($options) => collect($options)->pluck('label')->all() === ['Ghana (+233)', 'Panama (+507)'])
             );
     }
 
-    public function test_seller_verification_page_uses_active_port_countries_for_service_country_source(): void
+    public function test_seller_verification_page_uses_active_port_countries_for_service_country_and_dial_code_source(): void
     {
         Port::query()->create([
             'country_code' => 'GH',
@@ -63,6 +64,7 @@ class AuthCountrySourceConsistencyTest extends TestCase
             ->assertInertia(fn (AssertableInertia $page) => $page
                 ->component('Auth/SupplierVerification')
                 ->where('serviceCountries', fn ($countries) => collect($countries)->pluck('code')->all() === ['GH'])
+                ->where('dialCodeOptions', fn ($options) => collect($options)->pluck('label')->all() === ['Ghana (+233)'])
             );
     }
 }

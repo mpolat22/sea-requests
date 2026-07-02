@@ -1336,7 +1336,7 @@ onBeforeUnmount(() => {
                                 <div class="phone-combo" :class="{ invalid: hasVisualInvalid('phone') }">
                                     <div class="phone-code-shell">
                                         <select v-model="form.phone_country_code" class="phone-code-select" @change="clearFieldErrorIfValid('phone')">
-                                            <option v-for="item in dialCodeOptions" :key="`phone-${item.value}`" :value="item.value">{{ item.label }}</option>
+                                            <option v-for="item in dialCodeOptions" :key="`phone-${item.label}`" :value="item.value">{{ item.label }}</option>
                                         </select>
                                         <span class="phone-code-display" aria-hidden="true">{{ dialCodeDisplay(form.phone_country_code) }}</span>
                                     </div>
@@ -1364,7 +1364,7 @@ onBeforeUnmount(() => {
                                 <div class="phone-combo" :class="{ invalid: hasVisualInvalid('whatsapp_number') }">
                                     <div class="phone-code-shell">
                                         <select v-model="form.whatsapp_country_code" class="phone-code-select" @change="clearFieldErrorIfValid('whatsapp_number')">
-                                            <option v-for="item in dialCodeOptions" :key="`wa-${item.value}`" :value="item.value">{{ item.label }}</option>
+                                            <option v-for="item in dialCodeOptions" :key="`wa-${item.label}`" :value="item.value">{{ item.label }}</option>
                                         </select>
                                         <span class="phone-code-display" aria-hidden="true">{{ dialCodeDisplay(form.whatsapp_country_code) }}</span>
                                     </div>
