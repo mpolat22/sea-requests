@@ -37,6 +37,8 @@ class AdminDashboardPagesTest extends TestCase
                 ->where('activeTab', 'businesses')
                 ->where('dashboard.navigation.rfqs_count', 1)
                 ->where('dashboard.navigation.orders_count', 1)
+                ->missing('dashboard.navigation.outreach_url')
+                ->missing('dashboard.navigation.outreach_count')
             );
 
         $this->actingAs($admin)
@@ -93,6 +95,8 @@ class AdminDashboardPagesTest extends TestCase
             );
     }
 
+    
+
     public function test_non_admin_users_cannot_open_admin_dashboard_rfq_or_order_pages(): void
     {
         [, $rfq, $offer] = $this->createAdminScenario();
@@ -108,6 +112,15 @@ class AdminDashboardPagesTest extends TestCase
         $this->actingAs($seller)->get(route('admin.dashboard'))->assertForbidden();
         $this->actingAs($seller)->get(route('admin.rfqs'))->assertForbidden();
         $this->actingAs($seller)->get(route('admin.orders'))->assertForbidden();
+    }
+
+    public function test_admin_outreach_routes_are_hidden_behind_feature_flag_by_default(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin']);
+
+        $this->actingAs($admin)
+            ->get(route('admin.outreach'))
+            ->assertNotFound();
     }
 
     public function test_admin_rfq_list_exposes_management_actions_and_locked_edit_reason(): void

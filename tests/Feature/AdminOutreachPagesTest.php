@@ -25,6 +25,13 @@ class AdminOutreachPagesTest extends TestCase
 {
     use RefreshDatabase;
 
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        config()->set('features.admin_outreach', true);
+    }
+
     public function test_admin_can_open_outreach_workspace(): void
     {
         $admin = User::factory()->create(['role' => 'admin']);
@@ -136,7 +143,7 @@ class AdminOutreachPagesTest extends TestCase
             ->assertInertia(fn (AssertableInertia $page) => $page
                 ->component('Admin/Outreach/Index')
                 ->where('activeTab', 'outreach')
-                ->where('dashboard.navigation.outreach_count', 1)
+                ->missing('dashboard.navigation.outreach_count')
                 ->where('summary.total_contacts', 1)
                 ->where('summary.active_contacts', 1)
                 ->where('senderAccounts.0.name', 'Primary Request Mailbox')
