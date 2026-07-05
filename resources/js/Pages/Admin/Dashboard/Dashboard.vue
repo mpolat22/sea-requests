@@ -8,6 +8,7 @@ import DeleteModal from './Modals/DeleteModal.vue';
 import RemovalRequestModal from './Modals/RemovalRequestModal.vue';
 import RejectModal from './Modals/RejectModal.vue';
 import RejectionFeedbackModal from './Modals/RejectionFeedbackModal.vue';
+import AiVerificationReviewModal from './Modals/AiVerificationReviewModal.vue';
 import StatusModal from './Modals/StatusModal.vue';
 import UpdateRequestDiffModal from './Modals/UpdateRequestDiffModal.vue';
 import VerificationMailHistoryModal from './Modals/VerificationMailHistoryModal.vue';
@@ -214,6 +215,8 @@ const copy = computed(() => ({
     verificationMailHistory: 'Verification Mail History',
     verificationMailHistoryIntro: 'Review which supplier verification onboarding emails were already sent to this supplier account and when each step happened.',
     reviewVerificationMailHistory: 'Review verification mail history',
+    reviewAiVerification: 'Review AI verification',
+    aiReviewIntro: 'Review the saved automatic AI document analysis for this supplier application.',
     emailVerifiedAt: 'Email Verified',
     latestMailSent: 'Latest Mail Sent',
     reminderFlowStatus: 'Reminder Flow Status',
@@ -439,6 +442,25 @@ const aiReviewReasoning = (user) => Array.isArray(aiReviewAnalysis(user).reasoni
 const aiReviewDecisionLabel = (user) => humanizeAiValue(aiReviewRecord(user)?.decision ?? null);
 const aiReviewAnalysisLabel = (user, key) => humanizeAiValue(aiReviewAnalysis(user)[key] ?? null);
 const aiReviewAnalysisValue = (user, key) => aiReviewAnalysis(user)[key] ?? copy.value.noValue;
+const aiVerificationReviewPayload = (user) => ({
+    summary: [
+        { label: copy.value.aiReviewedAt, value: formatDateTime(user?.seller_verification_ai_reviewed_at) },
+        { label: copy.value.aiDecision, value: aiReviewDecisionLabel(user) },
+        { label: copy.value.aiConfidence, value: aiReviewAnalysisLabel(user, 'confidence') },
+        { label: copy.value.aiDocumentType, value: aiReviewAnalysisLabel(user, 'document_type') },
+    ],
+    details: [
+        { label: copy.value.aiQuality, value: aiReviewAnalysisLabel(user, 'quality') },
+        { label: copy.value.aiExpiryStatus, value: aiReviewAnalysisLabel(user, 'expiry_status') },
+        { label: copy.value.aiCompanyNameMatch, value: aiReviewAnalysisLabel(user, 'company_name_match') },
+        { label: copy.value.aiRegistrationNumberMatch, value: aiReviewAnalysisLabel(user, 'registration_number_match') },
+        { label: copy.value.aiDuplicateStatus, value: aiReviewAnalysisLabel(user, 'duplicate_status') },
+        { label: copy.value.aiExtractedCompanyName, value: aiReviewAnalysisValue(user, 'extracted_company_name') },
+        { label: copy.value.aiExtractedRegistrationNumber, value: aiReviewAnalysisValue(user, 'extracted_registration_number') },
+        { label: copy.value.aiSummary, value: aiReviewAnalysisValue(user, 'review_summary'), wide: true },
+    ],
+    reasoning: aiReviewReasoning(user),
+});
 
 const latestVerificationMailTimestamp = (user) => {
     const candidates = [
@@ -631,6 +653,11 @@ const openVerificationMailHistoryModal = (user) => {
     modalType.value = 'verification-mail-history';
 };
 
+const openAiVerificationReviewModal = (user) => {
+    activeUser.value = user;
+    modalType.value = 'ai-verification-review';
+};
+
 const submitUserEdit = () => {
     if (!activeUser.value) return;
 
@@ -742,6 +769,7 @@ const chooseBusinessStatus = (status) => {
                 @open-feedback="openRejectionFeedbackModal"
                 @open-update-diff="openUpdateDiffModal"
                 @open-mail-history="openVerificationMailHistoryModal"
+                @open-ai-review="openAiVerificationReviewModal"
                 @view="openBusinessView"
                 @edit="openBusinessEdit"
                 @delete="openDeleteModal($event, 'business')"
@@ -749,7 +777,7 @@ const chooseBusinessStatus = (status) => {
         </section>
 
         <Transition name="admin-fade">
-            <div v-if="modalType && !['delete-record', 'status-business', 'reject-business', 'update-diff', 'rejection-feedback', 'removal-request'].includes(modalType)" class="admin-modal-backdrop" @click="closeModal">
+            <div v-if="modalType && !['delete-record', 'status-business', 'reject-business', 'update-diff', 'rejection-feedback', 'removal-request', 'verification-mail-history', 'ai-verification-review'].includes(modalType)" class="admin-modal-backdrop" @click="closeModal">
                 <div class="admin-modal" @click.stop>
                     <button type="button" class="admin-modal-close" @click="closeModal">&times;</button>
 
@@ -855,30 +883,7 @@ const chooseBusinessStatus = (status) => {
                             <div class="detail-item detail-item-wide"><span>{{ copy.address }}</span><strong>{{ activeUser.company_address_line || copy.noValue }}</strong></div>
                             <div class="detail-item detail-item-wide"><span>{{ copy.companyDescription }}</span><strong>{{ activeUser.company_description || copy.noValue }}</strong></div>
                         </div>
-                        <div class="detail-section">
-                            <h3 class="detail-section-title">{{ copy.aiReviewTitle }}</h3>
-                            <div v-if="activeUser.seller_verification_ai_review" class="detail-grid">
-                                <div class="detail-item"><span>{{ copy.aiReviewedAt }}</span><strong>{{ formatDateTime(activeUser.seller_verification_ai_reviewed_at) }}</strong></div>
-                                <div class="detail-item"><span>{{ copy.aiDecision }}</span><strong>{{ aiReviewDecisionLabel(activeUser) }}</strong></div>
-                                <div class="detail-item"><span>{{ copy.aiConfidence }}</span><strong>{{ aiReviewAnalysisLabel(activeUser, 'confidence') }}</strong></div>
-                                <div class="detail-item"><span>{{ copy.aiDocumentType }}</span><strong>{{ aiReviewAnalysisLabel(activeUser, 'document_type') }}</strong></div>
-                                <div class="detail-item"><span>{{ copy.aiQuality }}</span><strong>{{ aiReviewAnalysisLabel(activeUser, 'quality') }}</strong></div>
-                                <div class="detail-item"><span>{{ copy.aiExpiryStatus }}</span><strong>{{ aiReviewAnalysisLabel(activeUser, 'expiry_status') }}</strong></div>
-                                <div class="detail-item"><span>{{ copy.aiCompanyNameMatch }}</span><strong>{{ aiReviewAnalysisLabel(activeUser, 'company_name_match') }}</strong></div>
-                                <div class="detail-item"><span>{{ copy.aiRegistrationNumberMatch }}</span><strong>{{ aiReviewAnalysisLabel(activeUser, 'registration_number_match') }}</strong></div>
-                                <div class="detail-item"><span>{{ copy.aiDuplicateStatus }}</span><strong>{{ aiReviewAnalysisLabel(activeUser, 'duplicate_status') }}</strong></div>
-                                <div class="detail-item"><span>{{ copy.aiExtractedCompanyName }}</span><strong>{{ aiReviewAnalysisValue(activeUser, 'extracted_company_name') }}</strong></div>
-                                <div class="detail-item"><span>{{ copy.aiExtractedRegistrationNumber }}</span><strong>{{ aiReviewAnalysisValue(activeUser, 'extracted_registration_number') }}</strong></div>
-                                <div class="detail-item detail-item-wide"><span>{{ copy.aiSummary }}</span><strong>{{ aiReviewAnalysisValue(activeUser, 'review_summary') }}</strong></div>
-                                <div v-if="aiReviewReasoning(activeUser).length" class="detail-item detail-item-wide">
-                                    <span>{{ copy.aiReasoning }}</span>
-                                    <ul class="detail-reasoning">
-                                        <li v-for="(line, index) in aiReviewReasoning(activeUser)" :key="`${activeUser.id}-ai-${index}`">{{ line }}</li>
-                                    </ul>
-                                </div>
-                            </div>
-                            <p v-else class="admin-modal-copy detail-empty-note">{{ copy.aiReviewEmpty }}</p>
-                        </div>
+
                     </template>
 
                     <template v-else-if="modalType === 'edit-business' && activeUser">
@@ -1032,6 +1037,13 @@ const chooseBusinessStatus = (status) => {
             :payload="activeUser ? verificationMailHistoryPayload(activeUser) : null"
             @close="closeModal"
         />
+        <AiVerificationReviewModal
+            :show="modalType === 'ai-verification-review'"
+            :user="activeUser"
+            :copy="copy"
+            :payload="activeUser ? aiVerificationReviewPayload(activeUser) : null"
+            @close="closeModal"
+        />
         <RejectionFeedbackModal
             :show="modalType === 'rejection-feedback'"
             :user="activeUser"
@@ -1136,5 +1148,3 @@ const chooseBusinessStatus = (status) => {
 @media (max-width: 900px){.detail-grid,.field-grid{grid-template-columns:1fr}.admin-modal{width:min(640px,100%)}}
 @media (max-width: 720px){.detail-grid,.field-grid,.subfilter-grid{grid-template-columns:1fr}.admin-modal-backdrop{padding:16px}.admin-modal{width:100%;max-height:calc(100vh - 32px);padding:20px}.action-primary,.action-secondary,.action-danger,.action-warning{width:100%}}
 </style>
-
-

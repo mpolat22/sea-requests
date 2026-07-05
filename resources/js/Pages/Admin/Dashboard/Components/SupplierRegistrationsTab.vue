@@ -19,6 +19,7 @@ const emit = defineEmits([
     'open-status',
     'open-removal',
     'open-feedback',
+    'open-ai-review',
     'open-update-diff',
     'open-mail-history',
     'view',
@@ -61,6 +62,8 @@ const canShowVerificationMailHistory = (user) => (
     user?.role === 'seller'
     && user?.approval_status !== 'approved'
 );
+
+const canShowAiVerificationReview = (user) => Boolean(user?.seller_verification_ai_review);
 
 const formatDate = (value) => {
     if (!value) return '-';
@@ -227,6 +230,15 @@ watch(search, () => {
                                     @click="emit('open-feedback', user)"
                                 >
                                     <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 8v5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><circle cx="12" cy="16.5" r="1" fill="currentColor"/><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>
+                                </button>
+                                <button
+                                    v-if="canShowAiVerificationReview(user)"
+                                    type="button"
+                                    class="action-button action-button-info"
+                                    :title="copy.reviewAiVerification"
+                                    @click="emit('open-ai-review', user)"
+                                >
+                                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 4 7v5c0 4.9 3.4 8.4 8 9 4.6-.6 8-4.1 8-9V7l-8-4Z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M9.5 11.25h5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path d="M12 8.75v5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
                                 </button>
                                 <button
                                     v-if="(user.update_changed_fields?.length ?? 0) > 0"

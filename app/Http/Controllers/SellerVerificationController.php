@@ -7,7 +7,7 @@ use App\Models\Port;
 use App\Models\Subcategory;
 use App\Support\AuthCountryCatalog;
 use App\Support\MarketplaceNotificationCenter;
-use App\Support\SellerVerificationAiReviewService;
+use App\Jobs\RunSellerVerificationAiReviewJob;
 use App\Support\SupplierServiceListingIndex;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -388,33 +388,13 @@ class SellerVerificationController extends Controller
             $companyLogoPath,
             $companyRegistrationDocuments,
         );
-        $reviewOutcome = ! $adminMode
-            ? app(SellerVerificationAiReviewService::class)->review($user, $payload)
-            : null;
-
-        $this->applyVerificationPayloadToUser($user, $payload, $adminMode, $reviewOutcome);
+        $this->applyVerificationPayloadToUser($user, $payload, $adminMode);
 
         if (! $adminMode) {
-            $decision = $reviewOutcome['decision'] ?? 'manual_review';
+            $submittedAtIso = $user->seller_verification_submitted_at?->toISOString();
 
-            if ($decision === 'approve') {
-                MarketplaceNotificationCenter::notifyApprovalDecision($user, 'approved');
-
-                return redirect()->route('seller.dashboard')->with('success', [
-                    'message' => 'Your supplier verification was approved automatically after the document review. Your profile is now active.',
-                ]);
-            }
-
-            if ($decision === 'reject') {
-                MarketplaceNotificationCenter::notifyApprovalDecision($user, 'rejected', [
-                    'reason' => $reviewOutcome['rejection_reason'] ?? null,
-                    'fields' => $reviewOutcome['rejection_fields'] ?? [],
-                    'note' => $reviewOutcome['rejection_note'] ?? null,
-                ]);
-
-                return redirect()->route('seller.verification.create')->with('error', [
-                    'message' => 'Your supplier verification was reviewed automatically, but your registration document still needs correction before activation.',
-                ]);
+            if ($submittedAtIso) {
+                RunSellerVerificationAiReviewJob::dispatch($user->id, $submittedAtIso)->delay(now()->addHour());
             }
 
             MarketplaceNotificationCenter::notifySellerVerificationSubmitted($user);
@@ -558,7 +538,7 @@ class SellerVerificationController extends Controller
             $payload['country'] ?? null,
         ])->filter()->implode(', ');
 
-        $automationDecision = ! $adminMode ? ($reviewOutcome['decision'] ?? 'manual_review') : null;
+        $automationDecision = ! $adminMode ? ($reviewOutcome['decision'] ?? null) : null;
         $approvalStatus = $adminMode
             ? ($user->approval_status === 'rejected' ? 'approved' : ($user->approval_status ?: 'approved'))
             : match ($automationDecision) {
@@ -570,8 +550,12 @@ class SellerVerificationController extends Controller
             ? ($user->approved_at ?: now())
             : ($approvalStatus === 'approved' ? ($user->approved_at ?: now()) : null);
         $submittedAt = $adminMode ? ($user->seller_verification_submitted_at ?: now()) : now();
-        $aiReview = is_array($reviewOutcome['review'] ?? null) ? $reviewOutcome['review'] : $user->seller_verification_ai_review;
-        $aiReviewedAt = is_array($reviewOutcome['review'] ?? null) ? now() : $user->seller_verification_ai_reviewed_at;
+        $aiReview = $adminMode
+            ? $user->seller_verification_ai_review
+            : (is_array($reviewOutcome['review'] ?? null) ? $reviewOutcome['review'] : null);
+        $aiReviewedAt = $adminMode
+            ? $user->seller_verification_ai_reviewed_at
+            : (is_array($reviewOutcome['review'] ?? null) ? now() : null);
         $rejectionReason = ! $adminMode && $approvalStatus === 'rejected' ? ($reviewOutcome['rejection_reason'] ?? null) : null;
         $rejectionNote = ! $adminMode && $approvalStatus === 'rejected' ? ($reviewOutcome['rejection_note'] ?? null) : null;
         $rejectionFields = ! $adminMode && $approvalStatus === 'rejected' ? array_values(array_unique($reviewOutcome['rejection_fields'] ?? [])) : null;
