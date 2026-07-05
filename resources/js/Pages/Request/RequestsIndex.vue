@@ -55,9 +55,9 @@ const copy = {
     eyebrow: 'Request directory',
     title: 'Published RFQs and Service Requests',
     text: 'Browse live marine requests, review requirement summaries and open the detail page for the opportunities that match your scope.',
-    emptyTitle: 'No live RFQs are visible right now.',
-    emptyText: 'Some requests may still be in draft, private, or not yet shared publicly. Buyers can create a new RFQ from their dashboard when they are ready to publish.',
-    create: 'Create New RFQ',
+    emptyTitle: 'Get started with the right account type.',
+    emptyText: 'To create a new request, you can register on the platform as a buyer. To submit offers for published requests, you can register as a supplier and complete your approval process.',
+    create: 'Register',
     loading: 'Loading more requests...',
     reachedEnd: 'You have reached the end of the request list.',
 };
@@ -153,7 +153,7 @@ watch(
             <div v-else class="empty-card">
                 <strong>{{ currentCopy.emptyTitle }}</strong>
                 <p>{{ currentCopy.emptyText }}</p>
-                <Link v-if="buyerContext.canCreate && buyerContext.createUrl" :href="buyerContext.createUrl" class="cta-link">
+                <Link href="/register" class="cta-link">
                     {{ currentCopy.create }}
                 </Link>
             </div>
