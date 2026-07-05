@@ -55,8 +55,8 @@ const copy = {
     eyebrow: 'Request directory',
     title: 'Published RFQs and Service Requests',
     text: 'Browse live marine requests, review requirement summaries and open the detail page for the opportunities that match your scope.',
-    emptyTitle: 'No published RFQs yet.',
-    emptyText: 'Draft RFQs do not appear here. Your first live RFQ will be listed in this area once it is published.',
+    emptyTitle: 'No live RFQs are visible right now.',
+    emptyText: 'Some requests may still be in draft, private, or not yet shared publicly. Buyers can create a new RFQ from their dashboard when they are ready to publish.',
     create: 'Create New RFQ',
     loading: 'Loading more requests...',
     reachedEnd: 'You have reached the end of the request list.',
@@ -272,3 +272,5 @@ watch(
     }
 }
 </style>
+
+

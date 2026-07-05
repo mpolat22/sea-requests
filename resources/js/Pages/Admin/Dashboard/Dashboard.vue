@@ -237,6 +237,21 @@ const copy = computed(() => ({
     reminderStatus24hSent: '24-hour reminder sent, waiting for submission',
     reminderStatusOnboardingSent: 'Initial verification mail sent, waiting for submission',
     reminderStatusWaiting: 'Waiting to send onboarding mail',
+    aiReviewTitle: 'AI Verification Review',
+    aiReviewEmpty: 'No automatic AI verification review was saved for this supplier yet.',
+    aiReviewedAt: 'Reviewed At',
+    aiDecision: 'Decision',
+    aiConfidence: 'Confidence',
+    aiDocumentType: 'Document Type',
+    aiQuality: 'Document Quality',
+    aiExpiryStatus: 'Expiry Check',
+    aiCompanyNameMatch: 'Company Name Match',
+    aiRegistrationNumberMatch: 'Registration Number Match',
+    aiDuplicateStatus: 'Duplicate Check',
+    aiExtractedCompanyName: 'Extracted Company Name',
+    aiExtractedRegistrationNumber: 'Extracted Registration Number',
+    aiSummary: 'Review Summary',
+    aiReasoning: 'Reasoning',
 }));
 
 const regularUsers = computed(() => props.userTable.data ?? []);
@@ -255,6 +270,7 @@ const visibleRejectionFieldKeys = [
     'company_overview',
     'registration_number',
     'company_logo',
+    'company_registration_documents',
 ];
 const visibleRejectionFieldSet = new Set(visibleRejectionFieldKeys);
 const normalizeRejectionField = (field) => field === 'official_documents' ? 'company_registration_documents' : field;
@@ -406,6 +422,23 @@ const formatDateTime = (value) => {
         minute: '2-digit',
     }).format(date);
 };
+
+const humanizeAiValue = (value) => {
+    if (!value) {
+        return copy.value.noValue;
+    }
+
+    return String(value)
+        .replace(/_/g, ' ')
+        .replace(/\b\w/g, (character) => character.toUpperCase());
+};
+
+const aiReviewRecord = (user) => user?.seller_verification_ai_review ?? null;
+const aiReviewAnalysis = (user) => aiReviewRecord(user)?.analysis ?? {};
+const aiReviewReasoning = (user) => Array.isArray(aiReviewAnalysis(user).reasoning) ? aiReviewAnalysis(user).reasoning : [];
+const aiReviewDecisionLabel = (user) => humanizeAiValue(aiReviewRecord(user)?.decision ?? null);
+const aiReviewAnalysisLabel = (user, key) => humanizeAiValue(aiReviewAnalysis(user)[key] ?? null);
+const aiReviewAnalysisValue = (user, key) => aiReviewAnalysis(user)[key] ?? copy.value.noValue;
 
 const latestVerificationMailTimestamp = (user) => {
     const candidates = [
@@ -822,6 +855,30 @@ const chooseBusinessStatus = (status) => {
                             <div class="detail-item detail-item-wide"><span>{{ copy.address }}</span><strong>{{ activeUser.company_address_line || copy.noValue }}</strong></div>
                             <div class="detail-item detail-item-wide"><span>{{ copy.companyDescription }}</span><strong>{{ activeUser.company_description || copy.noValue }}</strong></div>
                         </div>
+                        <div class="detail-section">
+                            <h3 class="detail-section-title">{{ copy.aiReviewTitle }}</h3>
+                            <div v-if="activeUser.seller_verification_ai_review" class="detail-grid">
+                                <div class="detail-item"><span>{{ copy.aiReviewedAt }}</span><strong>{{ formatDateTime(activeUser.seller_verification_ai_reviewed_at) }}</strong></div>
+                                <div class="detail-item"><span>{{ copy.aiDecision }}</span><strong>{{ aiReviewDecisionLabel(activeUser) }}</strong></div>
+                                <div class="detail-item"><span>{{ copy.aiConfidence }}</span><strong>{{ aiReviewAnalysisLabel(activeUser, 'confidence') }}</strong></div>
+                                <div class="detail-item"><span>{{ copy.aiDocumentType }}</span><strong>{{ aiReviewAnalysisLabel(activeUser, 'document_type') }}</strong></div>
+                                <div class="detail-item"><span>{{ copy.aiQuality }}</span><strong>{{ aiReviewAnalysisLabel(activeUser, 'quality') }}</strong></div>
+                                <div class="detail-item"><span>{{ copy.aiExpiryStatus }}</span><strong>{{ aiReviewAnalysisLabel(activeUser, 'expiry_status') }}</strong></div>
+                                <div class="detail-item"><span>{{ copy.aiCompanyNameMatch }}</span><strong>{{ aiReviewAnalysisLabel(activeUser, 'company_name_match') }}</strong></div>
+                                <div class="detail-item"><span>{{ copy.aiRegistrationNumberMatch }}</span><strong>{{ aiReviewAnalysisLabel(activeUser, 'registration_number_match') }}</strong></div>
+                                <div class="detail-item"><span>{{ copy.aiDuplicateStatus }}</span><strong>{{ aiReviewAnalysisLabel(activeUser, 'duplicate_status') }}</strong></div>
+                                <div class="detail-item"><span>{{ copy.aiExtractedCompanyName }}</span><strong>{{ aiReviewAnalysisValue(activeUser, 'extracted_company_name') }}</strong></div>
+                                <div class="detail-item"><span>{{ copy.aiExtractedRegistrationNumber }}</span><strong>{{ aiReviewAnalysisValue(activeUser, 'extracted_registration_number') }}</strong></div>
+                                <div class="detail-item detail-item-wide"><span>{{ copy.aiSummary }}</span><strong>{{ aiReviewAnalysisValue(activeUser, 'review_summary') }}</strong></div>
+                                <div v-if="aiReviewReasoning(activeUser).length" class="detail-item detail-item-wide">
+                                    <span>{{ copy.aiReasoning }}</span>
+                                    <ul class="detail-reasoning">
+                                        <li v-for="(line, index) in aiReviewReasoning(activeUser)" :key="`${activeUser.id}-ai-${index}`">{{ line }}</li>
+                                    </ul>
+                                </div>
+                            </div>
+                            <p v-else class="admin-modal-copy detail-empty-note">{{ copy.aiReviewEmpty }}</p>
+                        </div>
                     </template>
 
                     <template v-else-if="modalType === 'edit-business' && activeUser">
@@ -1060,10 +1117,15 @@ const chooseBusinessStatus = (status) => {
 .status-choice-approved{border-color:rgba(11,122,82,.14);background:#f1fcf6}
 .status-choice-rejected{border-color:rgba(194,65,12,.14);background:#fff7ed}
 .detail-grid.compact{grid-template-columns:1fr}
+.detail-section{margin-top:22px}
+.detail-section-title{margin:0 0 14px;color:#020617;font-size:1rem;font-weight:600}
+.detail-empty-note{margin-top:0}
 .detail-item{display:grid;gap:8px;padding:16px 18px;border:1px solid rgba(4,21,31,.08);border-radius: 10px;background:#fff}
 .detail-item-wide{grid-column:1 / -1}
 .detail-item span{color:#64748b;font-size:.8rem;font-weight:600;letter-spacing:.04em;text-transform:uppercase}
 .detail-item strong{color:#020617;font-size:.94rem;font-weight:560;line-height:1.6}
+.detail-reasoning{margin:0;padding-left:18px;color:#020617}
+.detail-reasoning li{font-size:.92rem;line-height:1.6}
 .field-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
 .field-chip{display:flex;align-items:center;gap:10px;min-height:44px;padding:0 14px;border:1px solid rgba(4,21,31,.08);border-radius: 10px;background:#fff}
 .field-chip input{margin:0}

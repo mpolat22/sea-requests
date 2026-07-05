@@ -148,6 +148,8 @@ class AdminDashboardController extends Controller
             'approval_status',
             'email_verified_at',
             'seller_verification_submitted_at',
+            'seller_verification_ai_review',
+            'seller_verification_ai_reviewed_at',
             'seller_verification_onboarding_sent_at',
             'seller_verification_24h_reminder_sent_at',
             'seller_verification_72h_reminder_sent_at',

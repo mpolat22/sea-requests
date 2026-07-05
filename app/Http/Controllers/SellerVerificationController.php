@@ -7,6 +7,7 @@ use App\Models\Port;
 use App\Models\Subcategory;
 use App\Support\AuthCountryCatalog;
 use App\Support\MarketplaceNotificationCenter;
+use App\Support\SellerVerificationAiReviewService;
 use App\Support\SupplierServiceListingIndex;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -387,10 +388,35 @@ class SellerVerificationController extends Controller
             $companyLogoPath,
             $companyRegistrationDocuments,
         );
+        $reviewOutcome = ! $adminMode
+            ? app(SellerVerificationAiReviewService::class)->review($user, $payload)
+            : null;
 
-        $this->applyVerificationPayloadToUser($user, $payload, $adminMode);
+        $this->applyVerificationPayloadToUser($user, $payload, $adminMode, $reviewOutcome);
 
         if (! $adminMode) {
+            $decision = $reviewOutcome['decision'] ?? 'manual_review';
+
+            if ($decision === 'approve') {
+                MarketplaceNotificationCenter::notifyApprovalDecision($user, 'approved');
+
+                return redirect()->route('seller.dashboard')->with('success', [
+                    'message' => 'Your supplier verification was approved automatically after the document review. Your profile is now active.',
+                ]);
+            }
+
+            if ($decision === 'reject') {
+                MarketplaceNotificationCenter::notifyApprovalDecision($user, 'rejected', [
+                    'reason' => $reviewOutcome['rejection_reason'] ?? null,
+                    'fields' => $reviewOutcome['rejection_fields'] ?? [],
+                    'note' => $reviewOutcome['rejection_note'] ?? null,
+                ]);
+
+                return redirect()->route('seller.verification.create')->with('error', [
+                    'message' => 'Your supplier verification was reviewed automatically, but your registration document still needs correction before activation.',
+                ]);
+            }
+
             MarketplaceNotificationCenter::notifySellerVerificationSubmitted($user);
 
             return redirect()->route('approval.pending')->with('success', 'seller-verification-submitted');
@@ -521,7 +547,7 @@ class SellerVerificationController extends Controller
         ];
     }
 
-    private function applyVerificationPayloadToUser(\App\Models\User $user, array $payload, bool $adminMode): void
+    private function applyVerificationPayloadToUser(\App\Models\User $user, array $payload, bool $adminMode, ?array $reviewOutcome = null): void
     {
         $address = collect([
             $payload['company_address_line'] ?? null,
@@ -532,9 +558,24 @@ class SellerVerificationController extends Controller
             $payload['country'] ?? null,
         ])->filter()->implode(', ');
 
-        $approvalStatus = $adminMode ? ($user->approval_status === 'rejected' ? 'approved' : ($user->approval_status ?: 'approved')) : 'pending';
-        $approvedAt = $adminMode ? ($user->approved_at ?: now()) : null;
+        $automationDecision = ! $adminMode ? ($reviewOutcome['decision'] ?? 'manual_review') : null;
+        $approvalStatus = $adminMode
+            ? ($user->approval_status === 'rejected' ? 'approved' : ($user->approval_status ?: 'approved'))
+            : match ($automationDecision) {
+                'approve' => 'approved',
+                'reject' => 'rejected',
+                default => 'pending',
+            };
+        $approvedAt = $adminMode
+            ? ($user->approved_at ?: now())
+            : ($approvalStatus === 'approved' ? ($user->approved_at ?: now()) : null);
         $submittedAt = $adminMode ? ($user->seller_verification_submitted_at ?: now()) : now();
+        $aiReview = is_array($reviewOutcome['review'] ?? null) ? $reviewOutcome['review'] : $user->seller_verification_ai_review;
+        $aiReviewedAt = is_array($reviewOutcome['review'] ?? null) ? now() : $user->seller_verification_ai_reviewed_at;
+        $rejectionReason = ! $adminMode && $approvalStatus === 'rejected' ? ($reviewOutcome['rejection_reason'] ?? null) : null;
+        $rejectionNote = ! $adminMode && $approvalStatus === 'rejected' ? ($reviewOutcome['rejection_note'] ?? null) : null;
+        $rejectionFields = ! $adminMode && $approvalStatus === 'rejected' ? array_values(array_unique($reviewOutcome['rejection_fields'] ?? [])) : null;
+        $rejectedAt = ! $adminMode && $approvalStatus === 'rejected' ? now() : null;
 
         $logoPath = $payload['company_logo']['path'] ?? null;
         $companyRegistrationDocuments = $payload['company_registration_documents'] ?? [];
@@ -578,10 +619,12 @@ class SellerVerificationController extends Controller
             'seller_verification_submitted_at' => $submittedAt,
             'approval_status' => $approvalStatus,
             'approved_at' => $approvedAt,
-            'seller_rejection_reason' => null,
-            'seller_rejection_note' => null,
-            'seller_rejection_fields' => null,
-            'seller_rejected_at' => null,
+            'seller_rejection_reason' => $rejectionReason,
+            'seller_rejection_note' => $rejectionNote,
+            'seller_rejection_fields' => $rejectionFields,
+            'seller_rejected_at' => $rejectedAt,
+            'seller_verification_ai_review' => $aiReview,
+            'seller_verification_ai_reviewed_at' => $aiReviewedAt,
             'seller_update_request_status' => null,
             'seller_update_request_payload' => null,
             'seller_update_request_diff' => null,
@@ -765,12 +808,19 @@ class SellerVerificationController extends Controller
             ->filter()
             ->map(function ($file) use ($directory) {
                 $originalName = $file->getClientOriginalName();
+                $mimeType = $file->getMimeType();
+                $size = $file->getSize();
+                $realPath = $file->getRealPath();
+                $sha256 = is_string($realPath) && $realPath !== '' ? @hash_file('sha256', $realPath) : null;
                 $filename = Str::uuid()->toString().'.'.$file->getClientOriginalExtension();
                 $path = $file->storeAs($directory, $filename, 'public');
 
                 return [
                     'path' => $path,
                     'name' => $originalName,
+                    'mime_type' => $mimeType,
+                    'size' => is_numeric($size) ? (int) $size : null,
+                    'sha256' => is_string($sha256) && $sha256 !== '' ? $sha256 : null,
                 ];
             });
 
@@ -817,11 +867,18 @@ class SellerVerificationController extends Controller
     {
         return collect($documents ?? [])
             ->filter(fn ($document) => filled($document['path'] ?? null))
-            ->map(fn ($document) => [
-                'path' => $document['path'],
-                'name' => $document['name'] ?? basename($document['path']),
-                'url' => '/storage/'.ltrim($document['path'], '/'),
-            ])
+            ->map(function ($document) {
+                $path = $document['path'];
+
+                return array_filter([
+                    'path' => $path,
+                    'name' => $document['name'] ?? basename($path),
+                    'mime_type' => $document['mime_type'] ?? null,
+                    'size' => isset($document['size']) ? (int) $document['size'] : null,
+                    'sha256' => $document['sha256'] ?? null,
+                    'url' => '/storage/'.ltrim($path, '/'),
+                ], fn ($value, $key) => ! is_null($value) || in_array($key, ['path', 'name', 'url'], true), ARRAY_FILTER_USE_BOTH);
+            })
             ->values()
             ->all();
     }
@@ -877,12 +934,19 @@ class SellerVerificationController extends Controller
             ->filter()
             ->map(function ($file) use ($directory) {
                 $originalName = $file->getClientOriginalName();
+                $mimeType = $file->getMimeType();
+                $size = $file->getSize();
+                $realPath = $file->getRealPath();
+                $sha256 = is_string($realPath) && $realPath !== '' ? @hash_file('sha256', $realPath) : null;
                 $filename = Str::uuid()->toString().'.'.$file->getClientOriginalExtension();
                 $path = $file->storeAs($directory, $filename, 'public');
 
                 return [
                     'path' => $path,
                     'name' => $originalName,
+                    'mime_type' => $mimeType,
+                    'size' => is_numeric($size) ? (int) $size : null,
+                    'sha256' => is_string($sha256) && $sha256 !== '' ? $sha256 : null,
                 ];
             });
 

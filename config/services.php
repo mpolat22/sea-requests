@@ -39,6 +39,7 @@ return [
         'api_key' => env('OPENAI_API_KEY'),
         'base_url' => env('OPENAI_BASE_URL', 'https://api.openai.com/v1'),
         'rfq_import_model' => env('OPENAI_RFQ_IMPORT_MODEL', 'gpt-4o-mini'),
+        'seller_verification_model' => env('OPENAI_SELLER_VERIFICATION_MODEL', 'gpt-4o-mini'),
         'timeout' => (int) env('OPENAI_TIMEOUT', 60),
     ],
 
