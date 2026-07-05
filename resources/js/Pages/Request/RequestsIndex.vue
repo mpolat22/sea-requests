@@ -55,12 +55,47 @@ const copy = {
     eyebrow: 'Request directory',
     title: 'Published RFQs and Service Requests',
     text: 'Browse live marine requests, review requirement summaries and open the detail page for the opportunities that match your scope.',
-    emptyTitle: 'Get started with the right account type.',
-    emptyText: 'To create a new request, you can register on the platform as a buyer. To submit offers for published requests, you can register as a supplier and complete your approval process.',
-    create: 'Register',
+    guestEmptyTitle: 'Get started with the right account type.',
+    guestEmptyText: 'To create a new request, you can register on the platform as a buyer. To submit offers for published requests, you can register as a supplier and complete your approval process.',
+    guestCta: 'Register',
+    buyerEmptyTitle: 'No open RFQ is visible right now.',
+    buyerEmptyText: 'Some requests may still be in draft, private, or not yet shared publicly. You can create a new RFQ when you are ready to publish.',
+    buyerCta: 'Create New RFQ',
+    memberEmptyTitle: 'No open RFQ is visible right now.',
+    memberEmptyText: 'Some requests may still be in draft, shared only with selected suppliers, or not yet published publicly.',
     loading: 'Loading more requests...',
     reachedEnd: 'You have reached the end of the request list.',
 };
+
+const authUser = computed(() => page.props.auth?.user ?? null);
+const isBuyerUser = computed(() => authUser.value?.role === 'buyer');
+const isGuestUser = computed(() => !authUser.value);
+const emptyState = computed(() => {
+    if (isGuestUser.value) {
+        return {
+            title: copy.guestEmptyTitle,
+            text: copy.guestEmptyText,
+            ctaLabel: copy.guestCta,
+            ctaUrl: '/register',
+        };
+    }
+
+    if (isBuyerUser.value && props.buyerContext.canCreate && props.buyerContext.createUrl) {
+        return {
+            title: copy.buyerEmptyTitle,
+            text: copy.buyerEmptyText,
+            ctaLabel: copy.buyerCta,
+            ctaUrl: props.buyerContext.createUrl,
+        };
+    }
+
+    return {
+        title: copy.memberEmptyTitle,
+        text: copy.memberEmptyText,
+        ctaLabel: null,
+        ctaUrl: null,
+    };
+});
 
 const currentCopy = computed(() => copy);
 
@@ -151,10 +186,10 @@ watch(
             </div>
 
             <div v-else class="empty-card">
-                <strong>{{ currentCopy.emptyTitle }}</strong>
-                <p>{{ currentCopy.emptyText }}</p>
-                <Link href="/register" class="cta-link">
-                    {{ currentCopy.create }}
+                <strong>{{ emptyState.title }}</strong>
+                <p>{{ emptyState.text }}</p>
+                <Link v-if="emptyState.ctaLabel && emptyState.ctaUrl" :href="emptyState.ctaUrl" class="cta-link">
+                    {{ emptyState.ctaLabel }}
                 </Link>
             </div>
 
