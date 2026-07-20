@@ -1,4 +1,4 @@
-﻿<script setup>
+<script setup>
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import { Link, router, usePage } from '@inertiajs/vue3';
 import BrandLogo from '../Components/BrandLogo.vue';
@@ -73,6 +73,8 @@ const footerSections = [
         ],
     },
 ];
+const whatsappSupportUrl = "https://wa.me/905078149176?text=Hello%2C%20I%20need%20support%20for%20the%20searequests.ai%20website.";
+
 
 const isActive = (url) => page.url === url || page.url.startsWith(`${url}/`);
 
@@ -662,12 +664,96 @@ onBeforeUnmount(() => {
                 </div>
             </div>
         </footer>
+
+        <a
+            v-if="!messenger.state.isOpen"
+            class="whatsapp-support-card"
+            :href="whatsappSupportUrl"
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label="Contact Sea Requests support on WhatsApp"
+        >
+            <span class="whatsapp-support-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none">
+                    <path d="M19.1 4.9A9.8 9.8 0 0 0 3.8 16.8L3 21l4.3-1.1A9.8 9.8 0 0 0 19.1 4.9Z" fill="currentColor" opacity="0.16" />
+                    <path d="M7.6 8.1c.2-.5.4-.5.7-.5h.5c.2 0 .4 0 .6.4l.8 1.9c.1.3.1.5-.1.7l-.4.5c-.1.2-.3.4-.1.7.3.6.8 1.3 1.4 1.8.7.6 1.4 1 2 1.2.3.1.5.1.7-.1l.7-.8c.2-.2.4-.2.7-.1l1.8.9c.3.2.4.3.4.6 0 .4-.2 1.2-.8 1.7-.4.4-1.2.7-2.6.4-2.1-.4-3.8-1.5-5.1-2.8-1.3-1.3-2.4-3-2.8-5.1-.2-.7.1-1.1.2-1.4Z" fill="currentColor" />
+                </svg>
+            </span>
+            <span class="whatsapp-support-copy">
+                <strong>Need help?</strong>
+                <span>Contact us on WhatsApp</span>
+            </span>
+        </a>
     </div>
 </template>
 
 <style scoped>
 .layout-shell {
     min-height: 100vh;
+}
+
+.whatsapp-support-card {
+    position: fixed;
+    right: 22px;
+    bottom: 22px;
+    z-index: 1500;
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
+    max-width: min(310px, calc(100vw - 32px));
+    padding: 12px 14px;
+    border: 1px solid rgba(22, 163, 74, 0.18);
+    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.94);
+    color: #14532d;
+    box-shadow: 0 18px 34px rgba(15, 23, 42, 0.16);
+    backdrop-filter: blur(18px);
+    text-decoration: none;
+    transition: transform 180ms ease, box-shadow 180ms ease, border-color 180ms ease;
+}
+
+.whatsapp-support-card:hover {
+    transform: translateY(-2px);
+    border-color: rgba(22, 163, 74, 0.34);
+    box-shadow: 0 22px 40px rgba(15, 23, 42, 0.2);
+}
+
+.whatsapp-support-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 auto;
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    background: #16a34a;
+    color: #fff;
+}
+
+.whatsapp-support-icon svg {
+    width: 24px;
+    height: 24px;
+}
+
+.whatsapp-support-copy {
+    display: grid;
+    gap: 2px;
+    min-width: 0;
+}
+
+.whatsapp-support-copy strong {
+    color: #052e16;
+    font-size: 0.92rem;
+    font-weight: 700;
+    line-height: 1.2;
+}
+
+.whatsapp-support-copy span {
+    color: rgba(20, 83, 45, 0.78);
+    font-size: 0.82rem;
+    font-weight: 560;
+    line-height: 1.25;
+    white-space: nowrap;
 }
 
 .toast-notice {
@@ -1188,6 +1274,31 @@ onBeforeUnmount(() => {
     .toast-notice {
         top: 14px;
         right: 16px;
+    }
+
+    .whatsapp-support-card {
+        right: 14px;
+        bottom: 14px;
+        gap: 0;
+        width: 52px;
+        height: 52px;
+        padding: 0;
+        justify-content: center;
+        border-radius: 50%;
+    }
+
+    .whatsapp-support-icon {
+        width: 40px;
+        height: 40px;
+    }
+
+    .whatsapp-support-copy {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        overflow: hidden;
+        clip: rect(0, 0, 0, 0);
+        white-space: nowrap;
     }
 
     .topbar {
