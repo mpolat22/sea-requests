@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Admin\AdminDashboardController;
+use App\Http\Controllers\Admin\AdminOnboardingController;
 use App\Http\Controllers\Admin\AdminOrderController;
 use App\Http\Controllers\Admin\AdminOutreachController;
 use App\Http\Controllers\Admin\AdminRfqController;
@@ -2050,6 +2051,12 @@ Route::middleware('auth')->group(function () {
         ->whereNumber('invoice')
         ->name('admin.orders.invoices.payment-confirm.store');
     Route::get('/dashboard/admin/orders/{offer}', [AdminOrderController::class, 'show'])->whereNumber('offer')->name('admin.orders.show');
+    Route::get('/dashboard/admin/onboarding', [AdminOnboardingController::class, 'index'])->name('admin.onboarding');
+    Route::post('/dashboard/admin/onboarding/manual-profiles', [AdminOnboardingController::class, 'storeManualProfile'])->name('admin.onboarding.manual.store');
+    Route::put('/dashboard/admin/onboarding/records/{contact}', [AdminOnboardingController::class, 'update'])->whereNumber('contact')->name('admin.onboarding.records.update');
+    Route::post('/dashboard/admin/onboarding/records/{contact}/account', [AdminOnboardingController::class, 'createAccount'])->whereNumber('contact')->name('admin.onboarding.records.create-account');
+    Route::post('/dashboard/admin/onboarding/records/{contact}/completion-email', [AdminOnboardingController::class, 'sendCompletionEmail'])->whereNumber('contact')->name('admin.onboarding.records.send-completion-email');
+    Route::delete('/dashboard/admin/onboarding/records/{contact}', [AdminOnboardingController::class, 'destroy'])->whereNumber('contact')->name('admin.onboarding.records.destroy');
     Route::middleware(\App\Http\Middleware\EnsureAdminOutreachEnabled::class)->group(function () {
         Route::get('/dashboard/admin/outreach', [AdminOutreachController::class, 'index'])->name('admin.outreach');
         Route::post('/dashboard/admin/outreach/imports', [AdminOutreachController::class, 'import'])->name('admin.outreach.imports.store');

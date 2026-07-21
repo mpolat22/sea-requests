@@ -33,12 +33,14 @@ const copy = computed(() => ({
     businessesTab: 'Supplier Companies',
     rfqsTab: 'RFQs',
     ordersTab: 'Orders',
+    onboardingTab: 'Onboarding',
 }));
 
 const usersTabLabel = computed(() => `${copy.value.usersTab}(${Number(props.dashboard.navigation?.users_count ?? 0)})`);
 const businessesTabLabel = computed(() => `${copy.value.businessesTab}(${Number(props.dashboard.navigation?.businesses_count ?? 0)})`);
 const rfqsTabLabel = computed(() => `${copy.value.rfqsTab}(${Number(props.dashboard.navigation?.rfqs_count ?? 0)})`);
 const ordersTabLabel = computed(() => `${copy.value.ordersTab}(${Number(props.dashboard.navigation?.orders_count ?? 0)})`);
+const onboardingTabLabel = computed(() => `${copy.value.onboardingTab}(${Number(props.dashboard.navigation?.onboarding_count ?? 0)})`);
 </script>
 
 <template>
@@ -83,6 +85,13 @@ const ordersTabLabel = computed(() => `${copy.value.ordersTab}(${Number(props.da
                         :href="dashboard.navigation.orders_url"
                     >
                         {{ ordersTabLabel }}
+                    </Link>
+                    <Link
+                        class="dashboard-tab"
+                        :class="{ active: activeTab === 'onboarding' }"
+                        :href="dashboard.navigation.onboarding_url"
+                    >
+                        {{ onboardingTabLabel }}
                     </Link>
 
                 </div>
