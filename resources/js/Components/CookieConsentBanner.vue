@@ -73,7 +73,7 @@ onBeforeUnmount(() => {
 <style scoped>
 .cookie-banner {
     position: fixed;
-    right: 24px;
+    left: 24px;
     bottom: 24px;
     z-index: 90;
     width: min(560px, calc(100vw - 32px));
@@ -151,6 +151,7 @@ onBeforeUnmount(() => {
 
 @media (max-width: 720px) {
     .cookie-banner {
+        left: 12px;
         right: 12px;
         bottom: 12px;
         width: calc(100vw - 24px);
