@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Models\Port;
 use App\Models\User;
 use App\Support\UserFacingMail;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -16,11 +17,12 @@ class UserFacingMailFailureTest extends TestCase
     public function test_register_shows_friendly_error_when_verification_email_cannot_be_sent(): void
     {
         $this->swapUserFacingMail(false);
+        $country = $this->seedAuthCountry();
 
         $response = $this->post('/register', [
             'account_type' => 'buyer',
             'name' => 'Mustafa Polat',
-            'country' => 'Turkey',
+            'country' => $country,
             'phone_country_code' => '+90',
             'phone' => '5413342219',
             'whatsapp_country_code' => '+90',
@@ -82,6 +84,7 @@ class UserFacingMailFailureTest extends TestCase
     public function test_buyer_profile_email_change_shows_friendly_error_when_verification_mail_cannot_be_sent(): void
     {
         $this->swapUserFacingMail(false);
+        $country = $this->seedAuthCountry();
 
         $buyer = User::factory()->create([
             'role' => 'buyer',
@@ -92,7 +95,7 @@ class UserFacingMailFailureTest extends TestCase
         $response = $this->actingAs($buyer)
             ->patch(route('buyer.profile.update'), [
                 'name' => 'Updated Buyer',
-                'country' => 'Turkey',
+                'country' => $country,
                 'phone_country_code' => '+90',
                 'phone' => '5413342219',
                 'whatsapp_country_code' => '+90',
@@ -130,15 +133,30 @@ class UserFacingMailFailureTest extends TestCase
         ]);
 
         $response
-            ->assertRedirect(route('login'))
+            ->assertRedirect(route('buyer.requests'))
             ->assertSessionHas('success')
             ->assertSessionHas('error', 'Your password was reset, but we could not send the confirmation email right now.');
 
         $user->refresh();
 
         $this->assertTrue(Hash::check('NewPassword123', $user->password));
+        $this->assertAuthenticatedAs($user);
     }
 
+    private function seedAuthCountry(): string
+    {
+        Port::query()->firstOrCreate([
+            'unlocode' => 'AHDXB',
+        ], [
+            'country_code' => 'AE',
+            'location_code' => 'DXB',
+            'country_name' => 'United Arab Emirates',
+            'port_name' => 'Dubai',
+            'is_active' => true,
+        ]);
+
+        return 'United Arab Emirates';
+    }
     private function swapUserFacingMail(bool $ok): void
     {
         $this->app->instance(UserFacingMail::class, new class($ok) extends UserFacingMail

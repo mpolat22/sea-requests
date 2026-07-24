@@ -6,10 +6,12 @@ use App\Http\Controllers\Controller;
 use App\Models\OutreachContact;
 use App\Models\User;
 use App\Notifications\PasswordResetCompletedNotification;
+use App\Support\DashboardRedirector;
 use App\Support\UserFacingMail;
 use Illuminate\Auth\Events\PasswordReset;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Password;
 use Illuminate\Support\Str;
@@ -27,7 +29,7 @@ class ResetPasswordController extends Controller
         ]);
     }
 
-    public function store(Request $request, UserFacingMail $mail): RedirectResponse
+    public function store(Request $request, UserFacingMail $mail, DashboardRedirector $redirector): RedirectResponse
     {
         $request->merge([
             'email' => strtolower(trim((string) $request->input('email'))),
@@ -40,16 +42,18 @@ class ResetPasswordController extends Controller
         ], $this->messages());
 
         $confirmationEmailSent = true;
+        $resetUser = null;
 
         $status = Password::reset(
             $request->only('email', 'password', 'password_confirmation', 'token'),
-            function (User $user, string $password) use ($mail, &$confirmationEmailSent) {
+            function (User $user, string $password) use ($mail, &$confirmationEmailSent, &$resetUser) {
                 $user->forceFill([
                     'password' => Hash::make($password),
                     'remember_token' => Str::random(60),
                 ])->save();
 
                 event(new PasswordReset($user));
+                $resetUser = $user->refresh();
                 $confirmationEmailSent = $mail->attempt(
                     fn () => $user->notify(new PasswordResetCompletedNotification())
                 )['ok'];
@@ -60,7 +64,17 @@ class ResetPasswordController extends Controller
             return back()->withErrors(['email' => __($status)]);
         }
 
-        $redirect = redirect()->route('login')->with('success', __($status));
+        if (! $resetUser) {
+            return redirect()->route('login')->with('success', __($status));
+        }
+
+        $this->markPreRegisteredAccountCompleted($resetUser->email);
+
+        Auth::login($resetUser);
+        $request->session()->regenerate();
+
+        $target = $redirector->blockingRouteFor($resetUser) ?: $redirector->intendedOrHome($resetUser);
+        $redirect = redirect()->to($target)->with('success', __($status));
 
         if (! $confirmationEmailSent) {
             return $redirect->with('error', 'Your password was reset, but we could not send the confirmation email right now.');
