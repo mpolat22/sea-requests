@@ -18,6 +18,8 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Password;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Validation\ValidationException;
+use PhpOffice\PhpSpreadsheet\IOFactory;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
@@ -82,6 +84,7 @@ class AdminOnboardingController extends Controller
             'urls' => [
                 'index' => route('admin.onboarding'),
                 'manual_store' => route('admin.onboarding.manual.store'),
+                'bulk_import_store' => route('admin.onboarding.bulk-import.store'),
             ],
         ]);
     }
@@ -246,6 +249,150 @@ class AdminOnboardingController extends Controller
         return back()->with('success', $result['result'] === 'duplicate'
             ? 'Manual onboarding profile updated, account linked, and completion email sent.'
             : 'Manual onboarding profile saved, account created, and completion email sent.');
+    }
+
+    public function storeBulkImport(Request $request, OnboardingDraftCreator $drafts, UserFacingMail $mail): RedirectResponse
+    {
+        abort_unless($request->user()?->isAdmin(), 403);
+
+        $validated = $request->validate([
+            'audience' => ['required', Rule::in(['seller', 'buyer'])],
+            'file' => ['required', 'file', 'mimes:csv,txt,xlsx,xls', 'max:20480'],
+        ], [
+            'file.required' => 'Please upload an Excel or CSV file with Company Name and Email columns.',
+            'file.mimes' => 'Only CSV, TXT, XLS, and XLSX files are supported for onboarding import.',
+        ]);
+
+        $rows = $this->parseCompanyEmailImport($request->file('file'));
+
+        if ($rows === []) {
+            return back()->withErrors([
+                'file' => 'No valid company rows were found. The first row must contain Company Name and Email.',
+            ]);
+        }
+
+        $stats = [
+            'created' => 0,
+            'updated' => 0,
+            'existing_users' => 0,
+            'duplicates' => 0,
+            'invalid' => 0,
+            'emails_sent' => 0,
+            'email_failed' => 0,
+        ];
+        $seen = [];
+        $fileName = $request->file('file')->getClientOriginalName();
+
+        foreach ($rows as $row) {
+            $email = strtolower(trim((string) $row['email']));
+            $companyName = trim((string) $row['company_name']);
+
+            if ($companyName === '' || ! filter_var($email, FILTER_VALIDATE_EMAIL)) {
+                $stats['invalid']++;
+                continue;
+            }
+
+            if (isset($seen[$email])) {
+                $stats['duplicates']++;
+                continue;
+            }
+
+            $seen[$email] = true;
+
+            if (User::query()->where('email', $email)->exists()) {
+                $stats['existing_users']++;
+                continue;
+            }
+
+            $parsed = [
+                'company_name' => $companyName,
+                'email' => $email,
+            ];
+
+            $result = $drafts->create(
+                audience: $validated['audience'],
+                parsed: $parsed,
+                rawProfile: $this->companyEmailImportRawProfile($companyName, $email),
+                sourceName: 'Bulk company import',
+                createdFrom: 'bulk_company_import',
+                adminId: $request->user()->id,
+            );
+
+            if (! $result['contact']) {
+                $stats['invalid']++;
+                continue;
+            }
+
+            $contact = $result['contact']->refresh();
+            $payload = $contact->source_payload ?? [];
+
+            $contact->forceFill([
+                'source_payload' => array_merge($payload, [
+                    'onboarding_status' => 'ready',
+                    'bulk_import_file_name' => $fileName,
+                    'bulk_imported_at' => now()->toIso8601String(),
+                    'bulk_import_expires_at' => now()->addDays(14)->toIso8601String(),
+                ]),
+            ])->save();
+
+            $this->createAccount($request, $contact->refresh());
+            $emailResult = $this->sendCompletionEmailForContact($contact->refresh(), $mail);
+
+            if ($result['result'] === 'duplicate') {
+                $stats['updated']++;
+            } else {
+                $stats['created']++;
+            }
+
+            if ($emailResult['ok']) {
+                $stats['emails_sent']++;
+            } else {
+                $stats['email_failed']++;
+            }
+        }
+
+        $accountsTouched = $stats['created'] + $stats['updated'];
+        $skippedRows = $stats['existing_users'] + $stats['duplicates'] + $stats['invalid'];
+
+        if ($accountsTouched === 0 && $skippedRows === 0) {
+            return back()->withErrors([
+                'file' => 'No accounts were created. Please check duplicates, existing users, and email format.',
+            ])->with('error', 'No onboarding accounts were created from this file.');
+        }
+
+        if ($accountsTouched === 0) {
+            return back()->with('success', sprintf(
+                'Import completed. No new accounts were created because all valid rows were already in the system. Existing accounts skipped: %d. Duplicate rows skipped: %d. Invalid rows skipped: %d.',
+                $stats['existing_users'],
+                $stats['duplicates'],
+                $stats['invalid'],
+            ));
+        }
+
+        if ($stats['email_failed'] > 0) {
+            return back()->withErrors([
+                'file' => sprintf(
+                    'Accounts were created, but %d completion email(s) could not be sent. Please check SMTP settings and use the Send action to retry.',
+                    $stats['email_failed'],
+                ),
+            ])->with('error', sprintf(
+                'Import created %d new account(s) and updated %d existing onboarding record(s). %d completion email(s) were sent, but %d email(s) failed. Please use the Send action to retry failed emails.',
+                $stats['created'],
+                $stats['updated'],
+                $stats['emails_sent'],
+                $stats['email_failed'],
+            ));
+        }
+
+        return back()->with('success', sprintf(
+            'Import completed. New accounts created: %d. Existing onboarding records updated: %d. Completion emails sent: %d. Existing platform accounts skipped: %d. Duplicate rows skipped: %d. Invalid rows skipped: %d.',
+            $stats['created'],
+            $stats['updated'],
+            $stats['emails_sent'],
+            $stats['existing_users'],
+            $stats['duplicates'],
+            $stats['invalid'],
+        ));
     }
     public function update(Request $request, OutreachContact $contact): RedirectResponse
     {
@@ -770,6 +917,70 @@ class AdminOnboardingController extends Controller
     /**
      * @return array<string, mixed>
      */
+
+    /**
+     * @return array<int, array{company_name:string,email:string}>
+     */
+    private function parseCompanyEmailImport($file): array
+    {
+        $spreadsheet = IOFactory::load($file->getRealPath());
+        $rows = $spreadsheet->getActiveSheet()->toArray(null, true, true, true);
+        $spreadsheet->disconnectWorksheets();
+
+        $headerRow = null;
+        $headerMap = [];
+
+        foreach ($rows as $index => $row) {
+            $normalized = collect($row)
+                ->mapWithKeys(fn ($value, $column) => [$column => $this->normalizeImportHeader((string) $value)])
+                ->filter()
+                ->all();
+
+            if (in_array('companyname', $normalized, true) && in_array('email', $normalized, true)) {
+                $headerRow = $index;
+                $headerMap = array_flip($normalized);
+                break;
+            }
+        }
+
+        if ($headerRow === null || ! isset($headerMap['companyname'], $headerMap['email'])) {
+            throw ValidationException::withMessages([
+                'file' => 'The first row must contain exactly these columns: Company Name and Email.',
+            ]);
+        }
+
+        $records = [];
+
+        foreach ($rows as $index => $row) {
+            if ($index <= $headerRow) {
+                continue;
+            }
+
+            $companyName = trim((string) ($row[$headerMap['companyname']] ?? ''));
+            $email = strtolower(trim((string) ($row[$headerMap['email']] ?? '')));
+
+            if ($companyName === '' && $email === '') {
+                continue;
+            }
+
+            $records[] = [
+                'company_name' => $companyName,
+                'email' => $email,
+            ];
+        }
+
+        return $records;
+    }
+
+    private function normalizeImportHeader(string $value): string
+    {
+        return preg_replace('/[^a-z0-9]+/', '', strtolower(trim($value))) ?: '';
+    }
+
+    private function companyEmailImportRawProfile(string $companyName, string $email): string
+    {
+        return "Company Name: {$companyName}".PHP_EOL."Email: {$email}";
+    }
     private function recordPayload(OutreachContact $contact): array
     {
         $payload = $contact->source_payload ?? [];

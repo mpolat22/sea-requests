@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
+use App\Models\OutreachContact;
 use App\Models\User;
 use App\Notifications\PasswordResetCompletedNotification;
 use App\Support\UserFacingMail;
@@ -68,6 +69,27 @@ class ResetPasswordController extends Controller
         return $redirect;
     }
 
+
+    private function markPreRegisteredAccountCompleted(string $email): void
+    {
+        $contact = OutreachContact::query()
+            ->where('email', strtolower(trim($email)))
+            ->whereIn('audience', ['seller', 'buyer'])
+            ->whereNotNull('source_payload->onboarding_status')
+            ->first();
+
+        if (! $contact) {
+            return;
+        }
+
+        $payload = $contact->source_payload ?? [];
+
+        $contact->forceFill([
+            'source_payload' => array_merge($payload, [
+                'account_completed_at' => $payload['account_completed_at'] ?? now()->toIso8601String(),
+            ]),
+        ])->save();
+    }
     private function messages(): array
     {
         return [

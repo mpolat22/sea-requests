@@ -22,3 +22,8 @@ Schedule::command('seller-verification:send-reminders')
     ->everyFifteenMinutes()
     ->timezone('Europe/Istanbul')
     ->withoutOverlapping();
+
+Schedule::command('onboarding:delete-expired-imports')
+    ->dailyAt('01:20')
+    ->timezone('Europe/Istanbul')
+    ->withoutOverlapping();

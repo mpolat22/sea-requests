@@ -17,6 +17,7 @@ const props = defineProps({
 
 const activeModal = ref(null);
 const activeRecordId = ref(null);
+const isImportSubmitting = ref(false);
 const search = ref(props.filters.search ?? '');
 const audience = ref(props.filters.audience ?? 'seller');
 const status = ref(props.filters.status ?? 'all');
@@ -50,6 +51,11 @@ const editForm = useForm({
 const accountForm = useForm({});
 const emailForm = useForm({});
 const deleteForm = useForm({});
+const importForm = useForm({
+    audience: 'seller',
+    file: null,
+});
+const importButtonLabel = computed(() => isImportSubmitting.value ? 'Creating Accounts...' : 'Create Accounts & Send Emails');
 
 const summaryCards = computed(() => [
     { label: 'Supplier Records', value: props.summary.seller_total ?? 0 },
@@ -89,6 +95,41 @@ watch([search, audience, status], () => {
 
 function openManualModal() {
     activeModal.value = 'manual';
+}
+
+function openImportModal() {
+    importForm.clearErrors();
+    importForm.reset();
+    importForm.audience = audience.value === 'buyer' ? 'buyer' : 'seller';
+    activeModal.value = 'import';
+}
+
+function handleImportFile(event) {
+    importForm.file = event.target.files?.[0] ?? null;
+    importForm.clearErrors('file');
+}
+
+function submitImport() {
+    if (isImportSubmitting.value) return;
+
+    if (!importForm.file) {
+        importForm.setError('file', 'Please select an Excel or CSV file before creating accounts.');
+        return;
+    }
+
+    isImportSubmitting.value = true;
+
+    importForm.post(props.urls.bulk_import_store, {
+        preserveScroll: true,
+        forceFormData: true,
+        onSuccess: () => {
+            activeModal.value = null;
+            importForm.reset();
+        },
+        onFinish: () => {
+            isImportSubmitting.value = false;
+        },
+    });
 }
 
 function openEditModal(record) {
@@ -175,6 +216,7 @@ function statusLabel(value) {
                     </p>
                 </div>
                 <div class="toolbar-actions">
+                    <button class="secondary-action" type="button" @click="openImportModal">Import Excel / CSV</button>
                     <button class="primary-action" type="button" @click="openManualModal">Add Manual Profile</button>
                 </div>
             </div>
@@ -253,6 +295,38 @@ function statusLabel(value) {
         </section>
 
         <div v-if="activeModal" class="modal-backdrop">
+            <section v-if="activeModal === 'import'" class="modal-card">
+                <header>
+                    <h3>Import Company List</h3>
+                    <p>Upload an Excel or CSV file with exactly two columns: Company Name and Email. Accounts are created and secure completion emails are sent automatically.</p>
+                </header>
+                <div class="import-format-box">
+                    <strong>Required format</strong>
+                    <code>Company Name | Email</code>
+                    <span>Existing platform accounts are skipped safely. New rows are created and emailed; duplicate or invalid rows are reported in the import result.</span>
+                </div>
+                <div class="form-grid">
+                    <label>
+                        Account Type *
+                        <select v-model="importForm.audience">
+                            <option value="seller">Supplier</option>
+                            <option value="buyer">Buyer</option>
+                        </select>
+                        <span v-if="importForm.errors.audience" class="field-error">{{ importForm.errors.audience }}</span>
+                    </label>
+                    <label>
+                        Company List File *
+                        <input type="file" accept=".csv,.txt,.xlsx,.xls" @change="handleImportFile" />
+                        <span v-if="importForm.file" class="file-name">{{ importForm.file.name }}</span>
+                        <span v-if="importForm.errors.file" class="field-error">{{ importForm.errors.file }}</span>
+                    </label>
+                </div>
+                <footer>
+                    <button type="button" class="secondary-action" :disabled="isImportSubmitting" @click="activeModal = null">Close</button>
+                    <button type="button" class="primary-action" :disabled="isImportSubmitting" :aria-busy="isImportSubmitting ? 'true' : 'false'" @click="submitImport">{{ importButtonLabel }}</button>
+                </footer>
+            </section>
+
             <section v-if="activeModal === 'manual'" class="modal-card verification-modal-card">
                 <OnboardingVerificationForm
                     :options="sellerVerificationOptions"
@@ -384,7 +458,7 @@ function statusLabel(value) {
                     </section>
                 </div>
                 <footer>
-                    <button type="button" class="secondary-action" @click="activeModal = null">Close</button>
+                    <button type="button" class="secondary-action" :disabled="isImportSubmitting" @click="activeModal = null">Close</button>
                     <button type="button" class="primary-action" :disabled="editForm.processing" @click="submitEdit">Save Profile</button>
                 </footer>
             </section>
@@ -431,7 +505,7 @@ td span{margin-top:3px;color:#64748b;font-size:.78rem}
 .actions{display:flex;flex-wrap:wrap;gap:6px}
 .actions button,.primary-action,.secondary-action,.danger-action{border:0;border-radius:8px;padding:9px 12px;font-size:.82rem;font-weight:700;cursor:pointer}
 .actions button{background:#eef2f7;color:#0f172a}
-.actions button:disabled{opacity:.45;cursor:not-allowed}
+.actions button:disabled,.primary-action:disabled,.secondary-action:disabled{opacity:.45;cursor:not-allowed}
 .actions .danger,.danger-action{background:#fee2e2;color:#991b1b}
 .primary-action{background:#0f172a;color:#fff}
 .secondary-action{background:#eef2f7;color:#334155}
@@ -459,6 +533,10 @@ td span{margin-top:3px;color:#64748b;font-size:.78rem}
 .field-error{color:#b91c1c;font-size:.78rem;font-weight:700}
 .confirm-box{display:grid;gap:4px;padding:14px;border-radius:10px;background:#f8fafc}
 .confirm-box span{color:#64748b}
+.import-format-box{display:grid;gap:8px;padding:14px;border-radius:10px;background:#f8fafc;border:1px solid rgba(15,23,42,.08)}
+.import-format-box strong{color:#0f172a;font-size:.9rem}
+.import-format-box code{display:inline-flex;width:max-content;max-width:100%;padding:7px 9px;border-radius:8px;background:#fff;color:#0f172a;font-size:.84rem;overflow:auto}
+.import-format-box span,.file-name{color:#64748b;font-size:.82rem;line-height:1.45}
 footer{display:flex;justify-content:flex-end;gap:10px}
 @media (max-width: 820px){
     .toolbar{align-items:stretch;flex-direction:column}

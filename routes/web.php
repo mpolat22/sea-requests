@@ -2053,6 +2053,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/dashboard/admin/orders/{offer}', [AdminOrderController::class, 'show'])->whereNumber('offer')->name('admin.orders.show');
     Route::get('/dashboard/admin/onboarding', [AdminOnboardingController::class, 'index'])->name('admin.onboarding');
     Route::post('/dashboard/admin/onboarding/manual-profiles', [AdminOnboardingController::class, 'storeManualProfile'])->name('admin.onboarding.manual.store');
+    Route::post('/dashboard/admin/onboarding/bulk-import', [AdminOnboardingController::class, 'storeBulkImport'])->name('admin.onboarding.bulk-import.store');
     Route::put('/dashboard/admin/onboarding/records/{contact}', [AdminOnboardingController::class, 'update'])->whereNumber('contact')->name('admin.onboarding.records.update');
     Route::post('/dashboard/admin/onboarding/records/{contact}/account', [AdminOnboardingController::class, 'createAccount'])->whereNumber('contact')->name('admin.onboarding.records.create-account');
     Route::post('/dashboard/admin/onboarding/records/{contact}/completion-email', [AdminOnboardingController::class, 'sendCompletionEmail'])->whereNumber('contact')->name('admin.onboarding.records.send-completion-email');

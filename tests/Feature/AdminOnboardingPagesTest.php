@@ -6,6 +6,7 @@ use App\Models\OutreachContact;
 use App\Models\User;
 use App\Notifications\PreRegisteredAccountCompletionNotification;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Notification;
 use Inertia\Testing\AssertableInertia;
 use Tests\TestCase;
@@ -113,6 +114,145 @@ Izmir / Turkey",
         Notification::assertSentTo($user, PreRegisteredAccountCompletionNotification::class);
     }
 
+
+    public function test_admin_can_bulk_import_company_name_email_file_and_send_completion_emails(): void
+    {
+        Notification::fake();
+
+        $admin = User::factory()->create(['role' => 'admin']);
+        $file = UploadedFile::fake()->createWithContent(
+            'companies.csv',
+            "Company Name,Email\nAnchor Industries,sales@anchors.co.za\nDivetech Marine,info@divetechuae.com\nAnchor Duplicate,sales@anchors.co.za\n"
+        );
+
+        $this->actingAs($admin)
+            ->post(route('admin.onboarding.bulk-import.store'), [
+                'audience' => 'seller',
+                'file' => $file,
+            ])
+            ->assertRedirect()
+            ->assertSessionHas('success');
+
+        $anchor = User::query()->where('email', 'sales@anchors.co.za')->firstOrFail();
+        $divetech = User::query()->where('email', 'info@divetechuae.com')->firstOrFail();
+
+        $this->assertTrue($anchor->isSeller());
+        $this->assertSame('pending', $anchor->approval_status);
+        $this->assertNotNull($anchor->seller_verification_onboarding_sent_at);
+        $this->assertSame('Anchor Industries', $anchor->company_name);
+
+        $contact = OutreachContact::query()->where('email', 'sales@anchors.co.za')->firstOrFail();
+        $this->assertSame('bulk_company_import', data_get($contact->source_payload, 'created_from'));
+        $this->assertSame('email_sent', data_get($contact->source_payload, 'onboarding_status'));
+        $this->assertNotNull(data_get($contact->source_payload, 'bulk_import_expires_at'));
+
+        Notification::assertSentTo($anchor, PreRegisteredAccountCompletionNotification::class);
+        Notification::assertSentTo($divetech, PreRegisteredAccountCompletionNotification::class);
+    }
+
+    public function test_bulk_import_skips_existing_accounts_and_creates_only_new_rows(): void
+    {
+        Notification::fake();
+
+        $admin = User::factory()->create(['role' => 'admin']);
+        User::factory()->create([
+            'role' => 'seller',
+            'email' => 'old@example.test',
+            'company_name' => 'Old Marine Supplier',
+        ]);
+
+        $file = UploadedFile::fake()->createWithContent(
+            'companies.csv',
+            "Company Name,Email\nOld Marine Supplier,old@example.test\nNew Marine Supplier,new@example.test\n"
+        );
+
+        $this->actingAs($admin)
+            ->post(route('admin.onboarding.bulk-import.store'), [
+                'audience' => 'seller',
+                'file' => $file,
+            ])
+            ->assertRedirect()
+            ->assertSessionHas('success', 'Import completed. New accounts created: 1. Existing onboarding records updated: 0. Completion emails sent: 1. Existing platform accounts skipped: 1. Duplicate rows skipped: 0. Invalid rows skipped: 0.');
+
+        $this->assertSame(1, User::query()->where('email', 'old@example.test')->count());
+        $newUser = User::query()->where('email', 'new@example.test')->firstOrFail();
+        $this->assertSame('New Marine Supplier', $newUser->company_name);
+
+        $this->assertDatabaseMissing('outreach_contacts', ['email' => 'old@example.test']);
+        $this->assertDatabaseHas('outreach_contacts', ['email' => 'new@example.test']);
+
+        Notification::assertSentTo($newUser, PreRegisteredAccountCompletionNotification::class);
+    }
+
+    public function test_bulk_import_with_only_existing_accounts_returns_clean_skip_message(): void
+    {
+        Notification::fake();
+
+        $admin = User::factory()->create(['role' => 'admin']);
+        User::factory()->create([
+            'role' => 'seller',
+            'email' => 'old@example.test',
+            'company_name' => 'Old Marine Supplier',
+        ]);
+
+        $file = UploadedFile::fake()->createWithContent(
+            'companies.csv',
+            "Company Name,Email\nOld Marine Supplier,old@example.test\n"
+        );
+
+        $this->actingAs($admin)
+            ->post(route('admin.onboarding.bulk-import.store'), [
+                'audience' => 'seller',
+                'file' => $file,
+            ])
+            ->assertRedirect()
+            ->assertSessionHas('success', 'Import completed. No new accounts were created because all valid rows were already in the system. Existing accounts skipped: 1. Duplicate rows skipped: 0. Invalid rows skipped: 0.');
+
+        $this->assertSame(1, User::query()->where('email', 'old@example.test')->count());
+        $this->assertDatabaseMissing('outreach_contacts', ['email' => 'old@example.test']);
+        Notification::assertNothingSent();
+    }
+    public function test_expired_bulk_imported_supplier_is_deleted_if_registration_is_not_completed(): void
+    {
+        Notification::fake();
+
+        $user = User::factory()->create([
+            'role' => 'seller',
+            'email' => 'expired@example.test',
+            'company_name' => 'Expired Marine Ltd',
+            'email_verified_at' => now()->subDays(15),
+            'approval_status' => 'rejected',
+            'seller_verification_submitted_at' => null,
+            'seller_verification_onboarding_sent_at' => now()->subDays(15),
+            'seller_verification_24h_reminder_sent_at' => now()->subDays(14),
+            'seller_verification_72h_reminder_sent_at' => now()->subDays(12),
+        ]);
+
+        OutreachContact::query()->create([
+            'email' => 'expired@example.test',
+            'audience' => 'seller',
+            'organization_name' => 'Expired Marine Ltd',
+            'source_name' => 'Bulk company import',
+            'status' => OutreachContact::STATUS_REGISTERED,
+            'source_payload' => [
+                'created_from' => 'bulk_company_import',
+                'onboarding_status' => 'email_sent',
+                'user_id' => $user->id,
+                'parsed' => [
+                    'company_name' => 'Expired Marine Ltd',
+                    'email' => 'expired@example.test',
+                ],
+                'bulk_import_expires_at' => now()->subDay()->toIso8601String(),
+            ],
+        ]);
+
+        $this->artisan('onboarding:delete-expired-imports')
+            ->expectsOutput('Expired onboarding imports processed. deleted=1, skipped_completed=0, notified=1, notification_failed=0')
+            ->assertExitCode(0);
+
+        $this->assertDatabaseMissing('users', ['email' => 'expired@example.test']);
+        $this->assertDatabaseMissing('outreach_contacts', ['email' => 'expired@example.test']);
+    }
     public function test_non_admin_cannot_open_onboarding_workspace(): void
     {
         $buyer = User::factory()->create(['role' => 'buyer']);
