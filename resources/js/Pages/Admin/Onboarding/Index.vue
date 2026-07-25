@@ -55,12 +55,13 @@ const importForm = useForm({
     audience: 'seller',
     file: null,
 });
-const importButtonLabel = computed(() => isImportSubmitting.value ? 'Creating Accounts...' : 'Create Accounts & Send Emails');
+const importButtonLabel = computed(() => isImportSubmitting.value ? 'Creating Accounts & Queueing Emails...' : 'Create Accounts & Queue Emails');
 
 const summaryCards = computed(() => [
     { label: 'Supplier Records', value: props.summary.seller_total ?? 0 },
     { label: 'Buyer Records', value: props.summary.buyer_total ?? 0 },
     { label: 'Accounts Created', value: props.summary.account_created ?? 0 },
+    { label: 'Emails Queued', value: props.summary.email_queued ?? 0 },
     { label: 'Completion Emails Sent', value: props.summary.email_sent ?? 0 },
 ]);
 
@@ -69,6 +70,7 @@ const statusOptions = [
     { value: 'draft', label: 'Draft' },
     { value: 'ready', label: 'Ready' },
     { value: 'account_created', label: 'Account created' },
+    { value: 'email_queued', label: 'Email queued' },
     { value: 'email_sent', label: 'Email sent' },
 ];
 
@@ -303,7 +305,7 @@ function statusLabel(value) {
                 <div class="import-format-box">
                     <strong>Required format</strong>
                     <code>Company Name | Email</code>
-                    <span>Existing platform accounts are skipped safely. New rows are created and emailed; duplicate or invalid rows are reported in the import result.</span>
+                    <span>Existing platform accounts are skipped safely. New rows are created first, then completion emails are queued one by one every 2 minutes; duplicate or invalid rows are reported in the import result.</span>
                 </div>
                 <div class="form-grid">
                     <label>

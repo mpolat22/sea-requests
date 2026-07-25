@@ -2,12 +2,14 @@
 
 namespace Tests\Feature;
 
+use App\Jobs\SendOnboardingCompletionEmail;
 use App\Models\OutreachContact;
 use App\Models\User;
 use App\Notifications\PreRegisteredAccountCompletionNotification;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Notification;
+use Illuminate\Support\Facades\Queue;
 use Inertia\Testing\AssertableInertia;
 use Tests\TestCase;
 
@@ -115,9 +117,10 @@ Izmir / Turkey",
     }
 
 
-    public function test_admin_can_bulk_import_company_name_email_file_and_send_completion_emails(): void
+    public function test_admin_can_bulk_import_company_name_email_file_and_queue_completion_emails(): void
     {
         Notification::fake();
+        Queue::fake();
 
         $admin = User::factory()->create(['role' => 'admin']);
         $file = UploadedFile::fake()->createWithContent(
@@ -138,21 +141,25 @@ Izmir / Turkey",
 
         $this->assertTrue($anchor->isSeller());
         $this->assertSame('pending', $anchor->approval_status);
-        $this->assertNotNull($anchor->seller_verification_onboarding_sent_at);
+        $this->assertNull($anchor->seller_verification_onboarding_sent_at);
         $this->assertSame('Anchor Industries', $anchor->company_name);
+        $this->assertSame('Divetech Marine', $divetech->company_name);
 
         $contact = OutreachContact::query()->where('email', 'sales@anchors.co.za')->firstOrFail();
         $this->assertSame('bulk_company_import', data_get($contact->source_payload, 'created_from'));
-        $this->assertSame('email_sent', data_get($contact->source_payload, 'onboarding_status'));
+        $this->assertSame('email_queued', data_get($contact->source_payload, 'onboarding_status'));
+        $this->assertSame(2, data_get($contact->source_payload, 'completion_email_queue_interval_minutes'));
+        $this->assertNotNull(data_get($contact->source_payload, 'completion_email_scheduled_for'));
         $this->assertNotNull(data_get($contact->source_payload, 'bulk_import_expires_at'));
 
-        Notification::assertSentTo($anchor, PreRegisteredAccountCompletionNotification::class);
-        Notification::assertSentTo($divetech, PreRegisteredAccountCompletionNotification::class);
+        Queue::assertPushed(SendOnboardingCompletionEmail::class, 2);
+        Queue::assertPushed(SendOnboardingCompletionEmail::class, fn ($job) => $job->contactId === $contact->id);
+        Notification::assertNothingSent();
     }
-
     public function test_bulk_import_skips_existing_accounts_and_creates_only_new_rows(): void
     {
         Notification::fake();
+        Queue::fake();
 
         $admin = User::factory()->create(['role' => 'admin']);
         User::factory()->create([
@@ -172,7 +179,7 @@ Izmir / Turkey",
                 'file' => $file,
             ])
             ->assertRedirect()
-            ->assertSessionHas('success', 'Import completed. New accounts created: 1. Existing onboarding records updated: 0. Completion emails sent: 1. Existing platform accounts skipped: 1. Duplicate rows skipped: 0. Invalid rows skipped: 0.');
+            ->assertSessionHas('success', 'Import completed. New accounts created: 1. Existing onboarding records updated: 0. Completion emails queued: 1. Emails will be sent one by one every 2 minutes. Existing platform accounts skipped: 1. Duplicate rows skipped: 0. Invalid rows skipped: 0.');
 
         $this->assertSame(1, User::query()->where('email', 'old@example.test')->count());
         $newUser = User::query()->where('email', 'new@example.test')->firstOrFail();
@@ -181,12 +188,14 @@ Izmir / Turkey",
         $this->assertDatabaseMissing('outreach_contacts', ['email' => 'old@example.test']);
         $this->assertDatabaseHas('outreach_contacts', ['email' => 'new@example.test']);
 
-        Notification::assertSentTo($newUser, PreRegisteredAccountCompletionNotification::class);
+        Queue::assertPushed(SendOnboardingCompletionEmail::class, 1);
+        Notification::assertNothingSent();
     }
 
     public function test_bulk_import_with_only_existing_accounts_returns_clean_skip_message(): void
     {
         Notification::fake();
+        Queue::fake();
 
         $admin = User::factory()->create(['role' => 'admin']);
         User::factory()->create([
@@ -211,7 +220,47 @@ Izmir / Turkey",
         $this->assertSame(1, User::query()->where('email', 'old@example.test')->count());
         $this->assertDatabaseMissing('outreach_contacts', ['email' => 'old@example.test']);
         Notification::assertNothingSent();
+        Queue::assertNothingPushed();
     }
+
+    public function test_queued_completion_email_job_sends_notification_and_marks_record_sent(): void
+    {
+        Notification::fake();
+
+        $user = User::factory()->create([
+            'role' => 'seller',
+            'email' => 'queued@example.test',
+            'company_name' => 'Queued Marine Ltd',
+            'email_verified_at' => null,
+            'seller_verification_onboarding_sent_at' => null,
+        ]);
+
+        $contact = OutreachContact::query()->create([
+            'email' => 'queued@example.test',
+            'audience' => 'seller',
+            'organization_name' => 'Queued Marine Ltd',
+            'source_name' => 'Bulk company import',
+            'status' => OutreachContact::STATUS_REGISTERED,
+            'source_payload' => [
+                'created_from' => 'bulk_company_import',
+                'onboarding_status' => 'email_queued',
+                'user_id' => $user->id,
+            ],
+        ]);
+
+        app()->call([new SendOnboardingCompletionEmail($contact->id), 'handle']);
+
+        $user->refresh();
+        $contact->refresh();
+
+        $this->assertNotNull($user->email_verified_at);
+        $this->assertNotNull($user->seller_verification_onboarding_sent_at);
+        $this->assertSame('email_sent', data_get($contact->source_payload, 'onboarding_status'));
+        $this->assertSame('completion_email_sent', $contact->last_result);
+
+        Notification::assertSentTo($user, PreRegisteredAccountCompletionNotification::class);
+    }
+
     public function test_expired_bulk_imported_supplier_is_deleted_if_registration_is_not_completed(): void
     {
         Notification::fake();

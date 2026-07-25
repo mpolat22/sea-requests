@@ -3,20 +3,20 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Jobs\SendOnboardingCompletionEmail;
 use App\Models\Brand;
 use App\Models\Category;
 use App\Models\OutreachContact;
 use App\Models\Port;
 use App\Models\Subcategory;
 use App\Models\User;
-use App\Notifications\PreRegisteredAccountCompletionNotification;
 use App\Support\AdminDashboardData;
 use App\Support\AuthCountryCatalog;
+use App\Support\Onboarding\OnboardingCompletionMailer;
 use App\Support\Onboarding\OnboardingDraftCreator;
 use App\Support\UserFacingMail;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Password;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\ValidationException;
 use PhpOffice\PhpSpreadsheet\IOFactory;
@@ -71,6 +71,7 @@ class AdminOnboardingController extends Controller
                 'draft' => $this->statusCount('draft'),
                 'ready' => $this->statusCount('ready'),
                 'account_created' => $this->statusCount('account_created'),
+                'email_queued' => $this->statusCount('email_queued'),
                 'email_sent' => $this->statusCount('email_sent'),
                 'seller_total' => OutreachContact::query()->where('audience', 'seller')->whereNotNull('source_payload->onboarding_status')->count(),
                 'buyer_total' => OutreachContact::query()->where('audience', 'buyer')->whereNotNull('source_payload->onboarding_status')->count(),
@@ -251,7 +252,7 @@ class AdminOnboardingController extends Controller
             : 'Manual onboarding profile saved, account created, and completion email sent.');
     }
 
-    public function storeBulkImport(Request $request, OnboardingDraftCreator $drafts, UserFacingMail $mail): RedirectResponse
+    public function storeBulkImport(Request $request, OnboardingDraftCreator $drafts): RedirectResponse
     {
         abort_unless($request->user()?->isAdmin(), 403);
 
@@ -277,11 +278,11 @@ class AdminOnboardingController extends Controller
             'existing_users' => 0,
             'duplicates' => 0,
             'invalid' => 0,
-            'emails_sent' => 0,
-            'email_failed' => 0,
+            'emails_queued' => 0,
         ];
         $seen = [];
         $fileName = $request->file('file')->getClientOriginalName();
+        $queuePosition = 0;
 
         foreach ($rows as $row) {
             $email = strtolower(trim((string) $row['email']));
@@ -336,7 +337,22 @@ class AdminOnboardingController extends Controller
             ])->save();
 
             $this->createAccount($request, $contact->refresh());
-            $emailResult = $this->sendCompletionEmailForContact($contact->refresh(), $mail);
+            $contact = $contact->refresh();
+            $scheduledFor = now()->addMinutes($queuePosition * 2);
+            $queuePosition++;
+
+            $payload = $contact->source_payload ?? [];
+            $contact->forceFill([
+                'last_result' => 'completion_email_queued',
+                'source_payload' => array_merge($payload, [
+                    'onboarding_status' => 'email_queued',
+                    'completion_email_queued_at' => now()->toIso8601String(),
+                    'completion_email_scheduled_for' => $scheduledFor->toIso8601String(),
+                    'completion_email_queue_interval_minutes' => 2,
+                ]),
+            ])->save();
+
+            SendOnboardingCompletionEmail::dispatch($contact->id)->delay($scheduledFor);
 
             if ($result['result'] === 'duplicate') {
                 $stats['updated']++;
@@ -344,11 +360,7 @@ class AdminOnboardingController extends Controller
                 $stats['created']++;
             }
 
-            if ($emailResult['ok']) {
-                $stats['emails_sent']++;
-            } else {
-                $stats['email_failed']++;
-            }
+            $stats['emails_queued']++;
         }
 
         $accountsTouched = $stats['created'] + $stats['updated'];
@@ -369,26 +381,11 @@ class AdminOnboardingController extends Controller
             ));
         }
 
-        if ($stats['email_failed'] > 0) {
-            return back()->withErrors([
-                'file' => sprintf(
-                    'Accounts were created, but %d completion email(s) could not be sent. Please check SMTP settings and use the Send action to retry.',
-                    $stats['email_failed'],
-                ),
-            ])->with('error', sprintf(
-                'Import created %d new account(s) and updated %d existing onboarding record(s). %d completion email(s) were sent, but %d email(s) failed. Please use the Send action to retry failed emails.',
-                $stats['created'],
-                $stats['updated'],
-                $stats['emails_sent'],
-                $stats['email_failed'],
-            ));
-        }
-
         return back()->with('success', sprintf(
-            'Import completed. New accounts created: %d. Existing onboarding records updated: %d. Completion emails sent: %d. Existing platform accounts skipped: %d. Duplicate rows skipped: %d. Invalid rows skipped: %d.',
+            'Import completed. New accounts created: %d. Existing onboarding records updated: %d. Completion emails queued: %d. Emails will be sent one by one every 2 minutes. Existing platform accounts skipped: %d. Duplicate rows skipped: %d. Invalid rows skipped: %d.',
             $stats['created'],
             $stats['updated'],
-            $stats['emails_sent'],
+            $stats['emails_queued'],
             $stats['existing_users'],
             $stats['duplicates'],
             $stats['invalid'],
@@ -570,58 +567,7 @@ class AdminOnboardingController extends Controller
      */
     private function sendCompletionEmailForContact(OutreachContact $contact, UserFacingMail $mail): array
     {
-        $payload = $contact->source_payload ?? [];
-        $user = User::query()->find($payload['user_id'] ?? null);
-
-        if (! $user) {
-            return [
-                'ok' => false,
-                'message' => 'Create the platform account before sending the completion email.',
-            ];
-        }
-
-        $token = Password::broker()->createToken($user);
-        $completionUrl = route('password.reset', [
-            'token' => $token,
-            'email' => $user->email,
-        ]);
-
-        $result = $mail->attempt(fn () => $user->notify(
-            new PreRegisteredAccountCompletionNotification($completionUrl, $user->role)
-        ));
-
-        if (! $result['ok']) {
-            return [
-                'ok' => false,
-                'message' => 'Completion email could not be sent. Please check the configured mail account.',
-            ];
-        }
-
-        $updates = [
-            'email_verified_at' => $user->email_verified_at ?: now(),
-        ];
-
-        if ($user->isSeller()) {
-            $updates['seller_verification_onboarding_sent_at'] = $user->seller_verification_onboarding_sent_at ?: now();
-        }
-
-        $user->forceFill($updates)->save();
-
-        $contact->forceFill([
-            'last_sent_at' => now(),
-            'sent_count' => $contact->sent_count + 1,
-            'last_result' => 'completion_email_sent',
-            'source_payload' => array_merge($payload, [
-                'onboarding_status' => 'email_sent',
-                'completion_email_sent_at' => now()->toIso8601String(),
-                'user_id' => $user->id,
-            ]),
-        ])->save();
-
-        return [
-            'ok' => true,
-            'message' => 'Account completion email sent.',
-        ];
+        return app(OnboardingCompletionMailer::class)->send($contact, $mail);
     }
 
     public function destroy(Request $request, OutreachContact $contact): RedirectResponse
