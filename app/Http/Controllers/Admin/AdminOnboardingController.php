@@ -57,7 +57,7 @@ class AdminOnboardingController extends Controller
         }
 
         $records = $query
-            ->paginate(12)
+            ->paginate(10)
             ->withQueryString()
             ->through(fn (OutreachContact $contact) => $this->recordPayload($contact));
 
@@ -485,6 +485,7 @@ class AdminOnboardingController extends Controller
                 'email' => $email,
                 'locale' => 'en',
                 'password' => Str::random(40),
+                'email_verified_at' => now(),
                 'role' => $audience,
                 'company_name' => $companyName,
                 'phone' => filled($parsed['phone'] ?? null) ? trim((string) $parsed['phone']) : null,
@@ -533,6 +534,12 @@ class AdminOnboardingController extends Controller
                         ->all()
                 );
             }
+        }
+
+        if (! $user->email_verified_at) {
+            $user->forceFill([
+                'email_verified_at' => now(),
+            ])->save();
         }
 
         $contact->forceFill([

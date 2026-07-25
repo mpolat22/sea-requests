@@ -30,6 +30,14 @@ const meta = computed(() => ({
     to: props.records.to ?? 0,
     total: props.records.total ?? records.value.length,
 }));
+const paginationLabel = computed(() => {
+    if (!meta.value.total) {
+        return '0-0 / 0';
+    }
+
+    return `${meta.value.from}-${meta.value.to} / ${meta.value.total}`;
+});
+
 const activeRecord = computed(() => records.value.find((record) => record.id === activeRecordId.value) ?? null);
 const activeServicedPorts = computed(() => activeRecord.value?.parsed?.serviced_ports ?? []);
 
@@ -97,6 +105,19 @@ watch([search, audience, status], () => {
 
 function openManualModal() {
     activeModal.value = 'manual';
+}
+
+function goToPage(page) {
+    router.get(props.urls.index, {
+        search: search.value,
+        audience: audience.value,
+        status: status.value,
+        page,
+    }, {
+        preserveState: true,
+        preserveScroll: true,
+        replace: true,
+    });
 }
 
 function openImportModal() {
@@ -282,16 +303,11 @@ function statusLabel(value) {
                         </tbody>
                     </table>
                 </div>
-
                 <PaginationControls
-                    v-if="meta.last_page > 1"
-                    :current-page="meta.current_page"
-                    :last-page="meta.last_page"
-                    :from="meta.from"
-                    :to="meta.to"
-                    :total="meta.total"
-                    :base-url="urls.index"
-                    :query="{ search, audience, status }"
+                    :page="meta.current_page"
+                    :total-pages="meta.last_page"
+                    :label="paginationLabel"
+                    @update:page="goToPage"
                 />
             </section>
         </section>

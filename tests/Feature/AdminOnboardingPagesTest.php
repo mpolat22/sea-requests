@@ -141,6 +141,7 @@ Izmir / Turkey",
 
         $this->assertTrue($anchor->isSeller());
         $this->assertSame('pending', $anchor->approval_status);
+        $this->assertNotNull($anchor->email_verified_at);
         $this->assertNull($anchor->seller_verification_onboarding_sent_at);
         $this->assertSame('Anchor Industries', $anchor->company_name);
         $this->assertSame('Divetech Marine', $divetech->company_name);
