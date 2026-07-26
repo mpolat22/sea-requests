@@ -31,6 +31,8 @@ class PreRegisteredAccountCompletionNotification extends Notification
     private function supplierMail(string $companyName, string $email): MailMessage
     {
         return (new MailMessage)
+            ->mailer('support')
+            ->from((string) config('mail.support_mail.from.address', 'support@searequests.ai'), (string) config('mail.support_mail.from.name', 'Sea Requests Support'))
             ->subject('Complete Your Supplier Profile on SeaRequests.ai')
             ->greeting('Dear '.$companyName.' Team,')
             ->line('A preliminary supplier profile has been created for your company on SeaRequests.ai, a platform connecting marine suppliers with shipowners, vessel operators, ship managers, and purchasing companies.')
@@ -49,12 +51,14 @@ class PreRegisteredAccountCompletionNotification extends Notification
             ->line('Participation and company registration are currently free of charge.')
             ->line('Once your profile is completed, your company will be able to receive relevant requests for quotations and submit commercial offers through the platform.')
             ->line('We hope your company will join SeaRequests.ai and become an active participant in our international marine supply network.')
-            ->salutation("Best regards,\nMuhammad Zumar\nSupport Team | SeaRequests.ai\nEmail: admin@searequests.ai\nWebsite: www.searequests.ai\nWhatsApp: +90 507 814 91 76");
+            ->salutation("Best regards,\nMuhammad Zumar\nSupport Team | SeaRequests.ai\nEmail: support@searequests.ai\nWebsite: www.searequests.ai\nWhatsApp: +90 507 814 91 76");
     }
 
     private function buyerMail(string $companyName, string $email): MailMessage
     {
         return (new MailMessage)
+            ->mailer('support')
+            ->from((string) config('mail.support_mail.from.address', 'support@searequests.ai'), (string) config('mail.support_mail.from.name', 'Sea Requests Support'))
             ->subject('Complete Your Buyer Profile on SeaRequests.ai')
             ->greeting('Dear '.$companyName.' Team,')
             ->line('A preliminary buyer profile has been created for your organization on SeaRequests.ai, a platform designed to help shipowners, vessel operators, ship managers, and purchasing companies request and compare quotations from marine suppliers.')
