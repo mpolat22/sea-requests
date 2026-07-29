@@ -1,13 +1,15 @@
 <script setup>
+import { computed } from 'vue';
 import MainLayout from '../../Layouts/MainLayout.vue';
 import PublicMetaHead from '../../Components/PublicMetaHead.vue';
 import StaticPageLayout from './StaticPageLayout.vue';
+import { useI18n } from '../../lib/i18n';
 
 const props = defineProps({
     meta: {
         type: Object,
         default: () => ({
-            title: 'Terms & Conditions | Sea Requests',
+            title: '',
             description: '',
             canonical: '',
             robots: 'index, follow',
@@ -17,36 +19,8 @@ const props = defineProps({
     },
 });
 
-const sections = [
-    {
-        title: 'Platform Use',
-        paragraphs: [
-            'Sea Requests is a maritime marketplace where buyers and suppliers create accounts, publish requests, list services and communicate through the platform.',
-            'Users are responsible for keeping their account details accurate and for using the platform only for lawful commercial activity.',
-        ],
-    },
-    {
-        title: 'Accounts and Approval',
-        paragraphs: [
-            'Account creation may require email verification and administrative approval before full access is granted.',
-            'Sea Requests may suspend, reject or remove accounts that contain false information, misuse the platform or create operational risk.',
-        ],
-    },
-    {
-        title: 'Listings and Requests',
-        paragraphs: [
-            'Suppliers are responsible for the accuracy of their company details, service descriptions, coverage information and contact details.',
-            'Buyers are responsible for submitting requests that are clear, accurate and relevant to genuine operational or procurement needs.',
-        ],
-    },
-    {
-        title: 'Liability',
-        paragraphs: [
-            'Sea Requests provides the platform infrastructure and does not become a party to transactions, quotations or service delivery between users.',
-            'Each party remains responsible for its own commercial decisions, technical review, compliance checks and contractual commitments.',
-        ],
-    },
-];
+const { section } = useI18n();
+const page = computed(() => section('staticPages').value.termsOfService);
 </script>
 
 <template>
@@ -54,11 +28,15 @@ const sections = [
 
     <MainLayout>
         <StaticPageLayout
-            eyebrow="Legal"
-            title="Terms & Conditions"
-            intro="These terms govern how buyers and suppliers use Sea Requests and interact through the marketplace."
-            updated="Last updated: May 13, 2026"
-            :sections="sections"
+            :eyebrow="page.eyebrow"
+            :title="page.title"
+            :intro="page.intro"
+            :updated="page.updated"
+            :sections="page.sections"
+            :facts="page.facts"
+            :panel-title="page.panelTitle"
+            :panel-items="page.panelItems"
+            :cta="page.cta"
         />
     </MainLayout>
 </template>

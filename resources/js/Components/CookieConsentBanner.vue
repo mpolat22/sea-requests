@@ -2,16 +2,12 @@
 import { Link } from '@inertiajs/vue3';
 import { onBeforeUnmount, onMounted, ref } from 'vue';
 import { consentKey, consentTimestampKey, hasCookieConsent, persistCookieConsent } from '../lib/cookieConsent';
+import { useI18n } from '../lib/i18n';
 
 const isVisible = ref(false);
 
-const copy = {
-    title: 'Cookie Notice',
-    text: 'Sea Requests uses cookies and similar storage for secure login, session continuity, and core marketplace features.',
-    privacy: 'Privacy Policy',
-    terms: 'Terms & Conditions',
-    accept: 'Accept Cookies',
-};
+const { section } = useI18n();
+const copy = section('layout.cookie');
 
 const syncVisibility = () => {
     isVisible.value = !hasCookieConsent();
@@ -56,7 +52,7 @@ onBeforeUnmount(() => {
                 <p id="cookie-notice-text">
                     {{ copy.text }}
                     <Link class="cookie-inline-link" href="/privacy-policy">{{ copy.privacy }}</Link>
-                    and
+                    {{ copy.and }}
                     <Link class="cookie-inline-link" href="/terms-of-service">{{ copy.terms }}</Link>.
                 </p>
             </div>

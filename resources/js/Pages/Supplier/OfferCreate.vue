@@ -1,4 +1,5 @@
 <script setup>
+import { useI18n } from '../../lib/i18n';
 import { computed, nextTick, onBeforeUnmount, onMounted, ref } from 'vue';
 import { Head, Link, useForm } from '@inertiajs/vue3';
 import MainLayout from '../../Layouts/MainLayout.vue';
@@ -27,7 +28,7 @@ const props = defineProps({
     },
 });
 
-const copy = {
+const baseCopy = {
     eyebrow: 'Submit Offer',
     heroSparePartsTitle: 'Spare Parts Offer',
     heroServiceTitle: 'Service Request Offer',
@@ -163,7 +164,32 @@ const copy = {
     portsSelected: 'ports selected',
 };
 
-const currentCopy = computed(() => copy);
+const { section } = useI18n();
+const translatedCopy = section('supplier.offerCreate');
+const currentCopy = computed(() => ({
+    ...baseCopy,
+    ...translatedCopy.value,
+    labels: {
+        ...baseCopy.labels,
+        ...(translatedCopy.value.labels ?? {}),
+    },
+    table: {
+        ...baseCopy.table,
+        ...(translatedCopy.value.table ?? {}),
+    },
+    requestType: {
+        ...baseCopy.requestType,
+        ...(translatedCopy.value.requestType ?? {}),
+    },
+    statuses: {
+        ...baseCopy.statuses,
+        ...(translatedCopy.value.statuses ?? {}),
+    },
+    priority: {
+        ...baseCopy.priority,
+        ...(translatedCopy.value.priority ?? {}),
+    },
+}));
 const formatOptionLabel = (value) => String(value ?? '')
     .split(/[_\s-]+/)
     .filter(Boolean)

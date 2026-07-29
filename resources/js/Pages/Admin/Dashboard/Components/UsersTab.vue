@@ -98,7 +98,7 @@ watch(search, () => {
         <div class="table-toolbar">
             <div class="table-intro">
                 <h2 class="directory-section-title">{{ copy.usersTitle }}</h2>
-                <p class="section-copy">Review and manage buyer and supplier user accounts from one admin table.</p>
+                <p class="section-copy">{{ copy.usersIntro }}</p>
             </div>
 
             <div class="toolbar-search">
@@ -120,7 +120,7 @@ watch(search, () => {
                         <th>#</th>
                         <th>{{ copy.userName }}</th>
                         <th>{{ copy.email }}</th>
-                        <th>Registered At</th>
+                        <th>{{ copy.registeredAt }}</th>
                         <th>{{ copy.role }}</th>
                         <th>{{ copy.verification }}</th>
                         <th>{{ copy.status }}</th>
@@ -173,11 +173,11 @@ watch(search, () => {
             <p class="table-meta">{{ paginationLabel }}</p>
             <div class="pager">
                 <button type="button" class="pager-button" :disabled="pageNumber === 1" @click="changePage(pageNumber - 1)">
-                    Prev
+                    {{ copy.prev }}
                 </button>
                 <span class="page-indicator">{{ pageNumber }} / {{ meta.last_page ?? 1 }}</span>
                 <button type="button" class="pager-button" :disabled="pageNumber >= (meta.last_page ?? 1)" @click="changePage(pageNumber + 1)">
-                    Next
+                    {{ copy.next }}
                 </button>
             </div>
         </div>

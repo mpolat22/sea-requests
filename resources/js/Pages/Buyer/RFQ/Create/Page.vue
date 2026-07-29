@@ -1,4 +1,4 @@
-﻿<script setup>
+<script setup>
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import { Head, Link, useForm } from '@inertiajs/vue3';
 import MainLayout from '../../../../Layouts/MainLayout.vue';
@@ -8,6 +8,7 @@ import RfqCreateSuppliersToSendRfqSection from './sections/RfqCreateSuppliersToS
 import RfqCreateImportTemplateModal from './modals/RfqCreateImportTemplateModal.vue';
 import RfqCreateImportPreviewModal from './modals/RfqCreateImportPreviewModal.vue';
 import { extractDocumentRows, isStructuredDocumentImport } from '../../../../lib/rfqDocumentImport.js';
+import { useI18n } from '../../../../lib/i18n';
 
 const props = defineProps({
     defaults: {
@@ -135,10 +136,10 @@ const itemsToQuoteLockMessage = computed(() => {
     }
 
     if (generalOnlyReason.value === 'overdue_extendable') {
-        return 'The due date has passed. Only the General Information section remains editable so you can extend the timeline.';
+        return copy.lockedDueDate;
     }
 
-    return 'Offers have started to arrive for this RFQ. Items to Quote and supplier targeting are now locked.';
+    return copy.lockedOffers;
 });
 const submitIntent = ref('submit');
 const primarySubmitLabel = computed(() => {
@@ -146,10 +147,10 @@ const primarySubmitLabel = computed(() => {
         return null;
     }
 
-    return 'Save Changes';
+    return copy.saveChanges;
 });
 const pageHeading = computed(() => (isEditMode.value
-    ? 'Edit RFQ'
+    ? copy.editTitle
     : copy.title));
 const pageIntro = computed(() => {
     if (!isEditMode.value) {
@@ -158,10 +159,10 @@ const pageIntro = computed(() => {
 
     if (isGeneralOnlyEdit.value) {
         if (generalOnlyReason.value === 'overdue_extendable') {
-            return 'The due date has passed. Only the General Information section can be updated now so you can extend the timeline.';
+            return copy.generalOnlyDueDate;
         }
 
-        return 'Offers have started to arrive for this RFQ. Only the General Information section can be updated now.';
+        return copy.generalOnlyOffers;
     }
 
     return 'Update the RFQ content, line items, and supplier targeting from this screen.';
@@ -279,16 +280,78 @@ let countryTypeaheadTimeout = null;
 let portTypeaheadTimeout = null;
 let supplierMatchesRequestId = 0;
 
-const copy = {
+const baseCopy = {
     eyebrow: 'Create RFQ',
     title: 'New Procurement Request',
-    text: 'In this first phase we are opening the manual entry flow. In the next phase we will add PDF, image, and Excel uploads with AI-assisted item extraction.',
+    editTitle: 'Edit RFQ',
+    headCreate: 'Create',
+    headEdit: 'Edit',
+    text: 'Create spare parts RFQs or service requests here. You can fill the form manually or upload your usual PDF, image, Excel, or CSV file; we map the content into this form and let you review it before sending to the selected suppliers.',
     submitDraft: 'Save Draft',
     submitSend: 'Submit RFQ',
     submitDraftLoading: 'Saving Draft...',
     submitSendLoading: 'Submitting RFQ...',
     submitSaveLoading: 'Saving Changes...',
+    saveChanges: 'Save Changes',
+    back: 'Back',
+    files: 'Files',
+    close: 'Close',
+    previewUnavailable: 'Preview is not available for this file type.',
+    selectCountries: 'Select Countries',
+    countriesSelected: '{count} countries selected',
+    selectCountriesFirst: 'Select Countries First',
+    selectPorts: 'Select Ports',
+    portsSelected: '{count} ports selected',
+    allCategories: 'All Categories',
+    categoriesSelected: '{count} categories selected',
+    selectCategoryFirst: 'Select Category First',
+    allSubcategories: 'All Subcategories',
+    oneSubcategorySelected: '1 subcategory selected',
+    subcategoriesSelected: '{count} subcategories selected',
+    allBrands: 'All Brands',
+    oneBrandSelected: '1 brand selected',
+    brandsSelected: '{count} brands selected',
+    uploadFiles: 'Upload Files',
+    oneFileSelected: '1 file selected',
+    filesSelected: '{count} files selected',
+    referenceNo: 'Reference No',
+    company: 'Company',
+    ship: 'Ship',
+    imoNumber: 'IMO Number',
+    rfqStatus: 'RFQ Status',
+    requestCountry: 'Request Country',
+    requestPorts: 'Request Ports',
+    requisitionDate: 'Requisition Date',
+    dueDate: 'Due Date',
+    currency: 'Currency',
+    priority: 'Priority',
+    generalNotes: 'General Notes',
+    product: 'Product',
+    partNo: 'Part No',
+    manufacturer: 'Manufacturer',
+    modelType: 'MFG Model / Type',
+    catalogCode: 'Catalog Code',
+    serialNumber: 'Serial Number',
+    drawingNumber: 'Drawing Number',
+    qty: 'Qty',
+    unit: 'Unit',
+    rob: 'ROB',
+    quality: 'Quality',
+    comments: 'Comments',
+    generalOnlyDueDate: 'The due date has passed. Only the General Information section can be updated now so you can extend the timeline.',
+    generalOnlyOffers: 'Offers have started to arrive for this RFQ. Only the General Information section can be updated now.',
+    lockedDueDate: 'The due date has passed. Only the General Information section remains editable so you can extend the timeline.',
+    lockedOffers: 'Offers have started to arrive for this RFQ. Items to Quote and supplier targeting are now locked.',
+    supplierRecipientError: 'No approved suppliers match this private request scope. Change country, ports, category, subcategory, or brand before submitting.',
+    suggestedFiltersPending: 'Suggested filters will still be applied, but supplier results will load after you choose request country and ports in General Information.',
 };
+
+const { section } = useI18n();
+const translatedCopy = section('buyer.rfq.create.page');
+const translatedCreatePageCopy = section('buyerCreate.page');
+const copy = new Proxy({}, {
+    get: (_, key) => translatedCopy.value[key] ?? translatedCreatePageCopy.value[key] ?? baseCopy[key],
+});
 
 const secondarySubmitLabel = computed(() => {
     if (form.processing && submitIntent.value === 'draft') {
@@ -312,41 +375,42 @@ const resolvedPrimarySubmitLabel = computed(() => {
         : copy.submitSend;
 });
 
-const heroIntroCopy = 'Create spare parts RFQs or service requests here. You can fill the form manually or upload your usual PDF, image, Excel, or CSV file; we map the content into this form and let you review it before sending to the selected suppliers.';
+const heroIntroCopy = copy.text;
 
-const importTemplateGeneralFields = [
-    ['reference_no', 'Reference No'],
-    ['company_name', 'Company'],
-    ['ship_name', 'Ship'],
-    ['imo_number', 'IMO Number'],
-    ['country', 'Country'],
-    ['port', 'Port'],
-    ['requisition_date', 'Requisition Date'],
-    ['due_date', 'Due Date'],
-    ['currency', 'Currency'],
-    ['priority', 'Priority'],
-    ['general_notes', 'General Notes'],
-];
+const importTemplateGeneralFields = computed(() => [
+    ['reference_no', copy.referenceNo],
+    ['company_name', copy.company],
+    ['ship_name', copy.ship],
+    ['imo_number', copy.imoNumber],
+    ['status', copy.rfqStatus],
+    ['country', copy.requestCountry],
+    ['port', copy.requestPorts],
+    ['requisition_date', copy.requisitionDate],
+    ['due_date', copy.dueDate],
+    ['currency', copy.currency],
+    ['priority', copy.priority],
+    ['general_notes', copy.generalNotes],
+]);
 
-const importTemplateItemFields = [
-    ['product_name', 'Product'],
-    ['part_no', 'Part No'],
-    ['manufacturer', 'Manufacturer'],
-    ['model_type', 'MFG Model / Type'],
-    ['catalog_code', 'Catalog Code'],
-    ['serial_number', 'Serial Number'],
-    ['drawing_number', 'Drawing Number'],
-    ['quantity', 'Qty'],
-    ['unit', 'Unit'],
-    ['rob', 'ROB'],
-    ['quality', 'Quality'],
-    ['comments', 'Comments'],
-];
+const importTemplateItemFields = computed(() => [
+    ['product_name', copy.product],
+    ['part_no', copy.partNo],
+    ['manufacturer', copy.manufacturer],
+    ['model_type', copy.modelType],
+    ['catalog_code', copy.catalogCode],
+    ['serial_number', copy.serialNumber],
+    ['drawing_number', copy.drawingNumber],
+    ['quantity', copy.qty],
+    ['unit', copy.unit],
+    ['rob', copy.rob],
+    ['quality', copy.quality],
+    ['comments', copy.comments],
+]);
 
 const importTemplateForm = ref({
     name: props.importTemplate?.name ?? 'My RFQ Import Template',
-    general: Object.fromEntries(importTemplateGeneralFields.map(([key]) => [key, props.importTemplate?.general?.[key] ?? ''])),
-    items: Object.fromEntries(importTemplateItemFields.map(([key]) => [key, props.importTemplate?.items?.[key] ?? ''])),
+    general: Object.fromEntries(importTemplateGeneralFields.value.map(([key]) => [key, props.importTemplate?.general?.[key] ?? ''])),
+    items: Object.fromEntries(importTemplateItemFields.value.map(([key]) => [key, props.importTemplate?.items?.[key] ?? ''])),
 });
 
 const normalizeSupplierPickerSearch = (value) => String(value ?? '')
@@ -500,14 +564,14 @@ const selectedSupplierCountryPortGroups = computed(() => selectedSupplierCountri
 
 const selectedSupplierCountriesLabel = computed(() => {
     if (!selectedSupplierCountries.value.length) {
-        return 'Select Countries';
+        return copy.selectCountries;
     }
 
     if (selectedSupplierCountries.value.length === 1) {
         return selectedSupplierCountries.value[0];
     }
 
-    return `${selectedSupplierCountries.value.length} countries selected`;
+    return copy.countriesSelected.replace('{count}', selectedSupplierCountries.value.length);
 });
 
 const selectedSupplierPortsByCountry = computed(() => supplierFilters.value.ports_by_country ?? {});
@@ -519,14 +583,14 @@ const hasSupplierPortsForEverySelectedCountry = (countries = [], portsByCountry 
 
 const selectedSupplierPortsLabel = computed(() => {
     if (!selectedSupplierCountries.value.length) {
-        return 'Select Countries First';
+        return copy.selectCountriesFirst;
     }
 
     if (!selectedSupplierPortsCount.value) {
-        return 'Select Ports';
+        return copy.selectPorts;
     }
 
-    return `${selectedSupplierPortsCount.value} ports selected`;
+    return copy.portsSelected.replace('{count}', selectedSupplierPortsCount.value);
 });
 
 const hasSupplierRequestScope = computed(() => hasSupplierPortsForEverySelectedCountry(
@@ -633,50 +697,50 @@ const canRequestSupplierSuggestions = computed(() => {
 
 const selectedSupplierCategoriesLabel = computed(() => {
     if (!selectedSupplierCategories.value.length) {
-        return 'All Categories';
+        return copy.allCategories;
     }
 
     if (selectedSupplierCategories.value.length === 1) {
         return selectedSupplierCategories.value[0].name;
     }
 
-    return `${selectedSupplierCategories.value.length} categories selected`;
+    return copy.categoriesSelected.replace('{count}', selectedSupplierCategories.value.length);
 });
 
 const selectedSupplierSubcategoriesLabel = computed(() => {
     if (!selectedSupplierCategoryIds.value.length) {
-        return 'Select Category First';
+        return copy.selectCategoryFirst;
     }
 
     if (!selectedSupplierSubcategories.value.length && selectedSupplierSubcategoryIds.value.length === 1) {
-        return '1 subcategory selected';
+        return copy.oneSubcategorySelected;
     }
 
     if (!selectedSupplierSubcategories.value.length && selectedSupplierSubcategoryIds.value.length > 1) {
-        return `${selectedSupplierSubcategoryIds.value.length} subcategories selected`;
+        return copy.subcategoriesSelected.replace('{count}', selectedSupplierSubcategoryIds.value.length);
     }
 
     if (!selectedSupplierSubcategories.value.length) {
-        return 'All Subcategories';
+        return copy.allSubcategories;
     }
 
     if (selectedSupplierSubcategories.value.length === 1) {
         return selectedSupplierSubcategories.value[0].name;
     }
 
-    return `${selectedSupplierSubcategories.value.length} subcategories selected`;
+    return copy.subcategoriesSelected.replace('{count}', selectedSupplierSubcategories.value.length);
 });
 
 const selectedSupplierBrandsLabel = computed(() => {
     if (!selectedSupplierBrandIds.value.length) {
-        return 'All Brands';
+        return copy.allBrands;
     }
 
     if (selectedSupplierBrandIds.value.length === 1) {
-        return selectedSupplierBrands.value[0]?.name ?? '1 brand selected';
+        return selectedSupplierBrands.value[0]?.name ?? copy.oneBrandSelected;
     }
 
-    return `${selectedSupplierBrandIds.value.length} brands selected`;
+    return copy.brandsSelected.replace('{count}', selectedSupplierBrandIds.value.length);
 });
 
 const supplierSuggestionCellEntries = (entries = []) => (entries ?? []).map((entry) => ({
@@ -766,7 +830,7 @@ const supplierSuggestionScopeWarning = computed(() => {
     );
 
     return !hasCountries || !hasPorts
-        ? 'Suggested filters will still be applied, but supplier results will load after you choose request country and ports in General Information.'
+        ? copy.suggestedFiltersPending
         : '';
 });
 
@@ -1166,10 +1230,10 @@ const serviceFileTriggerLabel = computed(() => {
     const count = Array.isArray(form.service_files) ? form.service_files.length : 0;
 
     if (count === 0) {
-        return 'Upload Files';
+        return copy.uploadFiles;
     }
 
-    return `${count} file${count === 1 ? '' : 's'} selected`;
+    return count === 1 ? copy.oneFileSelected : copy.filesSelected.replace('{count}', count);
 });
 
 const attachmentViewer = ref(null);
@@ -2127,40 +2191,40 @@ const fileTriggerLabel = (item) => {
     const count = Array.isArray(item.files) ? item.files.length : 0;
 
     if (count === 0) {
-        return 'Upload Files';
+        return copy.uploadFiles;
     }
 
-    return `${count} file${count === 1 ? '' : 's'} selected`;
+    return count === 1 ? copy.oneFileSelected : copy.filesSelected.replace('{count}', count);
 };
 
-const previewItemColumns = [
-    { key: 'product_name', label: 'Product' },
-    { key: 'part_no', label: 'Part No' },
-    { key: 'manufacturer', label: 'Manufacturer' },
-    { key: 'model_type', label: 'MFG Model / Type' },
-    { key: 'catalog_code', label: 'Catalog Code' },
-    { key: 'serial_number', label: 'Serial Number' },
-    { key: 'drawing_number', label: 'Drawing Number' },
-    { key: 'quantity', label: 'Qty' },
-    { key: 'unit', label: 'Unit' },
-    { key: 'rob', label: 'ROB' },
-    { key: 'quality', label: 'Quality' },
-    { key: 'comments', label: 'Comments' },
-];
-const previewGeneralColumns = [
-    { key: 'reference_no', label: 'Reference No' },
-    { key: 'company_name', label: 'Company' },
-    { key: 'ship_name', label: 'Ship' },
-    { key: 'imo_number', label: 'IMO Number' },
-    { key: 'status', label: 'RFQ Status' },
-    { key: 'country', label: 'Country' },
-    { key: 'port', label: 'Ports' },
-    { key: 'requisition_date', label: 'Requisition Date' },
-    { key: 'due_date', label: 'Due Date' },
-    { key: 'currency', label: 'Currency' },
-    { key: 'priority', label: 'Priority' },
-    { key: 'general_notes', label: 'General Notes', span: 2 },
-];
+const previewItemColumns = computed(() => [
+    { key: 'product_name', label: copy.product },
+    { key: 'part_no', label: copy.partNo },
+    { key: 'manufacturer', label: copy.manufacturer },
+    { key: 'model_type', label: copy.modelType },
+    { key: 'catalog_code', label: copy.catalogCode },
+    { key: 'serial_number', label: copy.serialNumber },
+    { key: 'drawing_number', label: copy.drawingNumber },
+    { key: 'quantity', label: copy.qty },
+    { key: 'unit', label: copy.unit },
+    { key: 'rob', label: copy.rob },
+    { key: 'quality', label: copy.quality },
+    { key: 'comments', label: copy.comments },
+]);
+const previewGeneralColumns = computed(() => [
+    { key: 'reference_no', label: copy.referenceNo },
+    { key: 'company_name', label: copy.company },
+    { key: 'ship_name', label: copy.ship },
+    { key: 'imo_number', label: copy.imoNumber },
+    { key: 'status', label: copy.rfqStatus },
+    { key: 'country', label: copy.requestCountry },
+    { key: 'port', label: copy.requestPorts },
+    { key: 'requisition_date', label: copy.requisitionDate },
+    { key: 'due_date', label: copy.dueDate },
+    { key: 'currency', label: copy.currency },
+    { key: 'priority', label: copy.priority },
+    { key: 'general_notes', label: copy.generalNotes },
+]);
 const previewDraftItems = computed(() => importPreviewDraft.value?.items ?? []);
 const previewGeneralDisplay = computed(() => {
     const preview = importPreviewDraft.value?.general ?? importPreview.value?.general ?? {};
@@ -2209,14 +2273,14 @@ const filteredCountryOptions = computed(() => prioritizeSelectedSupplierOptions(
 
 const selectedCountriesLabel = computed(() => {
     if (!selectedCountries.value.length) {
-        return 'Select Countries';
+        return copy.selectCountries;
     }
 
     if (selectedCountries.value.length === 1) {
         return selectedCountries.value[0];
     }
 
-    return `${selectedCountries.value.length} countries selected`;
+    return copy.countriesSelected.replace('{count}', selectedCountries.value.length);
 });
 
 const selectedPortsCount = computed(() => Object.values(form.ports_by_country ?? {})
@@ -2224,14 +2288,14 @@ const selectedPortsCount = computed(() => Object.values(form.ports_by_country ??
 
 const selectedPortsLabel = computed(() => {
     if (!selectedCountries.value.length) {
-        return 'Select Countries First';
+        return copy.selectCountriesFirst;
     }
 
     if (!selectedPortsCount.value) {
-        return 'Select Ports';
+        return copy.selectPorts;
     }
 
-    return `${selectedPortsCount.value} ports selected`;
+    return copy.portsSelected.replace('{count}', selectedPortsCount.value);
 });
 
 const filteredSelectedCountryPortGroups = computed(() => {
@@ -2378,8 +2442,8 @@ const importTemplateModalProps = computed(() => ({
     importTemplateSaving: importTemplateSaving.value,
     importTemplateError: importTemplateError.value,
     importTemplateForm: importTemplateForm.value,
-    importTemplateGeneralFields,
-    importTemplateItemFields,
+    importTemplateGeneralFields: importTemplateGeneralFields.value,
+    importTemplateItemFields: importTemplateItemFields.value,
     closeImportTemplate,
     saveImportTemplate,
 }));
@@ -2389,8 +2453,8 @@ const importPreviewModalProps = computed(() => ({
     importPreviewOpen: importPreviewOpen.value,
     importPreviewEditing: importPreviewEditing.value,
     previewDraftItems: previewDraftItems.value,
-    previewItemColumns,
-    previewGeneralColumns,
+    previewItemColumns: previewItemColumns.value,
+    previewGeneralColumns: previewGeneralColumns.value,
     previewGeneralDisplay: previewGeneralDisplay.value,
     unitOptions: props.unitOptions,
     qualityOptions: props.qualityOptions,
@@ -2448,7 +2512,7 @@ const suppliersToSendRfqSectionProps = computed(() => ({
     supplierMatchesError: supplierMatchesError.value,
     hasSupplierRequestScope: hasSupplierRequestScope.value,
     hasSupplierRecipientError: hasError('supplier_recipient_ids'),
-    supplierRecipientError: getError('supplier_recipient_ids') || 'No approved suppliers match this private request scope. Change country, ports, category, subcategory, or brand before submitting.',
+    supplierRecipientError: getError('supplier_recipient_ids') || copy.supplierRecipientError,
     setSupplierSelectionMode,
     requestSupplierSuggestions,
     applySupplierSuggestions,
@@ -2975,7 +3039,7 @@ const submit = (statusOverride = null) => {
     }
 
     if (submitIntent.value !== 'draft' && isSupplierTargetedRequest.value && form.supplier_recipient_ids.length === 0) {
-        form.setError('supplier_recipient_ids', 'No approved suppliers match this private request scope. Change country, ports, category, subcategory, or brand before submitting.');
+        form.setError('supplier_recipient_ids', copy.supplierRecipientError);
         void focusFirstSubmitError();
         return;
     }
@@ -3041,7 +3105,7 @@ const preventAccidentalSubmit = (event) => {
 </script>
 
 <template>
-    <Head :title="`${isEditMode ? 'Edit' : 'Create'} RFQ | Sea Requests`" />
+    <Head :title="`${isEditMode ? copy.headEdit : copy.headCreate} RFQ | Sea Requests`" />
 
     <MainLayout>
         <section class="rfq-shell">
@@ -3073,7 +3137,7 @@ const preventAccidentalSubmit = (event) => {
                 />
 
                 <div class="form-actions">
-                    <Link :href="backUrl" class="ghost-link">Back</Link>
+                    <Link :href="backUrl" class="ghost-link">{{ copy.back }}</Link>
                     <div class="action-group">
                         <button v-if="!isEditMode" type="button" class="secondary-button" :disabled="form.processing" @click="submit('draft')">
                             {{ secondarySubmitLabel }}
@@ -3093,11 +3157,11 @@ const preventAccidentalSubmit = (event) => {
                 <div class="gallery-modal">
                     <div class="detail-modal-head">
                         <div class="gallery-modal-title-group">
-                            <h3 class="detail-modal-title">Files</h3>
+                            <h3 class="detail-modal-title">{{ copy.files }}</h3>
                             <p class="gallery-modal-counter">{{ attachmentIndex + 1 }} / {{ attachmentViewer.length }}</p>
                         </div>
                         <button type="button" class="detail-modal-close" @click="closeAttachmentViewer">
-                            Close
+                            {{ copy.close }}
                         </button>
                     </div>
 
@@ -3130,7 +3194,7 @@ const preventAccidentalSubmit = (event) => {
                             </div>
                             <div v-else class="gallery-file-fallback">
                                 <p class="gallery-file-name">{{ currentAttachment?.name ?? 'File preview' }}</p>
-                                <p class="directory-intro-copy">Preview is not available for this file type.</p>
+                                <p class="directory-intro-copy">{{ copy.previewUnavailable }}</p>
                                 <a
                                     v-if="currentAttachmentUrl"
                                     :href="currentAttachmentUrl"

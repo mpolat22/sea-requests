@@ -1,5 +1,6 @@
 <script setup>
 import { computed, ref } from 'vue';
+import { useI18n } from '../../../lib/i18n';
 import { Link } from '@inertiajs/vue3';
 import BuyerDashboardShell from './Shell.vue';
 import OrderSelectedItemsSection from '../../../Components/OrderSelectedItemsSection.vue';
@@ -22,45 +23,11 @@ const props = defineProps({
 const order = props.order;
 const isSpareParts = computed(() => order.request_type === 'spare_parts');
 
-const copy = {
-    title: 'Order Detail',
-    eyebrow: 'Order Workflow',
-    intro: 'Review the selected lines, accepted commercial terms, order information summary, and the next workflow step from here.',
-    back: 'Back to Orders',
-    viewRfq: 'View Buyer RFQ',
-    requestType: {
-        spare_parts: 'Spare Parts',
-        service_request: 'Service Request',
-    },
-    general: 'General Information',
-    referenceNo: 'Reference No',
-    buyerCompany: 'Buyer Company',
-    supplier: 'Supplier',
-    ship: 'Ship',
-    orderStatus: 'Order Status',
-    country: 'Country',
-    ports: 'Ports',
-    requisitionDate: 'Requisition Date',
-    dueDate: 'Due Date',
-    currency: 'Currency',
-    confirmedAt: 'Award Confirmed',
-    generalNotes: 'General Notes',
-    selectedItems: 'Selected Items',
-    selectedService: 'Selected Service',
-    acceptedTerms: 'Accepted Commercial Terms',
-    partialAwardAccepted: 'Partial award accepted',
-    fullQuotedScopeRequired: 'Full quoted scope required',
-    orderInformation: 'Order Information',
-    orderInformationIntro: 'This summary shows the buyer-side billing and delivery or service instructions attached to this supplier order.',
-    invoices: 'Invoices & Payments',
-    invoicesIntro: 'Review every supplier invoice and its payment confirmation stage here. Use the Orders table action to upload or update payment proof invoice by invoice.',
-    noData: '-',
-    countriesSelected: 'countries selected',
-    portsSelected: 'ports selected',
-    selectedCountries: 'Selected Countries',
-    selectedPorts: 'Selected Ports',
-    close: 'Close',
-};
+const { section } = useI18n();
+const copySource = section('buyer.dashboard.orderDetail');
+const copy = new Proxy({}, {
+    get: (_, key) => copySource.value[key],
+});
 
 const formatDate = (value) => {
     if (!value) return copy.noData;
@@ -124,13 +91,13 @@ const detailModalTitle = computed(() => (
         : copy.selectedPorts
 ));
 
-const orderWorkflowLabel = computed(() => order.order_workflow_status_label || 'Order Information Pending');
+const orderWorkflowLabel = computed(() => order.order_workflow_status_label || copy.orderInformationPending);
 
 const generalInformationFields = computed(() => [
     { key: 'reference_no', label: copy.referenceNo, value: textOrDash(order.reference_no) },
     { key: 'supplier', label: copy.supplier, value: textOrDash(order.supplier_name), href: order.supplier_profile_url || '' },
     { key: 'ship', label: copy.ship, value: textOrDash(order.ship_name) },
-    { key: 'imo_number', label: 'IMO Number', value: textOrDash(order.imo_number) },
+    { key: 'imo_number', label: copy.imoNumber, value: textOrDash(order.imo_number) },
     { key: 'status', label: copy.orderStatus, value: orderWorkflowLabel.value },
     { key: 'country', label: copy.country, value: `${selectedCountryCount.value} ${copy.countriesSelected}`, clickable: true, action: 'countries' },
     { key: 'ports', label: copy.ports, value: `${selectedPortCount.value} ${copy.portsSelected}`, clickable: true, action: 'ports', long: true },

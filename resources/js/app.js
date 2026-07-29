@@ -4,8 +4,11 @@ import { Fragment, createApp, h } from 'vue';
 import { createInertiaApp } from '@inertiajs/vue3';
 import CookieConsentBanner from './Components/CookieConsentBanner.vue';
 import GoogleAnalyticsTracker from './Components/GoogleAnalyticsTracker.vue';
+import { initializeLocale } from './lib/i18n';
 
 const pages = import.meta.glob('./Pages/**/*.vue');
+
+initializeLocale();
 
 createInertiaApp({
     resolve: (name) => {

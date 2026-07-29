@@ -1,4 +1,5 @@
 <script setup>
+import { useI18n } from '../../../lib/i18n';
 import { computed, defineAsyncComponent, ref } from 'vue';
 import { Link } from '@inertiajs/vue3';
 import AdminDashboardShell from './Shell.vue';
@@ -30,7 +31,7 @@ const hasInvoices = computed(() => (order.invoices?.length ?? 0) > 0);
 const activeModalType = ref(null);
 const detailModal = ref(null);
 
-const copy = {
+const baseCopy = {
     title: 'Order Detail',
     eyebrow: 'Admin Order Detail',
     intro: 'Review the confirmed supplier order, intervene in order information when needed, manage invoices, and complete the payment workflow from one admin screen.',
@@ -75,10 +76,24 @@ const copy = {
     noData: '-',
 };
 
+const { section } = useI18n();
+const translatedCopy = section('admin.orderDetail');
+const mergedCopy = computed(() => ({
+    ...baseCopy,
+    ...translatedCopy.value,
+    requestType: {
+        ...baseCopy.requestType,
+        ...(translatedCopy.value.requestType ?? {}),
+    },
+}));
+const copy = new Proxy(baseCopy, {
+    get: (target, key) => mergedCopy.value[key] ?? target[key],
+});
+
 const isOrderInformationModalOpen = computed(() => activeModalType.value === 'order-information');
 const isInvoiceUploadModalOpen = computed(() => activeModalType.value === 'invoice');
 const isPaymentProofModalOpen = computed(() => activeModalType.value === 'payment-proof');
-const orderWorkflowLabel = computed(() => order.order_workflow_status_label || 'Order Information Pending');
+const orderWorkflowLabel = computed(() => order.order_workflow_status_label || copy.orderInformationPending);
 
 const formatDate = (value) => {
     if (!value) return copy.noData;

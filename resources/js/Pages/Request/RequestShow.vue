@@ -6,6 +6,7 @@ import MainLayout from '../../Layouts/MainLayout.vue';
 import PublicMetaHead from '../../Components/PublicMetaHead.vue';
 import RequestCard from '../../Components/RequestCard.vue';
 import RfqGeneralInformationSection from '../../Components/RfqGeneralInformationSection.vue';
+import { useI18n } from '../../lib/i18n';
 
 const props = defineProps({
     rfq: {
@@ -47,141 +48,8 @@ const similarStartIndex = ref(0);
 const similarVisibleCount = ref(4);
 const similarRfqsData = ref(props.similarRfqs ?? []);
 
-const copy = {
-        eyebrow: 'Published Request',
-        title: 'Request Detail',
-        heroSparePartsTitle: 'Spare Parts Request',
-        heroServiceTitle: 'Service Request',
-        text: 'Review the request scope exactly as it was published and check whether you can submit an offer from this page.',
-        privateRequest: 'Private Request',
-        back: 'Back to Requests',
-        general: 'General Information',
-        items: 'Items to Quote',
-        service: 'Service Request',
-        offerCard: 'Submit Offer',
-        buyerRfqCard: 'Buyer RFQ',
-        supplierRfqCard: 'Supplier RFQ',
-        orderDetailCard: 'Order Detail',
-        continueDraft: 'Continue Draft',
-        editOffer: 'Edit Offer',
-        submittedOffer: 'Submitted',
-        draftSaved: 'Draft saved',
-        offerQty: 'Offer Qty',
-        unitPrice: 'Unit Price',
-        totalPrice: 'Total Price',
-        total: 'Total',
-        leadTime: 'Delivery Time',
-        completionTime: 'Completion Time',
-        offerValidity: 'Offer Validity',
-        remarks: 'Remarks',
-        files: 'Files',
-        tax: 'Including Tax',
-        packing: 'Including Packing',
-        freight: 'Including Freight',
-        mobilization: 'Including Mobilization',
-        grandTotal: 'Grand Total',
-        serviceClarification: 'Service Clarification',
-        deliveryTerms: 'Delivery Terms',
-        otherDeliveryTerms: 'Other Delivery Terms',
-        paymentTerms: 'Payment Terms',
-        otherPaymentTerms: 'Other Payment Terms',
-        paymentOrderConfirmation: '% when order confirmation',
-        paymentBeforeShipment: '% before shipment',
-        paymentInvoiceDays: 'days from Invoice Date',
-        generalNote: 'General Note',
-        included: 'Included',
-        file: 'File',
-        fileAddedSingular: 'file added',
-        fileAddedPlural: 'files added',
-        titleLabel: 'Title',
-        descriptionLabel: 'Description',
-        noFiles: 'No files',
-        noNotes: 'No notes added',
-        noDescription: 'No description added',
-        view: 'View',
-        countriesSelected: 'countries selected',
-        portsSelected: 'ports selected',
-        selectedPorts: 'Selected Ports',
-        selectedCountries: 'Selected Countries',
-        allListedPortsIn: 'All listed ports in',
-        portsSelectedSuffix: 'ports selected',
-        close: 'Close',
-        previous: 'Previous',
-        next: 'Next',
-        openFile: 'Open file',
-        previewUnavailable: 'Preview unavailable for this file type.',
-        offer: 'Submit Offer',
-        buyerRfqAction: 'Go to Buyer RFQ',
-        supplierRfqAction: 'Go to Supplier RFQ',
-        awardDetail: 'Go to Order Detail',
-        offerLogin: 'Sign in to continue',
-        offerRegister: 'Create seller or buyer account',
-        offerLocked: 'Offer unavailable',
-        similarEyebrow: 'Similar RFQs',
-        similarTitle: 'Other published requests you may want to review',
-        openRequest: 'Open Request',
-        live: 'LIVE',
-        closeBadge: 'CLOSE',
-        yourOffer: 'Your Offer',
-        notices: {
-            rfq_closed: 'This request is closed and no longer accepts new offers.',
-            buyer_cannot_offer: 'Buyer accounts cannot submit offers from this area.',
-            seller_only: 'A supplier account is required before you can submit an offer.',
-            approval_required: 'Your supplier account must be approved before you can submit an offer.',
-            scope_mismatch: 'This request is not open to your selected countries, ports, categories, or subcategories.',
-            login_required: 'Sign in with your seller or buyer account to review this request and continue to the offer process.',
-            eligible: 'Your supplier account matches this request scope. Review the request details and continue to submit your offer from here.',
-            draft_saved: 'You have a saved draft for this request. Continue where you left off or review your entered lines below.',
-            submitted: 'You have already submitted an offer for this request. Review the request details and your submitted lines below.',
-            awarded_to_you: 'This request has already been awarded to your company. Continue from your Order Detail screen to review selected lines and the next workflow step.',
-            buyer_rfq_owner: 'This request belongs to your buyer account. Continue in Buyer RFQ to review offers and manage the next workflow steps.',
-        },
-        labels: {
-            referenceNo: 'Reference No',
-            company: 'Company',
-            ship: 'Ship',
-            country: 'Country',
-            ports: 'Ports',
-            requisitionDate: 'Requisition Date',
-            dueDate: 'Due Date',
-            currency: 'Currency',
-            priority: 'Priority',
-            status: 'RFQ Status',
-            awardConfirmed: 'Award Confirmed',
-            generalNotes: 'General Notes',
-        },
-        table: {
-            line: '#',
-            product: 'Product',
-            partNo: 'Part No',
-            manufacturer: 'Manufacturer',
-            modelType: 'Model/Type',
-            catalogCode: 'Catalog Code',
-            serialNumber: 'Serial No',
-            drawingNumber: 'Drawing No',
-            qty: 'Qty',
-            unit: 'Unit',
-            rob: 'ROB',
-            quality: 'Quality',
-            comments: 'Comments',
-            files: 'Files',
-        },
-        requestType: {
-            spare_parts: 'Spare Parts',
-            service_request: 'Service Request',
-        },
-        statuses: {
-            open: 'Open',
-            close: 'Close',
-            award_confirmed: 'Award Confirmed',
-        },
-        priority: {
-            low: 'Low',
-            normal: 'Normal',
-            high: 'High',
-            critical: 'Critical',
-        },
-    };
+const { locale, section } = useI18n();
+const copy = section('requestShow');
 
 const parseDeliveryDays = (value) => {
     const match = `${value ?? ''}`.match(/(\d+(?:[.,]\d+)?)/);
@@ -190,10 +58,10 @@ const parseDeliveryDays = (value) => {
 
 const formatDeliveryDays = (value) => {
     const days = parseDeliveryDays(value);
-    return days !== null ? `${days} days` : (value || '-');
+    return days !== null ? `${days} ${currentCopy.value.days}` : (value || '-');
 };
 
-const currentCopy = computed(() => copy);
+const currentCopy = copy;
 const isSpareParts = computed(() => props.rfq.request_type === 'spare_parts');
 const isPrivateRequest = computed(() => Boolean(props.rfq.is_private_request));
 const isBuyerOwnerView = computed(() => Boolean(props.rfq.is_buyer_owner));
@@ -211,8 +79,8 @@ const heroTitle = computed(() => {
         ? currentCopy.value.heroSparePartsTitle
         : currentCopy.value.heroServiceTitle;
 });
-const heroEyebrow = computed(() => props.rfq.eyebrow || currentCopy.value.eyebrow);
-const heroIntroCopy = computed(() => props.rfq.detail_text || currentCopy.value.text);
+const heroEyebrow = computed(() => (locale.value === 'zh' ? currentCopy.value.eyebrow : (props.rfq.eyebrow || currentCopy.value.eyebrow)));
+const heroIntroCopy = computed(() => (locale.value === 'zh' ? currentCopy.value.text : (props.rfq.detail_text || currentCopy.value.text)));
 const heroVisibilityNotice = computed(() => props.rfq.detail_notice || '');
 
 const isAwardedSellerView = computed(() => showSupplierWorkspace.value && props.rfq.offer_state === 'awarded');
@@ -1285,12 +1153,12 @@ const portGroupSummary = (group) => {
                 </div>
                 <div class="related-carousel">
                     <div v-if="similarRfqs.length > similarVisibleCount" class="related-nav">
-                        <button type="button" class="related-nav-button" :disabled="!canSlideSimilarPrev" @click="slideSimilarPrev" aria-label="Previous RFQs">
+                        <button type="button" class="related-nav-button" :disabled="!canSlideSimilarPrev" @click="slideSimilarPrev" :aria-label="currentCopy.previousRfqs">
                             <svg class="related-nav-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                                 <path d="m15 18-6-6 6-6" />
                             </svg>
                         </button>
-                        <button type="button" class="related-nav-button" :disabled="!canSlideSimilarNext" @click="slideSimilarNext" aria-label="Next RFQs">
+                        <button type="button" class="related-nav-button" :disabled="!canSlideSimilarNext" @click="slideSimilarNext" :aria-label="currentCopy.nextRfqs">
                             <svg class="related-nav-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                                 <path d="m9 18 6-6-6-6" />
                             </svg>

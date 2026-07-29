@@ -1,4 +1,9 @@
 <script setup>
+import { computed } from 'vue';
+import { useI18n } from '../../lib/i18n';
+const { section } = useI18n();
+const layoutCopy = section('staticLayout');
+
 const props = defineProps({
     eyebrow: {
         type: String,
@@ -42,9 +47,11 @@ const props = defineProps({
     },
     backLabel: {
         type: String,
-        default: 'Back to Home',
+        default: '',
     },
 });
+
+const resolvedBackLabel = computed(() => props.backLabel || layoutCopy.value.backToHome);
 </script>
 
 <template>
@@ -60,7 +67,7 @@ const props = defineProps({
 
                 <div class="static-hero-actions">
                     <slot name="hero-actions">
-                        <a class="hero-back-link" :href="backHref">{{ backLabel }}</a>
+                        <a class="hero-back-link" :href="backHref">{{ resolvedBackLabel }}</a>
                     </slot>
                 </div>
             </div>
@@ -80,7 +87,7 @@ const props = defineProps({
                         </section>
 
                         <section v-if="facts.length" class="static-inline-panel">
-                            <strong class="static-panel-title">At a glance</strong>
+                            <strong class="static-panel-title">{{ layoutCopy.atAGlance }}</strong>
                             <div class="static-line-list">
                                 <div v-for="fact in facts" :key="fact" class="static-line">
                                     <span class="fact-dot"></span>
@@ -106,7 +113,7 @@ const props = defineProps({
         <div v-if="cta" class="static-block">
             <section class="static-surface page-cta">
                 <div class="page-cta-copy">
-                    <p class="side-kicker">Next step</p>
+                    <p class="side-kicker">{{ layoutCopy.nextStep }}</p>
                     <strong>{{ cta.title }}</strong>
                     <p>{{ cta.text }}</p>
                 </div>

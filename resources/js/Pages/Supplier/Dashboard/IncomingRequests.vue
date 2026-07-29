@@ -1,4 +1,5 @@
 <script setup>
+import { useI18n } from '../../../lib/i18n';
 import { computed, ref } from 'vue';
 import { Link } from '@inertiajs/vue3';
 import SupplierDashboardShell from './Shell.vue';
@@ -18,7 +19,7 @@ const searchQuery = ref('');
 const rowsPerPage = ref(10);
 const currentPage = ref(1);
 
-const copy = {
+const baseCopy = {
     title: 'Supplier Dashboard',
     tabTitle: 'Incoming Requests',
     tabText: 'RFQs and service requests sent to you appear here.',
@@ -78,6 +79,12 @@ const copy = {
     medium: 'normal',
     low: 'low',
 };
+
+const { section } = useI18n();
+const translatedCopy = section('supplier.incoming');
+const copy = new Proxy(baseCopy, {
+    get: (target, key) => translatedCopy.value[key] ?? target[key],
+});
 
 const detailModal = ref(null);
 const detailModalRequest = ref(null);

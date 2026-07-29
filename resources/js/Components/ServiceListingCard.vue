@@ -1,6 +1,7 @@
 <script setup>
 import { computed } from 'vue';
 import { Link } from '@inertiajs/vue3';
+import { useI18n } from '../lib/i18n';
 
 const props = defineProps({
     item: {
@@ -77,6 +78,9 @@ const theme = computed(() => {
     return categoryThemes.find((entry) => entry.matches.some((match) => haystack.includes(match))) ?? defaultCategoryTheme;
 });
 
+const { section } = useI18n();
+const copy = section('serviceCard');
+
 const href = computed(() => props.item?.href || '#');
 const isDirectoryVariant = computed(() => props.variant === 'directory');
 const title = computed(() => props.item?.secondary_category?.name || props.item?.primary_category?.name || props.item?.name || props.item?.company_name || '');
@@ -86,7 +90,7 @@ const primaryCategoryName = computed(() => props.item?.primary_category?.name ||
 const secondaryCategoryName = computed(() => props.item?.secondary_category?.name || '');
 const serviceLabel = computed(() => secondaryCategoryName.value || primaryCategoryName.value || title.value);
 const portsCount = computed(() => Number(props.item?.ports_count ?? 0));
-const portsLabel = computed(() => `${portsCount.value} ${portsCount.value === 1 ? 'port' : 'ports'} globally`);
+const portsLabel = computed(() => `${portsCount.value} ${portsCount.value === 1 ? copy.value.port : copy.value.ports} ${copy.value.globally}`);
 const reviewCount = computed(() => Number(props.item?.review_summary?.count ?? 0));
 const reviewAverage = computed(() => {
     if (reviewCount.value <= 0) {
@@ -97,7 +101,7 @@ const reviewAverage = computed(() => {
 });
 const reviewAverageText = computed(() => {
     if (reviewCount.value <= 0) {
-        return 'No reviews yet';
+        return copy.value.noReviewsYet;
     }
 
     return reviewAverage.value.toFixed(1);
@@ -142,7 +146,7 @@ const logoInitials = computed(() => {
                         </div>
                         <span class="directory-rating-value">{{ reviewAverageText }}</span>
                         <span v-if="reviewCount > 0" class="directory-rating-count">
-                            {{ reviewCount }} review{{ reviewCount === 1 ? '' : 's' }}
+                            {{ reviewCount }} {{ reviewCount === 1 ? copy.review : copy.reviews }}
                         </span>
                     </div>
                     <span v-if="serviceLabel" class="directory-service-line">{{ serviceLabel }}</span>

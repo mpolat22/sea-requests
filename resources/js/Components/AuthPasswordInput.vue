@@ -1,5 +1,6 @@
 <script setup>
 import { computed, ref, useAttrs } from 'vue';
+import { useI18n } from '../lib/i18n';
 
 defineOptions({
     inheritAttrs: false,
@@ -14,6 +15,9 @@ const props = defineProps({
 
 const emit = defineEmits(['update:modelValue', 'input', 'focus', 'blur']);
 
+const { section } = useI18n();
+const ui = section('auth.passwordInput');
+
 const attrs = useAttrs();
 const inputEl = ref(null);
 const isVisible = ref(false);
@@ -25,7 +29,7 @@ const inputAttrs = computed(() => {
 });
 
 const inputClasses = computed(() => ['password-toggle-input', attrs.class]);
-const toggleLabel = computed(() => (isVisible.value ? 'Hide password' : 'Show password'));
+const toggleLabel = computed(() => (isVisible.value ? ui.value.hide : ui.value.show));
 
 const handleInput = (event) => {
     emit('update:modelValue', event.target.value);

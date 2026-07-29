@@ -5,6 +5,7 @@ import MainLayout from '../../Layouts/MainLayout.vue';
 import SupplierVerificationForm from './Partials/SupplierVerificationForm.vue';
 import SupplierVerificationPreview from './Partials/SupplierVerificationPreview.vue';
 import { dialCodes } from '../../lib/accountContactOptions';
+import { useI18n } from '../../lib/i18n';
 
 const props = defineProps({
     categories: { type: Array, required: true },
@@ -104,6 +105,8 @@ const parsedWhatsapp = parseDialPhone(props.verification.whatsapp_number, parsed
 
 
 const displayLocale = 'en';
+const { section } = useI18n();
+const supplierVerificationCopy = section('auth.supplierVerification');
 const removalModalOpen = ref(false);
 const removalForm = useForm({
     reason: props.verification.removal_request?.reason ?? '',
@@ -111,108 +114,11 @@ const removalForm = useForm({
 });
 
 
-const ui = computed(() => ({
-    title: 'Supplier Application | Sea Requests',
-    eyebrow: 'Corporate application',
-    heading: 'Submit your business in one complete application',
-    text: 'Complete your business identity, location, contact details and company registration documents. Your profile goes live after approval.',
-    identityHeading: 'Business Identity',
-    locationHeading: 'Location',
-    galleryHeading: 'Gallery',
-    contactHeading: 'Contact',
-    officialHeading: 'Official Details and Documents',
-    businessName: 'Business Name *',
-    primaryCategory: 'Business Primary Category *',
-    subcategory: 'Business Subcategory',
-    brands: 'Brands',
-    selectCategory: 'Select category',
-    selectSubcategory: 'Select subcategory',
-    brandSearchPlaceholder: 'Search and add brands',
-    categoryHelper: 'Select the categories and subcategories your company truly serves. Based on these selections, relevant requests will be matched and sent to you.',
-    brandHelper: 'Select the brands you actively supply or service. These selections help the platform match and send more relevant brand-specific requests to you.',
-    serviceCoverageHelper: 'Select the countries and ports where you actively provide service. Requests from matching locations will be routed to your company.',
-    brandEmpty: 'No matching brands were found.',
-    serviceCoverageHeading: 'Service Countries and Ports',
-    serviceCountries: 'Service Countries *',
-    servicePorts: 'Service Ports *',
-    selectServiceCountries: 'Select countries',
-    selectPorts: 'Select ports',
-    serviceCountryLimit: 'You can select up to 10 countries.',
-    servicePortRequired: 'Select at least one port for each country.',
-    noPortsForCountry: 'No ports available for this country.',
-    country: 'Country *',
-    city: 'City *',
-    district: 'District',
-    neighborhood: 'Neighborhood',
-    postalCode: 'Postal Code *',
-    fullAddress: 'Full Address *',
-    fullAddressPlaceholder: 'Street, building number, floor, office or company address',
-    logo: 'Logo *',
-    addFiles: 'Add Files',
-    openFile: 'Open',
-    removeFile: 'Remove',
-    noFiles: 'No files added yet.',
-    mobilePhone: 'Mobile / GSM Line *',
-    landlinePhone: 'Landline Business Phone',
-    website: 'Website',
-    email: 'Company Email *',
-    whatsapp: 'WhatsApp',
-    telegram: 'Telegram',
-    instagram: 'Instagram',
-    linkedin: 'LinkedIn',
-    facebook: 'Facebook',
-    twitter: 'Twitter',
-    phonePlaceholder: '+90 555 000 00 00',
-    landlinePlaceholder: '+90 212 000 00 00',
-    websitePlaceholder: 'https://www.example.com',
-    emailPlaceholder: 'contact@example.com',
-    socialPlaceholder: 'https://',
-    registrationNumber: 'Company Registration Number *',
-    registrationDocuments: 'Company Registration Documents *',
+const ui = computed(() => supplierVerificationCopy.value.form);
 
-    fileRules: 'PDF, JPG, JPEG, PNG or WEBP. Each file can be up to 10 MB.',
-    submit: 'Submit Application',
-    submitting: 'Submitting Application...',
-}));
+const removalUi = computed(() => supplierVerificationCopy.value.removal);
 
-const removalUi = computed(() => ({
-    eyebrow: 'Remove business',
-    title: 'Do you want to remove your business from the platform?',
-    text: 'Your business will not be deleted immediately. The request will be sent to the admin panel for review.',
-    button: 'Remove Business',
-    modalTitle: 'Business removal request',
-    modalText: 'Please select why you want to remove your business. This will be shared with the admin team.',
-    reason: 'Removal reason *',
-    note: 'Explanation *',
-    notePlaceholder: 'Please briefly explain why you want to remove your business.',
-    placeholder: 'Select a reason',
-    reasons: {
-        business_closed: 'My business has closed',
-        duplicate_listing: 'I created a duplicate listing',
-        wrong_account: 'I applied with the wrong account',
-        not_needed: 'I no longer want to be listed',
-        other: 'Other',
-    },
-    cancel: 'Cancel',
-    submit: 'Submit Request',
-    submitting: 'Submitting Request...',
-    pending: 'Your removal request is waiting for admin review.',
-}));
-
-const rejectionUi = computed(() => ({
-    eyebrow: 'Revision required',
-    title: 'Your application needs updates',
-    text: 'The admin team did not approve your application at this time. Please update your details based on the notes below and submit again.',
-    reason: 'Rejection reason',
-    note: 'Admin note',
-    reasons: {
-        documents_incomplete: 'Documents are incomplete or insufficient',
-        information_mismatch: 'The submitted information does not match',
-        service_scope_unclear: 'The service scope is unclear',
-        compliance_issue: 'There is a compliance or verification issue',
-        other: 'Other',
-    },
-}));
+const rejectionUi = computed(() => supplierVerificationCopy.value.rejection);
 
 const rejectionFeedback = computed(() => props.verification.rejection_feedback ?? {});
 

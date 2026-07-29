@@ -2,6 +2,7 @@
 import MainLayout from '@/Layouts/MainLayout.vue';
 import { Head, Link, router, usePage } from '@inertiajs/vue3';
 import { computed } from 'vue';
+import { useI18n } from '@/lib/i18n';
 
 const props = defineProps({
     notificationsPage: Object,
@@ -9,28 +10,36 @@ const props = defineProps({
 
 const page = usePage();
 
-const copy = {
-    eyebrow: 'Notification Center',
-    title: 'All your notifications',
-    text: 'You can see every update related to registration, applications, approvals and account activity here.',
-    emptyTitle: 'You do not have any notifications yet.',
-    emptyText: 'Notifications will appear here when a new action happens.',
-    allRead: 'Mark all as read',
-    unread: 'Unread',
-    read: 'Read',
-    open: 'Open details',
-    markRead: 'Mark as read',
-    previous: 'Previous',
-    next: 'Next',
-};
+const { locale, section } = useI18n();
+const copy = section('layout.notifications');
 
 const hasUnread = computed(() => (page.props.notifications?.unread_count ?? 0) > 0);
+
+const localizeNotification = (notification) => {
+    const translated = notification.translations?.[locale.value]
+        ?? notification.translations?.en
+        ?? null;
+
+    if (!translated) {
+        return notification;
+    }
+
+    return {
+        ...notification,
+        title: translated.title ?? notification.title,
+        message: translated.message ?? notification.message,
+        details: translated.details ?? notification.details,
+        action_label: translated.action_label ?? notification.action_label,
+    };
+};
+
+const notificationRows = computed(() => (props.notificationsPage?.data ?? []).map(localizeNotification));
 
 const formatNotificationTime = (value) => {
     if (!value) return '';
 
     try {
-        return new Intl.DateTimeFormat('en-GB', {
+        return new Intl.DateTimeFormat(locale.value === 'zh' ? 'zh-CN' : 'en-GB', {
             dateStyle: 'medium',
             timeStyle: 'short',
         }).format(new Date(value));
@@ -55,15 +64,15 @@ const markAsRead = (notificationId) => {
 </script>
 
 <template>
-    <Head title="Notifications" />
+    <Head :title="copy.pageHeadTitle" />
 
     <MainLayout>
         <section class="notifications-page">
             <header class="directory-intro-card notifications-hero">
                 <div>
                     <p class="directory-eyebrow">{{ copy.eyebrow }}</p>
-                    <h1 class="directory-page-title">{{ copy.title }}</h1>
-                    <p class="directory-intro-copy">{{ copy.text }}</p>
+                    <h1 class="directory-page-title">{{ copy.pageTitle }}</h1>
+                    <p class="directory-intro-copy">{{ copy.pageText }}</p>
                 </div>
 
                 <button
@@ -76,16 +85,16 @@ const markAsRead = (notificationId) => {
                 </button>
             </header>
 
-            <div v-if="notificationsPage.data.length" class="notifications-list-page">
+            <div v-if="notificationRows.length" class="notifications-list-page">
                 <article
-                    v-for="notification in notificationsPage.data"
+                    v-for="notification in notificationRows"
                     :key="notification.id"
                     :class="['notification-card', `is-${notification.tone}`, { unread: !notification.read_at }]"
                 >
                     <div class="notification-card-head">
                         <div>
                             <span :class="['status-pill', { unread: !notification.read_at }]">
-                                {{ notification.read_at ? copy.read : copy.unread }}
+                                {{ notification.read_at ? copy.readStatus : copy.unreadStatus }}
                             </span>
                             <h2 class="directory-card-title">{{ notification.title }}</h2>
                         </div>
@@ -121,7 +130,7 @@ const markAsRead = (notificationId) => {
                             class="primary-action"
                             :href="notification.action_url"
                         >
-                            {{ notification.action_label || copy.open }}
+                            {{ notification.action_label || copy.openDetails }}
                         </Link>
                     </div>
                 </article>

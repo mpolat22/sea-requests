@@ -1,4 +1,5 @@
 <script setup>
+import { useI18n } from '../../../../../lib/i18n';
 const props = defineProps({
     importTemplateOpen: {
         type: Boolean,
@@ -33,6 +34,27 @@ const props = defineProps({
         required: true,
     },
 });
+
+const baseCopy = {
+    title: 'Save Your Import Template',
+    copy: 'Enter the column names your company usually uses. This is optional and only needs to be done once.',
+    cancel: 'Cancel',
+    saving: 'Saving...',
+    saveTemplate: 'Save Template',
+    templateName: 'Template Name',
+    templateNamePlaceholder: 'My RFQ Import Template',
+    generalInformation: 'General Information',
+    itemsToQuote: 'Items to Quote',
+    aliasPlaceholder: '{label} aliases, comma separated',
+};
+
+const { section } = useI18n();
+const translatedCopy = section('buyerCreate.importTemplate');
+const copy = new Proxy(baseCopy, {
+    get: (target, key) => translatedCopy.value[key] ?? target[key],
+});
+
+const aliasPlaceholder = (label) => copy.aliasPlaceholder.replace('{label}', label);
 </script>
 
 <template>
@@ -41,51 +63,51 @@ const props = defineProps({
             <div class="import-preview-card">
                 <div class="import-preview-head">
                     <div>
-                        <h3 class="directory-section-title import-preview-main-title">Save Your Import Template</h3>
-                        <p class="import-preview-copy">Enter the column names your company usually uses. This is optional and only needs to be done once.</p>
+                        <h3 class="directory-section-title import-preview-main-title">{{ copy.title }}</h3>
+                        <p class="import-preview-copy">{{ copy.copy }}</p>
                     </div>
                     <div class="import-preview-actions">
                         <button type="button" class="secondary-button compact-button" @click="props.closeImportTemplate">
                             Cancel
                         </button>
                         <button type="button" class="primary-button compact-button" :disabled="props.importTemplateSaving" @click="props.saveImportTemplate">
-                            {{ props.importTemplateSaving ? 'Saving...' : 'Save Template' }}
+                            {{ props.importTemplateSaving ? copy.saving : copy.saveTemplate }}
                         </button>
                     </div>
                 </div>
 
                 <div class="import-template-surface">
                     <label class="field import-template-name-field">
-                        <span>Template Name</span>
-                        <input v-model="props.importTemplateForm.name" type="text" placeholder="My RFQ Import Template" />
+                        <span>{{ copy.templateName }}</span>
+                        <input v-model="props.importTemplateForm.name" type="text" :placeholder="copy.templateNamePlaceholder" />
                     </label>
 
                     <p v-if="props.importTemplateError" class="import-error">{{ props.importTemplateError }}</p>
 
                     <div class="import-template-grid">
                         <section class="import-template-column">
-                            <h4 class="directory-section-title import-preview-subtitle">General Information</h4>
+                            <h4 class="directory-section-title import-preview-subtitle">{{ copy.generalInformation }}</h4>
                             <div class="import-template-fields">
                                 <label v-for="[key, label] in props.importTemplateGeneralFields" :key="`general-template-${key}`" class="field import-template-field">
                                     <span>{{ label }}</span>
                                     <input
                                         v-model="props.importTemplateForm.general[key]"
                                         type="text"
-                                        :placeholder="`${label} aliases, comma separated`"
+                                        :placeholder="aliasPlaceholder(label)"
                                     />
                                 </label>
                             </div>
                         </section>
 
                         <section class="import-template-column">
-                            <h4 class="directory-section-title import-preview-subtitle">Items to Quote</h4>
+                            <h4 class="directory-section-title import-preview-subtitle">{{ copy.itemsToQuote }}</h4>
                             <div class="import-template-fields">
                                 <label v-for="[key, label] in props.importTemplateItemFields" :key="`item-template-${key}`" class="field import-template-field">
                                     <span>{{ label }}</span>
                                     <input
                                         v-model="props.importTemplateForm.items[key]"
                                         type="text"
-                                        :placeholder="`${label} aliases, comma separated`"
+                                        :placeholder="aliasPlaceholder(label)"
                                     />
                                 </label>
                             </div>

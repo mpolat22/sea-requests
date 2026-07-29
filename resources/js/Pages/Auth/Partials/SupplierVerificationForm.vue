@@ -384,7 +384,7 @@ const categoryDraftErrorMessage = computed(() => {
         return '';
     }
 
-    return 'Select at least 1 subcategory to continue.';
+    return props.ui.categoryDraftError;
 });
 
 const openCategoryPicker = () => {
@@ -420,11 +420,11 @@ const categoryStatusText = (categoryId) => {
     const selectedCount = inlineSubcategoryCountForCategory(categoryId);
 
     if (selectedCount > 0) {
-        return `${selectedCount} selected`;
+        return props.ui.selectedCount.replace('{count}', selectedCount);
     }
 
     if (expandedCategoryId.value === Number(categoryId)) {
-        return 'Select subcategories below';
+        return props.ui.selectSubcategoriesBelow;
     }
 
     return '';
@@ -695,14 +695,14 @@ const missingDraftPortCountryCodes = computed(() => (
 
 const servicePortDraftErrorMessage = computed(() => {
     if (servicePortDraftLimitRequested.value && Object.keys(servicePortDraftSelections.value).length > 10) {
-        return 'You can select up to 10 countries.';
+        return props.ui.servicePortDraftLimitError;
     }
 
     if (!servicePortDraftValidationRequested.value || !missingDraftPortCountryCodes.value.length) {
         return '';
     }
 
-    return 'Please select at least one port for every selected country.';
+    return props.ui.servicePortDraftError;
 });
 
 const openServicePortPicker = () => {
@@ -790,10 +790,10 @@ const serviceCountryPortSummary = (countryCode) => {
     }
 
     if (isServiceCountryFullySelected(countryCode)) {
-        return `All ${count} ports selected`;
+        return props.ui.allPortsSelected.replace('{count}', count);
     }
 
-    return `${count} port${count === 1 ? '' : 's'} selected`;
+    return (count === 1 ? props.ui.portSelected : props.ui.portsSelected).replace('{count}', count);
 };
 
 const syncServicePortDraftSelections = () => {
@@ -884,9 +884,9 @@ const documentLabel = (label) => String(label ?? '').replace(/\s*\*/g, '');
 const documentGuide = (key) => {
     switch (key) {
         case 'company_registration_documents':
-            return 'Upload the official company registration files that confirm your legal business entity.';
+            return props.ui.documentGuide;
         default:
-            return 'Upload the official company registration files that confirm your legal business entity.';
+            return props.ui.documentGuide;
     }
 };
 
@@ -943,7 +943,7 @@ const documentAttachmentsForGroup = (group) => [
     .filter((item) => item?.url)
     .map((item) => ({
         id: item.id ?? item.path ?? item.name ?? item.url,
-        name: item.name ?? 'File',
+        name: item.name ?? props.ui.file,
         url: item.url,
         type: item.type ?? item.file?.type ?? '',
     }));
@@ -954,14 +954,14 @@ const documentSummary = (group) => {
         .filter(Boolean);
 
     if (!names.length) {
-        return 'Select one or more files for this document set.';
+        return props.ui.documentSummaryEmpty;
     }
 
     if (names.length === 1) {
         return names[0];
     }
 
-    return `${names[0]} + ${names.length - 1} more`;
+    return props.ui.documentSummaryMore.replace('{name}', names[0]).replace('{count}', names.length - 1);
 };
 
 const openDocumentViewer = (group, startIndex = 0) => {
@@ -1086,17 +1086,17 @@ onBeforeUnmount(() => {
                     <div class="section-form section-form-narrow">
                         <label class="field" data-section-field="company_name">
                             <span v-html="formatRequiredLabel(ui.businessName)"></span>
-                            <span class="field-hint">Enter the business name exactly as buyers should see it on your profile and offers.</span>
+                            <span class="field-hint">{{ ui.businessNameHint }}</span>
                             <div class="input-shell" :class="{ invalid: hasVisualInvalid('company_name') }">
                                 <span class="input-icon" aria-hidden="true"><svg viewBox="0 0 20 20" fill="none"><path d="M3 7.5h14v8A1.5 1.5 0 0 1 15.5 17h-11A1.5 1.5 0 0 1 3 15.5v-8Z" stroke="currentColor" stroke-width="1.5"/><path d="m4.5 7.5 1.4-2.8A1.5 1.5 0 0 1 7.24 4h5.52c.57 0 1.08.32 1.34.83l1.4 2.67" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></span>
-                                <input :ref="fieldRefs.company_name" v-model="form.company_name" type="text" placeholder="Please enter your full business name" @input="clearFieldErrorIfValid('company_name')" />
+                                <input :ref="fieldRefs.company_name" v-model="form.company_name" type="text" :placeholder="ui.businessNamePlaceholder" @input="clearFieldErrorIfValid('company_name')" />
                             </div>
                             <span class="field-feedback">{{ visibleFieldError('company_name') }}</span>
                         </label>
 
                         <label class="field" data-section-field="company_logo">
                             <span v-html="formatRequiredLabel(ui.logo)"></span>
-                            <span class="field-hint">Upload a clean company logo that will represent your business on the supplier profile.</span>
+                            <span class="field-hint">{{ ui.logoHint }}</span>
                             <input id="single-file-input-company_logo" type="file" accept=".jpg,.jpeg,.png,.webp" class="hidden-input" @change="assignSingleFile('company_logo', $event)" />
                             <div class="identity-logo-shell" :class="{ invalid: hasVisualInvalid('company_logo', hasCompanyLogoSelected) }">
                                 <button type="button" class="identity-logo-trigger" @click="triggerSingleInput('company_logo')">
@@ -1109,13 +1109,13 @@ onBeforeUnmount(() => {
                                         </svg>
                                     </div>
                                     <div class="identity-logo-copy">
-                                        <strong>{{ newSingles.company_logo || singleMedia.company_logo ? 'Logo ready' : 'Upload company logo' }}</strong>
-                                        <span>{{ newSingles.company_logo?.name || singleMedia.company_logo?.name || 'JPG, JPEG, PNG or WEBP' }}</span>
+                                        <strong>{{ newSingles.company_logo || singleMedia.company_logo ? ui.logoReady : ui.uploadLogo }}</strong>
+                                        <span>{{ newSingles.company_logo?.name || singleMedia.company_logo?.name || ui.logoFileTypes }}</span>
                                     </div>
                                 </button>
                                 <div class="identity-logo-actions">
                                     <button type="button" class="secondary-button identity-logo-action" @click="triggerSingleInput('company_logo')">
-                                        {{ newSingles.company_logo || singleMedia.company_logo ? 'Change' : 'Select' }}
+                                        {{ newSingles.company_logo || singleMedia.company_logo ? ui.change : ui.select }}
                                     </button>
                                     <button
                                         v-if="newSingles.company_logo || singleMedia.company_logo"
@@ -1123,7 +1123,7 @@ onBeforeUnmount(() => {
                                         class="media-link-button is-danger identity-logo-remove"
                                         @click="removeSingleMedia('company_logo')"
                                     >
-                                        Remove
+                                        {{ ui.removeFile }}
                                     </button>
                                 </div>
                             </div>
@@ -1131,15 +1131,15 @@ onBeforeUnmount(() => {
                         </label>
 
                         <label class="field" data-section-field="company_overview">
-                            <span v-html="formatRequiredLabel('Company Overview *')"></span>
-                            <span class="field-hint">Describe your services, specialties, coverage, and the strengths buyers should know first.</span>
+                            <span v-html="formatRequiredLabel(ui.companyOverview)"></span>
+                            <span class="field-hint">{{ ui.companyOverviewHint }}</span>
                             <div class="input-shell input-shell-textarea" :class="{ invalid: hasVisualInvalid('company_overview') }">
                                 <span class="input-icon input-icon-textarea" aria-hidden="true"><svg viewBox="0 0 20 20" fill="none"><path d="M5 4.75h10A1.25 1.25 0 0 1 16.25 6v8A1.25 1.25 0 0 1 15 15.25H5A1.25 1.25 0 0 1 3.75 14V6A1.25 1.25 0 0 1 5 4.75Z" stroke="currentColor" stroke-width="1.5"/><path d="M6.75 8h6.5M6.75 10.75h6.5M6.75 13.5h4.25" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></span>
                                 <textarea
                                     :ref="fieldRefs.company_overview"
                                     v-model="form.company_overview"
                                     rows="6"
-                                    placeholder="Describe your expertise, services, coverage and what makes your operation stand out."
+                                    :placeholder="ui.companyOverviewPlaceholder"
                                     @input="clearFieldErrorIfValid('company_overview')"
                                 ></textarea>
                             </div>
@@ -1157,13 +1157,13 @@ onBeforeUnmount(() => {
                 <div class="capability-cluster">
                     <div class="capability-cluster-item">
                         <div class="section-head">
-                            <p class="directory-eyebrow section-card-eyebrow">Category and Subcategory</p>
+                            <p class="directory-eyebrow section-card-eyebrow">{{ ui.categoryHeading }}</p>
                         </div>
 
                         <div class="identity-surface">
                             <div class="section-form section-form-narrow">
                                 <div class="brand-selector" data-section-field="service_category_ids">
-                                    <span class="brand-selector-label" v-html="formatRequiredLabel('Category and Subcategory *')"></span>
+                                    <span class="brand-selector-label" v-html="formatRequiredLabel(ui.categoryLabel)"></span>
                                     <span class="field-hint">{{ ui.categoryHelper }}</span>
                                     <div class="brand-selector-shell" :class="{ invalid: hasVisualInvalid('service_category_ids') || hasVisualInvalid('service_subcategory_ids') }">
                                         <button
@@ -1173,14 +1173,14 @@ onBeforeUnmount(() => {
                                             @click="openCategoryPicker"
                                         >
                                             <span class="input-icon" aria-hidden="true"><svg viewBox="0 0 20 20" fill="none"><path d="m12.5 5 2 2M8 9l2 2M3.5 3.5 7 7M3.5 16.5 7 13" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><path d="m10.7 4.8 1.6-1.6a1 1 0 0 1 1.4 0l2.1 2.1a1 1 0 0 1 0 1.4l-1.6 1.6M6.3 15.2l-1.6 1.6a1 1 0 0 1-1.4 0l-2.1-2.1a1 1 0 0 1 0-1.4l1.6-1.6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></span>
-                                            <span>Select categories and subcategories</span>
+                                            <span>{{ ui.openCategoryPicker }}</span>
                                         </button>
 
                                         <div
                                             v-if="selectedCategoryCounts.categoryCount || selectedCategoryCounts.subcategoryCount"
                                             class="category-summary-count"
                                         >
-                                            <span>({{ selectedCategoryCounts.categoryCount }}) categories selected, ({{ selectedCategoryCounts.subcategoryCount }}) subcategories selected</span>
+                                            <span>{{ ui.selectedCategoriesSummary.replace('{category}', selectedCategoryCounts.categoryCount).replace('{subcategory}', selectedCategoryCounts.subcategoryCount) }}</span>
                                         </div>
                                     </div>
                                     <span class="field-feedback">{{ visibleCombinedError(['service_category_ids', 'service_subcategory_ids'], hasVisualInvalid('service_category_ids') || hasVisualInvalid('service_subcategory_ids')) }}</span>
@@ -1207,11 +1207,11 @@ onBeforeUnmount(() => {
                                             @click="openBrandPicker"
                                         >
                                             <span class="input-icon" aria-hidden="true"><svg viewBox="0 0 20 20" fill="none"><path d="M4 14V6.75A1.75 1.75 0 0 1 5.75 5h8.5A1.75 1.75 0 0 1 16 6.75V14M4 14h12M6.5 8.25h7M6.5 11h4.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></span>
-                                            <span>Select brands</span>
+                                            <span>{{ ui.openBrandPicker }}</span>
                                         </button>
 
                                         <div v-if="selectedBrandCount" class="category-summary-count">
-                                            <span>({{ selectedBrandCount }}) brands selected</span>
+                                            <span>{{ ui.selectedBrandsSummary.replace('{count}', selectedBrandCount) }}</span>
                                         </div>
                                     </div>
                                     <span class="field-feedback">{{ visibleFieldError('service_brand_ids') }}</span>
@@ -1228,7 +1228,7 @@ onBeforeUnmount(() => {
                         <div class="identity-surface">
                             <div class="section-form section-form-narrow">
                                 <div class="brand-selector" data-section-field="service_country_codes">
-                                    <span class="brand-selector-label" v-html="formatRequiredLabel('Service Countries and Ports *')"></span>
+                                    <span class="brand-selector-label" v-html="formatRequiredLabel(ui.serviceCoverageLabel)"></span>
                                     <span class="field-hint">{{ serviceCoverageSectionHelper }}</span>
                                     <div class="brand-selector-shell" :class="{ invalid: hasVisualInvalid('service_country_codes') || hasVisualInvalid('service_ports_by_country') }">
                                         <button
@@ -1238,14 +1238,14 @@ onBeforeUnmount(() => {
                                             @click="openServicePortPicker"
                                         >
                                             <span class="input-icon" aria-hidden="true"><svg viewBox="0 0 20 20" fill="none"><path d="M10 16.5s4.5-3.5 4.5-7a4.5 4.5 0 1 0-9 0c0 3.5 4.5 7 4.5 7Z" stroke="currentColor" stroke-width="1.5"/><circle cx="10" cy="9.5" r="1.5" stroke="currentColor" stroke-width="1.5"/></svg></span>
-                                            <span>Select countries and ports</span>
+                                            <span>{{ ui.openServicePortPicker }}</span>
                                         </button>
 
                                         <div
                                             v-if="selectedServicePortCounts.countryCount || selectedServicePortCounts.portCount"
                                             class="category-summary-count"
                                         >
-                                            <span>({{ selectedServicePortCounts.countryCount }}) countries selected, ({{ selectedServicePortCounts.portCount }}) ports selected</span>
+                                            <span>{{ ui.selectedServicePortsSummary.replace('{country}', selectedServicePortCounts.countryCount).replace('{port}', selectedServicePortCounts.portCount) }}</span>
                                         </div>
                                     </div>
                                     <span class="field-feedback">{{ visibleCombinedError(['service_country_codes', 'service_ports_by_country'], hasVisualInvalid('service_country_codes') || hasVisualInvalid('service_ports_by_country')) }}</span>
@@ -1263,7 +1263,7 @@ onBeforeUnmount(() => {
 
                 <div class="identity-surface">
                     <div class="section-form section-form-narrow">
-                        <p class="helper-copy">Add the registered business location buyers and admins should rely on for profile visibility and verification.</p>
+                        <p class="helper-copy">{{ ui.locationHelper }}</p>
 
                         <div class="grid-two top-aligned">
                             <label class="field" data-section-field="country">
@@ -1271,7 +1271,7 @@ onBeforeUnmount(() => {
                                 <div class="input-shell input-shell-select" :class="{ invalid: hasVisualInvalid('country') }">
                                     <span class="input-icon" aria-hidden="true"><svg viewBox="0 0 20 20" fill="none"><path d="M10 16.5s4.5-3.5 4.5-7a4.5 4.5 0 1 0-9 0c0 3.5 4.5 7 4.5 7Z" stroke="currentColor" stroke-width="1.5"/><circle cx="10" cy="9.5" r="1.5" stroke="currentColor" stroke-width="1.5"/></svg></span>
                                     <select :ref="fieldRefs.country" v-model="form.country" class="field-select" @change="clearFieldErrorIfValid('country')">
-                                        <option value="">Select country</option>
+                                        <option value="">{{ ui.selectCountry }}</option>
                                         <option v-for="option in countryOptions" :key="option" :value="option">{{ option }}</option>
                                     </select>
                                     <span class="select-caret" aria-hidden="true">
@@ -1285,16 +1285,16 @@ onBeforeUnmount(() => {
                                 <span v-html="formatRequiredLabel(ui.city)"></span>
                                 <div class="input-shell" :class="{ invalid: hasVisualInvalid('company_city') }">
                                     <span class="input-icon" aria-hidden="true"><svg viewBox="0 0 20 20" fill="none"><path d="M5.5 16.5h9M6.5 16.5V5a1 1 0 0 1 1-1h5a1 1 0 0 1 1 1v11.5M8.5 7h3M8.5 10h3M8.5 13h3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></span>
-                                    <input v-model="form.company_city" type="text" placeholder="Please enter your city" @input="clearFieldErrorIfValid('company_city')" />
+                                    <input v-model="form.company_city" type="text" :placeholder="ui.cityPlaceholder" @input="clearFieldErrorIfValid('company_city')" />
                                 </div>
                                 <span class="field-feedback">{{ visibleFieldError('company_city') }}</span>
                             </label>
 
                             <label class="field">
-                                <span>District</span>
+                                <span>{{ ui.district }}</span>
                                 <div class="input-shell" :class="{ invalid: form.errors.company_neighborhood }">
                                     <span class="input-icon" aria-hidden="true"><svg viewBox="0 0 20 20" fill="none"><path d="M4.5 14.5h11M4.5 10h11M4.5 5.5h11" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></span>
-                                    <input v-model="form.company_neighborhood" type="text" placeholder="Please enter your district" @input="clearFieldErrorIfValid('company_neighborhood')" />
+                                    <input v-model="form.company_neighborhood" type="text" :placeholder="ui.districtPlaceholder" @input="clearFieldErrorIfValid('company_neighborhood')" />
                                 </div>
                                 <span class="field-feedback">{{ visibleFieldError('company_neighborhood') }}</span>
                             </label>
@@ -1303,7 +1303,7 @@ onBeforeUnmount(() => {
                                 <span v-html="formatRequiredLabel(ui.postalCode)"></span>
                                 <div class="input-shell" :class="{ invalid: hasVisualInvalid('company_postal_code') }">
                                     <span class="input-icon" aria-hidden="true"><svg viewBox="0 0 20 20" fill="none"><path d="M4.5 6.5h11v7h-11z" stroke="currentColor" stroke-width="1.5"/><path d="M7 9.5h6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></span>
-                                    <input v-model="form.company_postal_code" type="text" placeholder="Please enter your postal code" @input="clearFieldErrorIfValid('company_postal_code')" />
+                                    <input v-model="form.company_postal_code" type="text" :placeholder="ui.postalCodePlaceholder" @input="clearFieldErrorIfValid('company_postal_code')" />
                                 </div>
                                 <span class="field-feedback">{{ visibleFieldError('company_postal_code') }}</span>
                             </label>
@@ -1313,7 +1313,7 @@ onBeforeUnmount(() => {
                             <span v-html="formatRequiredLabel(ui.fullAddress)"></span>
                             <div class="input-shell input-shell-textarea" :class="{ invalid: hasVisualInvalid('company_address_line') }">
                                 <span class="input-icon input-icon-textarea" aria-hidden="true"><svg viewBox="0 0 20 20" fill="none"><path d="M10 16.5s4.5-3.5 4.5-7a4.5 4.5 0 1 0-9 0c0 3.5 4.5 7 4.5 7Z" stroke="currentColor" stroke-width="1.5"/><circle cx="10" cy="9.5" r="1.5" stroke="currentColor" stroke-width="1.5"/></svg></span>
-                                <textarea :ref="fieldRefs.company_address_line" v-model="form.company_address_line" rows="4" placeholder="Please enter your full business address" @input="clearFieldErrorIfValid('company_address_line')"></textarea>
+                                <textarea :ref="fieldRefs.company_address_line" v-model="form.company_address_line" rows="4" :placeholder="ui.fullAddressInputPlaceholder" @input="clearFieldErrorIfValid('company_address_line')"></textarea>
                             </div>
                                 <span class="field-feedback">{{ visibleFieldError('company_address_line') }}</span>
                         </label>
@@ -1328,7 +1328,7 @@ onBeforeUnmount(() => {
 
                 <div class="identity-surface">
                     <div class="contact-stack">
-                        <p class="helper-copy">Add the direct business contact channels buyers and admins can use to verify and reach your company.</p>
+                        <p class="helper-copy">{{ ui.contactHelper }}</p>
 
                         <div class="grid-two top-aligned">
                             <label class="field field-inline" data-section-field="phone">
@@ -1456,14 +1456,14 @@ onBeforeUnmount(() => {
 
                 <div class="identity-surface official-documents-surface">
                     <div class="section-form section-form-narrow official-documents-stack">
-                        <p class="helper-copy">Provide your company registration number and upload your company registration documents so the approval review can be completed accurately.</p>
+                        <p class="helper-copy">{{ ui.officialHelper }}</p>
 
                         <label class="field" data-section-field="registration_number">
                             <span v-html="formatRequiredLabel(ui.registrationNumber)"></span>
-                            <span class="field-hint">Enter the official registration number exactly as it appears on your legal company records.</span>
+                            <span class="field-hint">{{ ui.registrationNumberHint }}</span>
                             <div class="input-shell" :class="{ invalid: hasVisualInvalid('registration_number') }">
                                 <span class="input-icon" aria-hidden="true"><svg viewBox="0 0 20 20" fill="none"><path d="M5 3.75h7.25l2.75 2.75V15A1.25 1.25 0 0 1 13.75 16.25H5A1.25 1.25 0 0 1 3.75 15V5A1.25 1.25 0 0 1 5 3.75Z" stroke="currentColor" stroke-width="1.5"/><path d="M12 3.75V6.5h2.75M6.75 10h6.5M6.75 12.75h4.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></span>
-                                <input :ref="fieldRefs.registration_number" v-model="form.registration_number" type="text" placeholder="Trade registry or company registration number" @input="clearFieldErrorIfValid('registration_number')" />
+                                <input :ref="fieldRefs.registration_number" v-model="form.registration_number" type="text" :placeholder="ui.registrationNumberPlaceholder" @input="clearFieldErrorIfValid('registration_number')" />
                             </div>
                             <span class="field-feedback">{{ visibleFieldError('registration_number') }}</span>
                         </label>
@@ -1489,7 +1489,7 @@ onBeforeUnmount(() => {
                                         </svg>
                                     </div>
                                     <div class="identity-logo-copy">
-                                        <strong>{{ documentFileCount(group) ? 'Documents ready' : `Upload ${documentLabel(group.label).toLowerCase()}` }}</strong>
+                                        <strong>{{ documentFileCount(group) ? ui.documentsReady : ui.uploadDocument.replace('{label}', documentLabel(group.label).toLowerCase()) }}</strong>
                                         <span>{{ documentSummary(group) }}</span>
                                     </div>
                                 </button>
@@ -1500,10 +1500,10 @@ onBeforeUnmount(() => {
                                         class="secondary-button identity-logo-action"
                                         @click="openDocumentViewer(group)"
                                     >
-                                        Open
+                                        {{ ui.openFile }}
                                     </button>
                                     <button type="button" class="secondary-button identity-logo-action" @click="triggerFileInput(group.key)">
-                                        {{ documentFileCount(group) ? 'Change' : 'Select' }}
+                                        {{ documentFileCount(group) ? ui.change : ui.select }}
                                     </button>
                                     <button
                                         v-if="documentFileCount(group)"
@@ -1511,7 +1511,7 @@ onBeforeUnmount(() => {
                                         class="media-link-button is-danger identity-logo-remove"
                                         @click="clearDocumentGroup(group)"
                                     >
-                                        Remove
+                                        {{ ui.removeFile }}
                                     </button>
                                 </div>
                             </div>
@@ -1534,10 +1534,10 @@ onBeforeUnmount(() => {
                 <div class="gallery-modal">
                 <div class="detail-modal-head">
                     <div class="gallery-modal-title-group">
-                        <h3 class="detail-modal-title">Files</h3>
+                        <h3 class="detail-modal-title">{{ ui.filesTitle }}</h3>
                         <p class="gallery-modal-counter">{{ documentViewerIndex + 1 }} / {{ documentViewer.length }}</p>
                     </div>
-                    <button type="button" class="detail-modal-close" @click="closeDocumentViewer">Close</button>
+                    <button type="button" class="detail-modal-close" @click="closeDocumentViewer">{{ ui.close }}</button>
                 </div>
 
                 <div class="gallery-modal-body">
@@ -1545,7 +1545,7 @@ onBeforeUnmount(() => {
                             v-if="hasDocumentGallery"
                             type="button"
                             class="gallery-nav-button is-left"
-                            aria-label="Previous file"
+                            :aria-label="ui.previousFile"
                             @click="goToPreviousDocument"
                         >&#8249;</button>
 
@@ -1553,25 +1553,25 @@ onBeforeUnmount(() => {
                             <img
                                 v-if="isImageDocument(currentDocumentAttachment)"
                                 :src="currentDocumentAttachment?.url"
-                                :alt="currentDocumentAttachment?.name || 'File preview'"
+                                :alt="currentDocumentAttachment?.name || ui.filePreviewAlt"
                                 class="gallery-image"
                             />
                             <div v-else-if="isPdfDocument(currentDocumentAttachment)" class="gallery-pdf-shell">
                                 <iframe
                                     :src="documentPreviewUrl(currentDocumentAttachment)"
                                     class="gallery-pdf-frame"
-                                    title="PDF preview"
+                                    :title="ui.pdfPreviewTitle"
                                 ></iframe>
                             </div>
                             <div v-else class="gallery-file-fallback">
-                                <p class="detail-inline-text detail-inline-text-long">Preview is not available for this file type.</p>
+                                <p class="detail-inline-text detail-inline-text-long">{{ ui.previewUnavailable }}</p>
                                 <a
                                     :href="currentDocumentAttachment?.url"
                                     class="secondary-button gallery-file-open"
                                     target="_blank"
                                     rel="noopener noreferrer"
                                 >
-                                    Open file
+                                    {{ ui.openFileAction }}
                                 </a>
                             </div>
                         </div>
@@ -1580,7 +1580,7 @@ onBeforeUnmount(() => {
                             v-if="hasDocumentGallery"
                             type="button"
                             class="gallery-nav-button is-right"
-                            aria-label="Next file"
+                            :aria-label="ui.nextFile"
                             @click="goToNextDocument"
                         >&#8250;</button>
                     </div>
@@ -1593,18 +1593,18 @@ onBeforeUnmount(() => {
                 <div class="picker-modal" @click.stop>
                     <button type="button" class="picker-close" @click="closeCategoryPicker">&times;</button>
                     <div class="picker-head">
-                        <p class="capability-panel-kicker">Category and Subcategory</p>
-                        <h3 class="picker-title">Select Category and Subcategories</h3>
-                        <p class="picker-copy">Choose a category and select its matching subcategories below.</p>
+                        <p class="capability-panel-kicker">{{ ui.categoryModalKicker }}</p>
+                        <h3 class="picker-title">{{ ui.categoryModalTitle }}</h3>
+                        <p class="picker-copy">{{ ui.categoryModalText }}</p>
                     </div>
 
                     <div class="picker-toolbar">
                         <div class="picker-search-row">
                             <input v-model="categorySearch" type="text" :placeholder="ui.selectCategory" />
-                            <button type="button" class="picker-search-clear" :disabled="!categorySearch" @click="categorySearch = ''">Clear</button>
+                            <button type="button" class="picker-search-clear" :disabled="!categorySearch" @click="categorySearch = ''">{{ ui.clear }}</button>
                         </div>
                         <div class="picker-letters">
-                            <button type="button" class="picker-letter" :class="{ active: categoryLetter === BRAND_SELECTED_FILTER }" @click="categoryLetter = BRAND_SELECTED_FILTER">Selected ({{ categoryDraftCounts.categoryCount }})</button>
+                            <button type="button" class="picker-letter" :class="{ active: categoryLetter === BRAND_SELECTED_FILTER }" @click="categoryLetter = BRAND_SELECTED_FILTER">{{ ui.selectedFilter.replace('{count}', categoryDraftCounts.categoryCount) }}</button>
                             <button v-for="letter in categoryLetters" :key="`category-${letter}`" type="button" class="picker-letter" :class="{ active: categoryLetter === letter }" @click="categoryLetter = letter">{{ letter }}</button>
                         </div>
                     </div>
@@ -1636,7 +1636,7 @@ onBeforeUnmount(() => {
                                     class="picker-row-action"
                                     @click="clearCategorySelection(category.id)"
                                 >
-                                    Clear
+                                    {{ ui.clear }}
                                 </button>
                             </div>
 
@@ -1651,7 +1651,7 @@ onBeforeUnmount(() => {
                     </div>
 
                     <div class="picker-actions">
-                        <button type="button" class="primary-button small" @click="closeCategoryPicker">Done</button>
+                        <button type="button" class="primary-button small" @click="closeCategoryPicker">{{ ui.done }}</button>
                     </div>
                 </div>
             </div>
@@ -1662,18 +1662,18 @@ onBeforeUnmount(() => {
                 <div class="picker-modal" @click.stop>
                     <button type="button" class="picker-close" @click="closeBrandPicker">&times;</button>
                     <div class="picker-head">
-                        <p class="capability-panel-kicker">Brands</p>
-                        <h3 class="picker-title">Select Brands</h3>
-                        <p class="picker-copy">Choose the brands you actively supply or service.</p>
+                        <p class="capability-panel-kicker">{{ ui.brandModalKicker }}</p>
+                        <h3 class="picker-title">{{ ui.brandModalTitle }}</h3>
+                        <p class="picker-copy">{{ ui.brandModalText }}</p>
                     </div>
 
                     <div class="picker-toolbar">
                         <div class="picker-search-row">
                             <input v-model="brandSearch" type="text" :placeholder="ui.brandSearchPlaceholder" />
-                            <button type="button" class="picker-search-clear" :disabled="!brandSearch" @click="brandSearch = ''">Clear</button>
+                            <button type="button" class="picker-search-clear" :disabled="!brandSearch" @click="brandSearch = ''">{{ ui.clear }}</button>
                         </div>
                         <div class="picker-letters">
-                            <button type="button" class="picker-letter" :class="{ active: brandLetter === BRAND_SELECTED_FILTER }" @click="brandLetter = BRAND_SELECTED_FILTER">Selected ({{ brandDraftIds.length }})</button>
+                            <button type="button" class="picker-letter" :class="{ active: brandLetter === BRAND_SELECTED_FILTER }" @click="brandLetter = BRAND_SELECTED_FILTER">{{ ui.selectedFilter.replace('{count}', brandDraftIds.length) }}</button>
                             <button v-for="letter in brandLetters" :key="`brand-${letter}`" type="button" class="picker-letter" :class="{ active: brandLetter === letter }" @click="brandLetter = letter">{{ letter }}</button>
                         </div>
                     </div>
@@ -1686,7 +1686,7 @@ onBeforeUnmount(() => {
                     </div>
 
                     <div class="picker-actions">
-                        <button type="button" class="primary-button small" @click="closeBrandPicker">Done</button>
+                        <button type="button" class="primary-button small" @click="closeBrandPicker">{{ ui.done }}</button>
                     </div>
                 </div>
             </div>
@@ -1697,18 +1697,18 @@ onBeforeUnmount(() => {
                 <div class="picker-modal" @click.stop>
                     <button type="button" class="picker-close" @click="closeServicePortPicker">&times;</button>
                     <div class="picker-head">
-                        <p class="capability-panel-kicker">Service Countries and Ports</p>
-                        <h3 class="picker-title">Select Service Countries and Ports</h3>
-                        <p class="picker-copy">Choose the countries you serve and add at least 1 port for each country.</p>
+                        <p class="capability-panel-kicker">{{ ui.serviceModalKicker }}</p>
+                        <h3 class="picker-title">{{ ui.serviceModalTitle }}</h3>
+                        <p class="picker-copy">{{ ui.serviceModalText }}</p>
                     </div>
 
                     <div class="picker-toolbar">
                         <div class="picker-search-row">
                             <input v-model="servicePortSearch" type="text" :placeholder="ui.selectServiceCountries" />
-                            <button type="button" class="picker-search-clear" :disabled="!servicePortSearch" @click="servicePortSearch = ''">Clear</button>
+                            <button type="button" class="picker-search-clear" :disabled="!servicePortSearch" @click="servicePortSearch = ''">{{ ui.clear }}</button>
                         </div>
                         <div class="picker-letters">
-                            <button type="button" class="picker-letter" :class="{ active: servicePortLetter === BRAND_SELECTED_FILTER }" @click="servicePortLetter = BRAND_SELECTED_FILTER">Selected ({{ servicePortDraftCounts.countryCount }})</button>
+                            <button type="button" class="picker-letter" :class="{ active: servicePortLetter === BRAND_SELECTED_FILTER }" @click="servicePortLetter = BRAND_SELECTED_FILTER">{{ ui.selectedFilter.replace('{count}', servicePortDraftCounts.countryCount) }}</button>
                             <button v-for="letter in serviceCountryLetters" :key="`country-${letter}`" type="button" class="picker-letter" :class="{ active: servicePortLetter === letter }" @click="servicePortLetter = letter">{{ letter }}</button>
                         </div>
                     </div>
@@ -1731,7 +1731,7 @@ onBeforeUnmount(() => {
                                         @change="toggleServiceCountryDraftSelection(country.code)"
                                     />
                                     <span></span>
-                                    <small class="picker-check-copy">Select All</small>
+                                    <small class="picker-check-copy">{{ ui.selectAll }}</small>
                                 </label>
                             </div>
 
@@ -1745,7 +1745,7 @@ onBeforeUnmount(() => {
                     </div>
 
                     <div class="picker-actions">
-                        <button type="button" class="primary-button small" @click="closeServicePortPicker">Done</button>
+                        <button type="button" class="primary-button small" @click="closeServicePortPicker">{{ ui.done }}</button>
                     </div>
                 </div>
             </div>

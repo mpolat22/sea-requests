@@ -1,4 +1,5 @@
 <script setup>
+import { useI18n } from '../../../lib/i18n';
 import { computed, ref, watch } from 'vue';
 import { Link, router } from '@inertiajs/vue3';
 import AdminDashboardShell from './Shell.vue';
@@ -18,7 +19,7 @@ const searchQuery = ref(props.rfqsTable.filters?.search ?? '');
 const rowsPerPage = ref(Number(props.rfqsTable.filters?.per_page ?? props.rfqsTable.meta?.per_page ?? 10));
 const deleteModalRfq = ref(null);
 
-const copy = {
+const baseCopy = {
     title: 'Admin Dashboard',
     tabTitle: 'RFQs',
     tabText: 'Manage every RFQ in the system, move into compare or edit when needed, and step in with full admin control when a workflow needs intervention.',
@@ -73,7 +74,33 @@ const copy = {
     noData: '-',
 };
 
-const offerText = (count) => `${Number(count ?? 0)} Received`;
+const { section } = useI18n();
+const translatedCopy = section('admin.rfqs');
+const mergedCopy = computed(() => ({
+    ...baseCopy,
+    ...translatedCopy.value,
+    table: {
+        ...baseCopy.table,
+        ...(translatedCopy.value.table ?? {}),
+    },
+    priority: {
+        ...baseCopy.priority,
+        ...(translatedCopy.value.priority ?? {}),
+    },
+    statuses: {
+        ...baseCopy.statuses,
+        ...(translatedCopy.value.statuses ?? {}),
+    },
+    requestType: {
+        ...baseCopy.requestType,
+        ...(translatedCopy.value.requestType ?? {}),
+    },
+}));
+const copy = new Proxy(baseCopy, {
+    get: (target, key) => mergedCopy.value[key] ?? target[key],
+});
+
+const offerText = (count) => copy.offersReceived.replace('{count}', Number(count ?? 0));
 const rfqs = computed(() => props.rfqsTable.data ?? []);
 const meta = computed(() => props.rfqsTable.meta ?? {});
 const filters = computed(() => props.rfqsTable.filters ?? {});
@@ -109,19 +136,13 @@ const statusTone = (status) => {
 };
 
 const statusLabel = (status) => {
-    if (status === 'open') return 'Open';
-    if (status === 'award_in_progress') return 'Award In Progress';
-    if (status === 'award_confirmed') return 'Award Confirmed';
-    if (status === 'completed') return 'Completed';
-    if (status === 'closed') return 'Closed';
-    if (status === 'cancelled') return 'Cancelled';
-    return 'Draft';
+    return copy.statuses[status] ?? copy.statuses.draft;
 };
 
 const requestTypeLabel = (requestType) => (
     requestType === 'service_request'
-        ? 'Service Request'
-        : 'Spare Parts'
+        ? copy.requestType.service_request
+        : copy.requestType.spare_parts
 );
 
 const visibilityLabel = (visibilityScope) => (

@@ -4,6 +4,7 @@ import { Link, router, usePage } from '@inertiajs/vue3';
 import MainLayout from '../../Layouts/MainLayout.vue';
 import PublicMetaHead from '../../Components/PublicMetaHead.vue';
 import RequestCard from '../../Components/RequestCard.vue';
+import { useI18n } from '../../lib/i18n';
 
 const props = defineProps({
     requestsPage: {
@@ -51,21 +52,8 @@ const isLoadingMore = ref(false);
 const sentinel = ref(null);
 let observer = null;
 
-const copy = {
-    eyebrow: 'Request directory',
-    title: 'Published RFQs and Service Requests',
-    text: 'Browse live marine requests, review requirement summaries and open the detail page for the opportunities that match your scope.',
-    guestEmptyTitle: 'Get started with the right account type.',
-    guestEmptyText: 'To create a new request, you can register on the platform as a buyer. To submit offers for published requests, you can register as a supplier and complete your approval process.',
-    guestCta: 'Register',
-    buyerEmptyTitle: 'No open RFQ is visible right now.',
-    buyerEmptyText: 'Some requests may still be in draft, private, or not yet shared publicly. You can create a new RFQ when you are ready to publish.',
-    buyerCta: 'Create New RFQ',
-    memberEmptyTitle: 'No open RFQ is visible right now.',
-    memberEmptyText: 'Some requests may still be in draft, shared only with selected suppliers, or not yet published publicly.',
-    loading: 'Loading more requests...',
-    reachedEnd: 'You have reached the end of the request list.',
-};
+const { section } = useI18n();
+const copy = section('requestIndex');
 
 const authUser = computed(() => page.props.auth?.user ?? null);
 const isBuyerUser = computed(() => authUser.value?.role === 'buyer');
@@ -73,31 +61,31 @@ const isGuestUser = computed(() => !authUser.value);
 const emptyState = computed(() => {
     if (isGuestUser.value) {
         return {
-            title: copy.guestEmptyTitle,
-            text: copy.guestEmptyText,
-            ctaLabel: copy.guestCta,
+            title: copy.value.guestEmptyTitle,
+            text: copy.value.guestEmptyText,
+            ctaLabel: copy.value.guestCta,
             ctaUrl: '/register',
         };
     }
 
     if (isBuyerUser.value && props.buyerContext.canCreate && props.buyerContext.createUrl) {
         return {
-            title: copy.buyerEmptyTitle,
-            text: copy.buyerEmptyText,
-            ctaLabel: copy.buyerCta,
+            title: copy.value.buyerEmptyTitle,
+            text: copy.value.buyerEmptyText,
+            ctaLabel: copy.value.buyerCta,
             ctaUrl: props.buyerContext.createUrl,
         };
     }
 
     return {
-        title: copy.memberEmptyTitle,
-        text: copy.memberEmptyText,
+        title: copy.value.memberEmptyTitle,
+        text: copy.value.memberEmptyText,
         ctaLabel: null,
         ctaUrl: null,
     };
 });
 
-const currentCopy = computed(() => copy);
+const currentCopy = copy;
 
 const loadMore = () => {
     if (isLoadingMore.value || currentPage.value >= lastPage.value) {

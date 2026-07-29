@@ -12,17 +12,7 @@ const props = defineProps({
     goToField: { type: Function, required: true },
 });
 
-const copy = computed(() => ({
-    eyebrow: 'Application Status',
-    title: 'Readiness Check',
-    subtitle: 'See what is completed and what is still missing before you submit.',
-    completed: 'Completed Items',
-    missing: 'Missing Items',
-    noCompleted: 'No completed items yet.',
-    noMissing: 'No critical missing items right now.',
-    overview: 'Company Overview',
-    officialDocuments: 'Company Registration Documents',
-}));
+const copy = computed(() => props.ui.preview);
 
 const hasLogo = computed(() => Boolean(props.newSingles.company_logo || props.singleMedia.company_logo));
 

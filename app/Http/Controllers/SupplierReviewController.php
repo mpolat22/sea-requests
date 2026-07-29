@@ -63,7 +63,7 @@ class SupplierReviewController extends Controller
 
         $reviewData->forgetSellerReviewCaches((int) $offer->seller_id);
 
-        return back()->with('success', 'Supplier review saved.');
+        return back()->with('success', 'supplier-review-saved');
     }
 
     public function reply(Request $request, SupplierReview $review, SupplierReviewData $reviewData): RedirectResponse
@@ -97,7 +97,7 @@ class SupplierReviewController extends Controller
             }
         }
 
-        return back()->with('success', 'Review reply saved.');
+        return back()->with('success', 'review-reply-saved');
     }
 
     public function destroy(Request $request, SupplierReview $review, SupplierReviewData $reviewData): RedirectResponse
@@ -109,7 +109,7 @@ class SupplierReviewController extends Controller
         $reviewData->forgetSellerReviewCaches((int) $review->seller_id);
         $review->delete();
 
-        return back()->with('success', 'Supplier review deleted.');
+        return back()->with('success', 'supplier-review-deleted');
     }
 
     public function destroyReply(Request $request, SupplierReview $review, SupplierReviewData $reviewData): RedirectResponse
@@ -125,6 +125,6 @@ class SupplierReviewController extends Controller
 
         $reviewData->forgetSellerReviewCaches((int) $review->seller_id);
 
-        return back()->with('success', 'Review reply deleted.');
+        return back()->with('success', 'review-reply-deleted');
     }
 }

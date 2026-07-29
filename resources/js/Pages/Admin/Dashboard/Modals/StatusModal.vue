@@ -13,38 +13,38 @@ const emit = defineEmits(['close', 'choose']);
 const isUpdateRequest = computed(() => !!props.user?.has_pending_update_request);
 const modalCopy = computed(() => {
     if (isUpdateRequest.value) {
-        return 'You are reviewing only the pending update request, not the already approved business profile.';
+        return props.copy.statusModalUpdateCopy;
     }
 
-    return 'Choose the new status for this supplier company registration.';
+    return props.copy.statusModalDefaultCopy;
 });
 const approveTitle = computed(() => {
     if (isUpdateRequest.value) {
-        return 'Approve update';
+        return props.copy.approveUpdate;
     }
 
     return props.statusLabel('approved');
 });
 const approveText = computed(() => {
     if (isUpdateRequest.value) {
-        return 'Apply the new information to the live profile.';
+        return props.copy.approveUpdateText;
     }
 
-    return 'Keep this record approved.';
+    return props.copy.approveRecordText;
 });
 const rejectTitle = computed(() => {
     if (isUpdateRequest.value) {
-        return 'Reject update';
+        return props.copy.rejectUpdate;
     }
 
     return props.statusLabel('rejected');
 });
 const rejectText = computed(() => {
     if (isUpdateRequest.value) {
-        return 'Keep the current approved profile and reject only this update request.';
+        return props.copy.rejectUpdateText;
     }
 
-    return 'Add a rejection reason and explanation.';
+    return props.copy.rejectRecordText;
 });
 </script>
 

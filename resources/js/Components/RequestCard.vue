@@ -1,6 +1,7 @@
 <script setup>
 import { computed } from 'vue';
 import { Link } from '@inertiajs/vue3';
+import { useI18n } from '../lib/i18n';
 
 const props = defineProps({
     item: {
@@ -9,23 +10,10 @@ const props = defineProps({
     },
 });
 
-const copy = {
-    live: 'LIVE',
-    close: 'CLOSE',
-    submitted: 'Submitted',
-    awardConfirmed: 'Award Confirmed',
-    award: 'Award Confirmed',
-    received: 'Received',
-    privateRequest: 'Private Request',
-    spareParts: 'Spare Parts',
-    serviceRequest: 'Service Request',
-    sparePartsFallbackTitle: 'Spare Parts Request',
-    serviceFallbackTitle: 'Service request',
-    sparePartsDescription: 'A spare parts request for {count} products has been published by {company}. Review the details to submit your offer.',
-    serviceDescription: '{company} has published a service request.',
-};
+const { locale, section } = useI18n();
+const copy = section('requestCard');
 
-const currentCopy = computed(() => copy);
+const currentCopy = copy;
 
 const relativeTime = (value) => {
     if (!value) return '-';
@@ -40,7 +28,7 @@ const relativeTime = (value) => {
     const absMinutes = Math.round(absSeconds / 60);
     const absHours = Math.round(absMinutes / 60);
     const absDays = Math.round(absHours / 24);
-    const rtf = new Intl.RelativeTimeFormat('en', { numeric: 'auto' });
+    const rtf = new Intl.RelativeTimeFormat(locale.value === 'zh' ? 'zh-CN' : 'en-US', { numeric: 'auto' });
 
     if (absSeconds < 60) {
         return rtf.format(future ? absSeconds : -absSeconds, 'second');

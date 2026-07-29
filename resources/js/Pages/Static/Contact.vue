@@ -4,6 +4,7 @@ import { Link, useForm } from '@inertiajs/vue3';
 import MainLayout from '../../Layouts/MainLayout.vue';
 import PublicMetaHead from '../../Components/PublicMetaHead.vue';
 import StaticPageLayout from './StaticPageLayout.vue';
+import { useI18n } from '../../lib/i18n';
 
 const props = defineProps({
     contactEmail: {
@@ -23,6 +24,8 @@ const props = defineProps({
     },
 });
 
+const { section } = useI18n();
+const page = computed(() => section('staticPages').value.contact);
 const contactEmailDisplay = computed(() => props.contactEmail || 'support@searequests.ai');
 
 const contactForm = useForm({
@@ -47,48 +50,48 @@ const submitContactForm = () => {
 
     <MainLayout>
         <StaticPageLayout
-            eyebrow="Company"
-            title="Contact"
-            intro="Send a message to our team and we will get back to you as soon as possible."
+            :eyebrow="page.eyebrow"
+            :title="page.title"
+            :intro="page.intro"
         >
             <div class="contact-layout">
                 <section class="contact-form-panel">
                     <div class="contact-section-head">
-                        <h2>Start a Conversation</h2>
-                        <p>Fill out the form below and we&apos;ll get back to you as soon as possible.</p>
+                        <h2>{{ page.startTitle }}</h2>
+                        <p>{{ page.startText }}</p>
                     </div>
 
                     <form class="contact-form-grid" @submit.prevent="submitContactForm">
                         <label>
-                            <span>Name <span class="required-star">*</span></span>
-                            <input v-model="contactForm.name" type="text" placeholder="Your name" />
+                            <span>{{ page.name }} <span class="required-star">*</span></span>
+                            <input v-model="contactForm.name" type="text" :placeholder="page.namePlaceholder" />
                             <small v-if="contactForm.errors.name">{{ contactForm.errors.name }}</small>
                         </label>
 
                         <label>
-                            <span>Email <span class="required-star">*</span></span>
-                            <input v-model="contactForm.email" type="email" placeholder="you@company.com" />
+                            <span>{{ page.email }} <span class="required-star">*</span></span>
+                            <input v-model="contactForm.email" type="email" :placeholder="page.emailPlaceholder" />
                             <small v-if="contactForm.errors.email">{{ contactForm.errors.email }}</small>
                         </label>
 
                         <label>
-                            <span>Phone <span class="required-star">*</span></span>
-                            <input v-model="contactForm.phone" type="text" placeholder="+44 7520 658048" />
+                            <span>{{ page.phone }} <span class="required-star">*</span></span>
+                            <input v-model="contactForm.phone" type="text" :placeholder="page.phonePlaceholder" />
                             <small v-if="contactForm.errors.phone">{{ contactForm.errors.phone }}</small>
                         </label>
 
                         <label>
-                            <span>Subject</span>
-                            <input v-model="contactForm.subject" type="text" placeholder="How can we help?" />
+                            <span>{{ page.subject }}</span>
+                            <input v-model="contactForm.subject" type="text" :placeholder="page.subjectPlaceholder" />
                             <small v-if="contactForm.errors.subject">{{ contactForm.errors.subject }}</small>
                         </label>
 
                         <label class="contact-form-full">
-                            <span>Message <span class="required-star">*</span></span>
+                            <span>{{ page.message }} <span class="required-star">*</span></span>
                             <textarea
                                 v-model="contactForm.message"
                                 rows="6"
-                                placeholder="Tell us more about your enquiry..."
+                                :placeholder="page.messagePlaceholder"
                             />
                             <small v-if="contactForm.errors.message">{{ contactForm.errors.message }}</small>
                         </label>
@@ -96,11 +99,10 @@ const submitContactForm = () => {
                         <label class="contact-consent contact-form-full">
                             <input v-model="contactForm.agree_to_contact" type="checkbox" />
                             <span>
-                                I authorize Sea Requests to send notifications via SMS, RCS, phone, email, and WhatsApp.
-                                I have read, understood, and agree to the
-                                <Link href="/terms-of-service">Terms &amp; Conditions</Link>
-                                and
-                                <Link href="/privacy-policy">Privacy Policy</Link>.
+                                {{ page.consentLead }}
+                                <Link href="/terms-of-service">{{ page.terms }}</Link>
+                                {{ page.and }}
+                                <Link href="/privacy-policy">{{ page.privacy }}</Link>.
                             </span>
                         </label>
                         <small v-if="contactForm.errors.agree_to_contact" class="contact-form-full">
@@ -109,7 +111,7 @@ const submitContactForm = () => {
 
                         <div class="contact-actions contact-form-full">
                             <button type="submit" :disabled="contactForm.processing">
-                                {{ contactForm.processing ? 'Sending...' : 'Send Message' }}
+                                {{ contactForm.processing ? page.sending : page.sendMessage }}
                             </button>
                         </div>
                     </form>
@@ -117,18 +119,18 @@ const submitContactForm = () => {
 
                 <aside class="contact-info-panel">
                     <div class="contact-section-head">
-                        <h2>Our Contact Information</h2>
+                        <h2>{{ page.infoTitle }}</h2>
                     </div>
 
                     <div class="contact-info-list">
                         <div class="contact-info-item">
-                            <strong>Email</strong>
+                            <strong>{{ page.email }}</strong>
                             <a :href="`mailto:${contactEmailDisplay}`">{{ contactEmailDisplay }}</a>
                         </div>
 
                         <div class="contact-info-item">
-                            <strong>Working Hours</strong>
-                            <p>Monday - Friday: 9:00 AM to 5:00 PM</p>
+                            <strong>{{ page.workingHours }}</strong>
+                            <p>{{ page.workingHoursText }}</p>
                         </div>
                     </div>
                 </aside>
@@ -136,7 +138,6 @@ const submitContactForm = () => {
         </StaticPageLayout>
     </MainLayout>
 </template>
-
 <style scoped>
 .contact-layout {
     display: grid;

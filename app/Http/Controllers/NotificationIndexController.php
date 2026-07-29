@@ -24,6 +24,7 @@ class NotificationIndexController extends Controller
                     'message' => $translations['message'] ?? $notification->data['message'] ?? '',
                     'details' => $translations['details'] ?? $notification->data['details'] ?? [],
                     'action_label' => $translations['action_label'] ?? $notification->data['action_label'] ?? '',
+                    'translations' => $notification->data['translations'] ?? [],
                     'action_url' => $notification->data['action_url'] ?? '',
                     'tone' => $notification->data['tone'] ?? 'info',
                     'read_at' => optional($notification->read_at)?->toIso8601String(),

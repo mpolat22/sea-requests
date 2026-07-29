@@ -1,5 +1,6 @@
 <script setup>
 import { computed, nextTick, ref, watch } from 'vue';
+import { useI18n } from '../../../lib/i18n';
 import { useForm } from '@inertiajs/vue3';
 import OrderInvoicesSection from '../../../Components/OrderInvoicesSection.vue';
 import RfqGeneralInformationSection from '../../../Components/RfqGeneralInformationSection.vue';
@@ -29,51 +30,11 @@ const props = defineProps({
 
 const emit = defineEmits(['close', 'retry']);
 
-const copy = {
-    title: 'Invoice & Payment Proof',
-    intro: 'Review supplier invoices here and upload the matching payment proof invoice by invoice once payment is completed.',
-    overview: 'Order Overview',
-    close: 'Close',
-    uploadProof: 'Upload Payment Proof',
-    updateProof: 'Update Payment Proof',
-    cancel: 'Cancel',
-    save: 'Save Payment Proof',
-    update: 'Update Payment Proof',
-    invoiceList: 'Invoice List',
-    invoiceListIntro: 'Every supplier invoice and its current payment confirmation status appears here.',
-    retry: 'Retry',
-    formTitle: 'Payment Proof Form',
-    formIntro: 'Attach the bank slip or payment confirmation file that belongs to the selected invoice.',
-    referenceNo: 'Reference No',
-    buyerCompany: 'Buyer Company',
-    supplier: 'Supplier',
-    ship: 'Ship',
-    agreedTotal: 'Agreed Total',
-    invoicedTotal: 'Already Invoiced',
-    remainingTotal: 'Remaining Amount',
-    orderTotal: 'Order Total',
-    emptyInvoicesTitle: 'No invoice has been added yet.',
-    emptyInvoicesText: 'The supplier invoice list will appear here once the supplier uploads the first invoice.',
-    paymentDate: 'Payment Date',
-    paymentReference: 'Payment Reference',
-    paymentFile: 'Payment Proof File',
-    paymentNotes: 'Payment Notes',
-    currentFile: 'Current payment proof file',
-    replaceFile: 'Choose a new file only if you want to replace the current payment proof document.',
-    noFileYet: 'No payment proof file uploaded yet.',
-    hints: {
-        payment_proof_date: 'Choose the date the payment was completed or the bank slip was issued.',
-        payment_reference: 'Add the transfer number, transaction reference, or any traceable payment code if available.',
-        payment_proof_document: 'Upload the bank slip, payment confirmation PDF, or image proof the supplier should review.',
-        payment_notes: 'Add any note the supplier should read together with the payment confirmation.',
-    },
-    placeholders: {
-        payment_reference: 'Enter the payment reference or transfer number.',
-        payment_notes: 'Enter payment notes, remittance notes, or supplier instructions.',
-    },
-    browse: 'Choose File',
-    fileTypes: 'Accepted: PDF, JPG, PNG, WEBP up to 15 MB.',
-};
+const { section } = useI18n();
+const copySource = section('buyer.dashboard.paymentProof');
+const copy = new Proxy({}, {
+    get: (_, key) => copySource.value[key],
+});
 
 const currentOrder = computed(() => props.order ?? {});
 const invoices = computed(() => currentOrder.value.invoices ?? []);
@@ -190,7 +151,7 @@ const validateTextField = (value, { label, required = false, max = null }) => {
     const text = textValue(value);
 
     if (required && !text) {
-        return `${label} is required.`;
+        return copy.isRequired.replace('{label}', label);
     }
 
     if (!text) {
@@ -198,7 +159,7 @@ const validateTextField = (value, { label, required = false, max = null }) => {
     }
 
     if (max && text.length > max) {
-        return `${label} must be ${max} characters or less.`;
+        return copy.maxChars.replace('{label}', label).replace('{max}', max);
     }
 
     return '';
@@ -208,11 +169,11 @@ const validateDateField = (value, { label }) => {
     const text = textValue(value);
 
     if (!text) {
-        return `${label} is required.`;
+        return copy.isRequired.replace('{label}', label);
     }
 
     if (Number.isNaN(Date.parse(text))) {
-        return `Enter a valid ${label.toLowerCase()}.`;
+        return copy.validDate.replace('{label}', label.toLowerCase());
     }
 
     return '';
@@ -370,12 +331,12 @@ const submitPaymentProof = async () => {
 
             <div class="detail-modal-body">
                 <div v-if="isLoading" class="modal-state-card">
-                    <strong>Loading order details...</strong>
-                    <p>Please wait while the invoice and payment proof workflow is prepared.</p>
+                    <strong>{{ copy.loadingTitle }}</strong>
+                    <p>{{ copy.loading }}</p>
                 </div>
 
                 <div v-else-if="loadError" class="modal-state-card modal-state-card-error">
-                    <strong>Order details could not be loaded.</strong>
+                    <strong>{{ copy.loadErrorTitle }}</strong>
                     <p>{{ loadError }}</p>
                     <div class="form-actions">
                         <button type="button" class="primary-action" @click="emit('retry')">

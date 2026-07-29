@@ -1,6 +1,7 @@
 <script setup>
 import { computed } from 'vue';
 import { Link } from '@inertiajs/vue3';
+import { useI18n } from '../lib/i18n';
 import HomeFinalCtaSection from '../Components/Home/HomeFinalCtaSection.vue';
 import HomeHowItWorksSection from '../Components/Home/HomeHowItWorksSection.vue';
 import HomeRequestShowcaseSection from '../Components/Home/HomeRequestShowcaseSection.vue';
@@ -44,6 +45,7 @@ const props = defineProps({
     },
 });
 
+const { locale, section, t: translate } = useI18n();
 const baseRegisterUrl = computed(() => props.home_links?.register_url ?? props.hero?.register_url ?? '/register');
 const sellerRegisterUrl = computed(() => `${baseRegisterUrl.value}?role=seller`);
 const buyerRegisterUrl = computed(() => `${baseRegisterUrl.value}?role=buyer`);
@@ -56,165 +58,12 @@ const featuredRequests = computed(() => {
 });
 const featuredSuppliers = computed(() => Array.isArray(props.featured_suppliers) ? props.featured_suppliers : []);
 
-const heroCopy = {
-    eyebrow: 'Global Marine Supply Network',
-    title: 'Buy Smarter. Reach Broader.',
-    text: 'A trusted marketplace for marine equipment, spare parts, and service requests that connects ship owners, managers, operators, and port agents with verified maritime suppliers.',
-    sellerCta: 'Register as a Supplier',
-    buyerCta: 'Register as a Buyer',
-    marketSummary: 'Marketplace Snapshot',
-    live: 'LIVE',
-    close: 'CLOSE',
-    viewMore: 'View all requests',
-    openRequest: 'View Details',
-    serviceRequest: 'Service Request',
-    sparePartsRequest: 'Spare Parts Request',
-    serviceFallbackTitle: 'Service Request',
-    serviceFallbackDescription: 'A service request has been published by {company}. Review the details to submit your offer.',
-    sparePartsDescription: 'A spare parts request for {count} products has been published by {company}. Review the details to submit your offer.',
-};
-
-const homeCopy = {
-    howEyebrow: 'Workflow',
-    howTabs: [
-        {
-            key: 'buyers',
-            label: 'Buyers',
-            title: 'How It Works for Buyers',
-            text: 'Create the right spare parts or service request, review incoming offers, and move to the best supplier decision faster.',
-            flows: [
-                {
-                    key: 'spare-parts-rfq',
-                    title: 'Flow A: Spare Parts RFQ',
-                    text: 'Share the items you need, collect the right supplier offers, and compare them with confidence.',
-                    steps: [
-                        { key: 'create-rfq', kicker: 'STEP 1', title: 'Create Spare Parts RFQ' },
-                        { key: 'add-items-scope', kicker: 'STEP 2', title: 'Add Items & Scope' },
-                        { key: 'receive-offers', kicker: 'STEP 3', title: 'Receive Offers' },
-                        { key: 'compare-confirm', kicker: 'STEP 4', title: 'Compare & Confirm' },
-                    ],
-                },
-                {
-                    key: 'service-request',
-                    title: 'Flow B: Service Request',
-                    text: 'Define the service need, add scope and files, and review qualified supplier offers.',
-                    steps: [
-                        { key: 'create-service-request', kicker: 'STEP 1', title: 'Create Service Request' },
-                        { key: 'add-scope-files', kicker: 'STEP 2', title: 'Add Scope & Files' },
-                        { key: 'receive-service-offers', kicker: 'STEP 3', title: 'Receive Offers' },
-                        { key: 'select-supplier', kicker: 'STEP 4', title: 'Select Supplier' },
-                    ],
-                },
-            ],
-        },
-        {
-            key: 'suppliers',
-            label: 'Supplier',
-            title: 'How It Works for Suppliers',
-            text: 'Review matching requests, add your commercial terms, and submit stronger offers to the right buyers.',
-            flows: [
-                {
-                    key: 'spare-parts-offer',
-                    title: 'Flow A: Spare Parts Offer',
-                    text: 'Review the RFQ, price the requested items, and share your commercial terms clearly.',
-                    steps: [
-                        { key: 'review-rfq', kicker: 'STEP 1', title: 'Review RFQ' },
-                        { key: 'price-items', kicker: 'STEP 2', title: 'Price the Items' },
-                        { key: 'add-terms', kicker: 'STEP 3', title: 'Add Terms' },
-                        { key: 'submit-offer', kicker: 'STEP 4', title: 'Submit Offer' },
-                    ],
-                },
-                {
-                    key: 'service-offer',
-                    title: 'Flow B: Service Offer',
-                    text: 'Review the service scope, define delivery and payment terms, and send the final offer.',
-                    steps: [
-                        { key: 'review-service-request', kicker: 'STEP 1', title: 'Review Service Request' },
-                        { key: 'define-service-scope', kicker: 'STEP 2', title: 'Define Service Scope' },
-                        { key: 'add-price-terms', kicker: 'STEP 3', title: 'Add Price & Terms' },
-                        { key: 'submit-service-offer', kicker: 'STEP 4', title: 'Submit Offer' },
-                    ],
-                },
-            ],
-        },
-    ],
-    requestsEyebrow: 'Live requests',
-    requestsTitle: 'Latest RFQs',
-    requestsText: 'Review the latest spare parts and service requests published on the platform.',
-    requestsAction: 'View All Requests',
-    suppliersEyebrow: 'Approved profiles',
-    suppliersTitle: 'Featured Suppliers',
-    suppliersText: 'Explore approved supplier profiles, review their service coverage, and open detailed company profiles.',
-    suppliersAction: 'View All Suppliers',
-    supplierCardLabel: 'Open Profile',
-    supplierNoDescription: 'Company overview has not been added yet.',
-    valueEyebrow: 'Who benefits?',
-    valueTitle: 'Value for Buyers and Suppliers',
-    valueText: 'The platform offers a transparent, trackable, and controlled workflow for both sides inside one system.',
-    valueScope: 'Workflow Area',
-    valueBuyer: 'Buyer',
-    valueSupplier: 'Supplier',
-    valueRows: [
-        {
-            key: 'rfq',
-            label: 'RFQ and Request Management',
-            buyer: 'Creates the request, defines the scope, and targets the right supplier pool.',
-            supplier: 'Sees RFQs that match its capabilities and focuses on the right opportunities.',
-        },
-        {
-            key: 'offers',
-            label: 'Offers and Decisions',
-            buyer: 'Compares offers and can split the request between multiple suppliers when needed.',
-            supplier: 'Submits controlled offers with price, delivery, and payment terms.',
-        },
-        {
-            key: 'award',
-            label: 'Award and Communication',
-            buyer: 'Manages the post-award flow inside the platform and keeps the process structured.',
-            supplier: 'Visibility and direct communication open in stages after award confirmation.',
-        },
-        {
-            key: 'trust',
-            label: 'Trust and History',
-            buyer: 'Makes safer decisions through reviews, prior transactions, and a transparent flow.',
-            supplier: 'Builds trust through a verified profile, reviews, and its on-platform track record.',
-        },
-    ],
-    trustEyebrow: 'Trust',
-    trustTitle: 'Secure and Controlled Workflow',
-    trustText: 'The platform is designed to keep the commercial process between buyer and supplier inside the system from pre-award through reviews.',
-    trustItems: [
-        {
-            key: 'verified',
-            title: 'Verified account structure',
-            text: 'Buyer and supplier registrations move through a controlled approval path to build trust.',
-        },
-        {
-            key: 'controlled-contact',
-            title: 'Controlled contact before award',
-            text: 'Direct contact details open only after award confirmation so the flow stays inside the platform.',
-        },
-        {
-            key: 'workflow',
-            title: 'In-platform offer and award flow',
-            text: 'RFQ, offer, comparison, and award steps are managed within the same system.',
-        },
-        {
-            key: 'reviews',
-            title: 'Reviews after real transactions',
-            text: 'Only buyers with a confirmed award relationship can leave ratings and reviews, making feedback more meaningful.',
-        },
-    ],
-    ctaEyebrow: 'Join',
-    ctaTitle: 'Join the Platform',
-    ctaText: 'Manage maritime procurement and supplier coordination in a faster, more controlled, and more visible way.',
-    ctaPrimary: 'Register as a Supplier',
-    ctaSecondary: 'Register as a Buyer',
-};
+const heroCopy = section('home.hero');
+const homeCopy = section('home.sections');
 
 const formattedStats = computed(() => (props.hero?.stats ?? []).map((item) => ({
     ...item,
-    label: item.label ?? item.label_en ?? '',
+    label: translate(`home.stats.${item.key}`, item.label ?? item.label_en ?? ''),
     valueText: new Intl.NumberFormat('en-US').format(Number(item.value ?? 0)),
 })));
 
@@ -224,28 +73,28 @@ const tickerRequests = computed(() => {
 });
 
 const requestStatusLabel = (status) => status === 'live'
-    ? heroCopy.live
-    : heroCopy.close;
+    ? heroCopy.value.live
+    : heroCopy.value.close;
 
 const requestTypeLabel = (type) => type === 'service_request'
-    ? heroCopy.serviceRequest
-    : heroCopy.sparePartsRequest;
+    ? heroCopy.value.serviceRequest
+    : heroCopy.value.sparePartsRequest;
 
 const requestTitle = (card) => {
     if (card.request_type === 'service_request') {
-        return card.service_title || heroCopy.serviceFallbackTitle;
+        return card.service_title || heroCopy.value.serviceFallbackTitle;
     }
 
-    return heroCopy.sparePartsRequest;
+    return heroCopy.value.sparePartsRequest;
 };
 
 const requestDescription = (card) => {
     if (card.request_type === 'service_request') {
         return card.service_description
-            || heroCopy.serviceFallbackDescription.replace('{company}', card.company_mask || 'REQ***');
+            || heroCopy.value.serviceFallbackDescription.replace('{company}', card.company_mask || 'REQ***');
     }
 
-    return heroCopy.sparePartsDescription
+    return heroCopy.value.sparePartsDescription
         .replace('{company}', card.company_mask || 'REQ***')
         .replace('{count}', String(card.items_count ?? 0));
 };
@@ -263,7 +112,7 @@ const relativeTime = (value) => {
     const absMinutes = Math.round(absSeconds / 60);
     const absHours = Math.round(absMinutes / 60);
     const absDays = Math.round(absHours / 24);
-    const rtf = new Intl.RelativeTimeFormat('en-US', { numeric: 'auto' });
+    const rtf = new Intl.RelativeTimeFormat(locale.value === 'zh' ? 'zh-CN' : 'en-US', { numeric: 'auto' });
 
     if (absSeconds < 60) return rtf.format(future ? absSeconds : -absSeconds, 'second');
     if (absMinutes < 60) return rtf.format(future ? absMinutes : -absMinutes, 'minute');

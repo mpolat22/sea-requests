@@ -1,4 +1,5 @@
 <script setup>
+import { useI18n } from '../../../lib/i18n';
 import { computed, defineAsyncComponent, ref, watch } from 'vue';
 import { Link } from '@inertiajs/vue3';
 import { useMessengerStore } from '../../../lib/messengerStore';
@@ -28,7 +29,7 @@ const isModalLoading = ref(false);
 const modalLoadError = ref('');
 const modalRequestToken = ref(0);
 
-const copy = {
+const baseCopy = {
     title: 'Supplier Dashboard',
     tabTitle: 'Orders',
     tabText: 'Track the buyer-confirmed supplier orders here. Use the row actions to open the details, selected lines, and accepted commercial terms.',
@@ -72,6 +73,12 @@ const copy = {
     serviceClarification: 'Service Clarification',
     noData: '-',
 };
+
+const { section } = useI18n();
+const translatedCopy = section('supplier.orders');
+const copy = new Proxy(baseCopy, {
+    get: (target, key) => translatedCopy.value[key] ?? target[key],
+});
 
 const requestTypeLabel = (request) => {
     if (request?.is_private_request) {

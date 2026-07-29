@@ -3,28 +3,15 @@ import { computed } from 'vue';
 import { Head, useForm } from '@inertiajs/vue3';
 import AuthPasswordInput from '../../Components/AuthPasswordInput.vue';
 import MainLayout from '../../Layouts/MainLayout.vue';
+import { useI18n } from '../../lib/i18n';
 
 const props = defineProps({
     email: { type: String, default: '' },
     token: { type: String, required: true },
 });
 
-const copy = {
-    eyebrow: 'Reset Password',
-    title: 'Create a new password',
-    text: 'Choose a new password for your account and confirm it below.',
-    email: 'Email',
-    emailPlaceholder: 'name@company.com',
-    password: 'Password',
-    passwordPlaceholder: 'Enter your new password',
-    passwordConfirmation: 'Password Confirmation',
-    passwordConfirmationPlaceholder: 'Repeat your new password',
-    passwordRules: 'Password Rules',
-    minChars: 'At least 8 characters',
-    hasLetter: 'At least 1 letter',
-    hasNumber: 'At least 1 number',
-    button: 'Reset Password',
-};
+const { section } = useI18n();
+const copy = section('auth.resetPassword');
 
 const form = useForm({
     token: props.token,
@@ -45,7 +32,7 @@ const submit = () => {
 </script>
 
 <template>
-    <Head title="Reset Password | Sea Requests">
+    <Head :title="copy.headTitle">
         <meta head-key="robots" name="robots" content="noindex, nofollow" />
     </Head>
 

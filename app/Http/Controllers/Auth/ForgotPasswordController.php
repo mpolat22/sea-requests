@@ -34,7 +34,7 @@ class ForgotPasswordController extends Controller
         );
 
         if (! $attempt['ok']) {
-            return back()->with('error', 'We could not send the password reset email right now. Please try again shortly.');
+            return back()->with('error', 'password-reset-email-failed');
         }
 
         $status = $attempt['result'];

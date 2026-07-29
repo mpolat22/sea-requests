@@ -3,6 +3,10 @@ import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import { Head, Link, router, useForm } from '@inertiajs/vue3';
 import MainLayout from '../../Layouts/MainLayout.vue';
 import ServiceListingCard from '../../Components/ServiceListingCard.vue';
+import { useI18n } from '../../lib/i18n';
+
+const { section } = useI18n();
+const ui = section('servicesShow');
 
 const props = defineProps({
     service: {
@@ -134,35 +138,35 @@ const primaryContactItems = computed(() => ([
         key: 'contact_name',
         href: null,
         icon: 'user',
-        label: 'Contact person',
+        label: ui.value.contactPerson,
         value: props.service.vendor.contact_name || '-',
     },
     {
         key: 'phone',
         href: props.service.vendor.phone ? `tel:${props.service.vendor.phone}` : null,
         icon: 'phone',
-        label: 'Mobile / GSM',
+        label: ui.value.mobileGsm,
         value: props.service.vendor.phone || '-',
     },
     {
         key: 'landline',
         href: props.service.vendor.landline ? `tel:${props.service.vendor.landline}` : null,
         icon: 'phone',
-        label: 'Landline',
+        label: ui.value.landline,
         value: props.service.vendor.landline || '-',
     },
     {
         key: 'email',
         href: props.service.vendor.email ? `mailto:${props.service.vendor.email}` : null,
         icon: 'mail',
-        label: 'Email address',
+        label: ui.value.emailAddress,
         value: props.service.vendor.email || '-',
     },
     {
         key: 'whatsapp',
         href: props.service.vendor.whatsapp ? `https://wa.me/${props.service.vendor.whatsapp.replace(/\D/g, '')}` : null,
         icon: 'whatsapp',
-        label: 'WhatsApp',
+        label: ui.value.whatsapp,
         value: props.service.vendor.whatsapp || '-',
         external: true,
     },
@@ -170,7 +174,7 @@ const primaryContactItems = computed(() => ([
         key: 'website',
         href: props.service.vendor.website || null,
         icon: 'globe',
-        label: 'Website',
+        label: ui.value.website,
         value: props.service.vendor.website || '-',
         external: true,
     },
@@ -179,15 +183,15 @@ const primaryContactItems = computed(() => ([
 const coverageGroups = computed(() => (props.service.vendor.ports_by_country ?? []).filter((group) => group.ports?.length));
 
 const companyDetails = computed(() => ([
-    { key: 'address', label: 'Address', value: props.service.vendor.address },
+    { key: 'address', label: ui.value.address, value: props.service.vendor.address },
 ]).filter((item) => item.value));
 const profileTabs = computed(() => ([
-    { key: 'about', label: 'About' },
-    { key: 'categories', label: 'Categories' },
-    { key: 'brands', label: 'Brands' },
-    { key: 'ports', label: 'Service Ports' },
-    { key: 'business', label: 'Contact Information' },
-    { key: 'reviews', label: 'Reviews' },
+    { key: 'about', label: ui.value.about },
+    { key: 'categories', label: ui.value.categories },
+    { key: 'brands', label: ui.value.brands },
+    { key: 'ports', label: ui.value.servicePorts },
+    { key: 'business', label: ui.value.contactInformation },
+    { key: 'reviews', label: ui.value.reviews },
 ]));
 const categorySections = computed(() => {
     const categories = (props.service.categories ?? []).filter((item) => item?.id && item?.name);
@@ -222,7 +226,7 @@ const categorySections = computed(() => {
         return {
             key: `category-${index}-${category.id}`,
             title: category.name,
-            body: resolvedSubcategories.length ? resolvedSubcategories.join(', ') : 'No subcategories listed',
+            body: resolvedSubcategories.length ? resolvedSubcategories.join(', ') : ui.value.noSubcategoriesListed,
         };
     });
 
@@ -234,8 +238,8 @@ const brandSections = computed(() => {
     if (!brands.length) {
         return [{
             key: 'brands-empty',
-            title: 'Brands',
-            body: 'No brands listed',
+            title: ui.value.brands,
+            body: ui.value.noBrandsListed,
         }];
     }
 
@@ -265,44 +269,44 @@ const editableReviewOfferIds = computed(() => new Set(
 ));
 const reviewAccessMessage = computed(() => {
     if (reviewEligibility.value.access_state === 'eligible') {
-        return 'Leave a star rating and buyer comment for the confirmed work you received from this supplier.';
+        return ui.value.reviewAccessEligible;
     }
 
     if (reviewEligibility.value.access_state === 'guest') {
-        return 'Only buyers with confirmed awards will be able to leave reviews here after signing in.';
+        return ui.value.reviewAccessGuest;
     }
 
     if (reviewEligibility.value.access_state === 'owner') {
-        return 'Buyer reviews and your replies will appear here once confirmed buyers start leaving feedback.';
+        return ui.value.reviewAccessOwner;
     }
 
-    return 'Only buyers with confirmed awards can leave reviews here. The supplier company will be able to reply on-platform.';
+    return ui.value.reviewAccessRestricted;
 });
 const showContactAuthActions = computed(() => contactAccessState.value === 'guest');
 const reviewActionCopy = computed(() => ({
-    deleteReview: 'Delete',
-    deleteReply: 'Delete Reply',
-    deleteReviewTitle: 'Delete review',
-    deleteReplyTitle: 'Delete reply',
-    deleteReviewBody: 'If you delete this review, your buyer feedback will be removed from the supplier profile. You can publish a new review again later if needed.',
-    deleteReplyBody: 'If you delete this reply, the buyer review will remain published and you can write a new reply again later if needed.',
-    confirmDeleteReview: 'Delete Review',
-    confirmDeleteReply: 'Delete Reply',
-    cancelDelete: 'Cancel',
+    deleteReview: ui.value.deleteReview,
+    deleteReply: ui.value.deleteReply,
+    deleteReviewTitle: ui.value.deleteReviewTitle,
+    deleteReplyTitle: ui.value.deleteReplyTitle,
+    deleteReviewBody: ui.value.deleteReviewBody,
+    deleteReplyBody: ui.value.deleteReplyBody,
+    confirmDeleteReview: ui.value.confirmDeleteReview,
+    confirmDeleteReply: ui.value.confirmDeleteReply,
+    cancelDelete: ui.value.cancel,
 }));
 const lockedContactTitle = computed(() => {
     if (contactAccessState.value === 'guest') {
-        return 'Sign in to continue through the RFQ workflow';
+        return ui.value.lockedGuestTitle;
     }
 
-    return 'Direct contact stays on-platform until award confirmation';
+    return ui.value.lockedAwardTitle;
 });
 const lockedContactText = computed(() => {
     if (contactAccessState.value === 'guest') {
-        return 'Supplier phone, email, website, WhatsApp and address become visible only after a confirmed award is established through the platform.';
+        return ui.value.lockedGuestText;
     }
 
-    return 'Phone, email, website, WhatsApp and address are visible only to the awarded buyer and the supplier company after award confirmation.';
+    return ui.value.lockedAwardText;
 });
 
 const resetReviewFormForTarget = () => {
@@ -739,7 +743,7 @@ onBeforeUnmount(() => {
                                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                                             <path d="m15 18-6-6 6-6" />
                                         </svg>
-                                        <span>Back to search results</span>
+                                        <span>{{ ui.backToSearchResults }}</span>
                                     </Link>
                                 </div>
 
@@ -767,7 +771,7 @@ onBeforeUnmount(() => {
                                                 </div>
                                                 <span class="hero-rating-value">{{ averageRatingText }}</span>
                                                 <span class="hero-rating-count">
-                                                    {{ Number(reviewSummary.count ?? 0) }} review{{ Number(reviewSummary.count ?? 0) === 1 ? '' : 's' }}
+                                                    {{ Number(reviewSummary.count ?? 0) }} {{ Number(reviewSummary.count ?? 0) === 1 ? ui.reviewSingular : ui.reviewPlural }}
                                                 </span>
                                             </div>
                                         </div>
@@ -778,10 +782,10 @@ onBeforeUnmount(() => {
                                         :href="props.service.request_service_url"
                                         class="hero-contact-button"
                                     >
-                                        Request Service
+                                        {{ ui.requestService }}
                                     </Link>
                                     <a v-else href="#contact-information" class="hero-contact-button" @click="activeProfileTab = 'business'">
-                                        Contact supplier
+                                        {{ ui.contactSupplier }}
                                     </a>
                                 </div>
                             </div>
@@ -789,7 +793,7 @@ onBeforeUnmount(() => {
 
                         <section id="company-profile" class="content-flow">
                             <div class="profile-tabs-layout">
-                                <nav class="profile-tabs-nav" aria-label="Company profile sections">
+                                <nav class="profile-tabs-nav" :aria-label="ui.companyProfileSections">
                                     <button
                                         v-for="tab in profileTabs"
                                         :key="tab.key"
@@ -805,7 +809,7 @@ onBeforeUnmount(() => {
                                 <div class="profile-tab-panel">
                                     <section v-if="activeProfileTab === 'about'" class="content-section overview-section">
                                         <div class="section-head">
-                                            <span class="section-kicker">About</span>
+                                            <span class="section-kicker">{{ ui.about }}</span>
                                         </div>
 
                                         <div class="content-section-body">
@@ -817,7 +821,7 @@ onBeforeUnmount(() => {
 
                                     <section v-else-if="activeProfileTab === 'categories'" class="content-section">
                                         <div class="section-head">
-                                            <span class="section-kicker">Categories</span>
+                                            <span class="section-kicker">{{ ui.categories }}</span>
                                         </div>
 
                                         <div class="content-section-body">
@@ -832,7 +836,7 @@ onBeforeUnmount(() => {
 
                                     <section v-else-if="activeProfileTab === 'brands'" class="content-section">
                                         <div class="section-head">
-                                            <span class="section-kicker">Brands</span>
+                                            <span class="section-kicker">{{ ui.brands }}</span>
                                         </div>
 
                                         <div class="content-section-body">
@@ -847,7 +851,7 @@ onBeforeUnmount(() => {
 
                                     <section v-else-if="activeProfileTab === 'ports'" class="content-section">
                                         <div class="section-head">
-                                            <span class="section-kicker">Service Ports</span>
+                                            <span class="section-kicker">{{ ui.servicePorts }}</span>
                                         </div>
 
                                         <div class="content-section-body">
@@ -862,7 +866,7 @@ onBeforeUnmount(() => {
 
                                     <section v-else-if="activeProfileTab === 'business'" class="content-section">
                                         <div class="section-head">
-                                            <span class="section-kicker">Contact Information</span>
+                                            <span class="section-kicker">{{ ui.contactInformation }}</span>
                                         </div>
 
                                         <div class="content-section-body business-profile-stack">
@@ -876,10 +880,10 @@ onBeforeUnmount(() => {
 
                                                         <div v-if="showContactAuthActions" class="locked-actions">
                                                             <Link href="/login" class="hero-action hero-action-primary">
-                                                                Sign In
+                                                                {{ ui.signIn }}
                                                             </Link>
                                                             <Link href="/register" class="hero-action hero-action-secondary">
-                                                                Create Account
+                                                                {{ ui.createAccount }}
                                                             </Link>
                                                         </div>
                                                     </div>
@@ -910,7 +914,7 @@ onBeforeUnmount(() => {
                                                         </article>
 
                                                         <article v-if="socialIconItems.length" class="profile-data-card contact-info-card contact-info-card-wide">
-                                                            <span class="profile-data-card-title">Social Media</span>
+                                                            <span class="profile-data-card-title">{{ ui.socialMedia }}</span>
                                                             <div class="contact-actions">
                                                             <a
                                                                 v-for="item in socialIconItems"
@@ -960,15 +964,15 @@ onBeforeUnmount(() => {
 
                                     <section v-else class="content-section">
                                         <div class="section-head">
-                                            <span class="section-kicker">Reviews</span>
+                                            <span class="section-kicker">{{ ui.reviews }}</span>
                                         </div>
 
                                         <div class="content-section-body">
                                             <div class="reviews-stack">
                                                 <section v-if="isLoadingReviews && !reviewsLoaded" class="review-placeholder-card">
-                                                    <strong class="review-placeholder-title">Loading reviews...</strong>
+                                                    <strong class="review-placeholder-title">{{ ui.loadingReviews }}</strong>
                                                     <p class="body-copy review-placeholder-copy">
-                                                        Buyer ratings, comments and reply controls are being prepared.
+                                                        {{ ui.loadingReviewsText }}
                                                     </p>
                                                 </section>
 
@@ -997,7 +1001,7 @@ onBeforeUnmount(() => {
                                                                 >★</span>
                                                             </div>
                                                             <p class="body-copy review-summary-copy">
-                                                                {{ Number(reviewSummary.count ?? 0) }} review{{ Number(reviewSummary.count ?? 0) === 1 ? '' : 's' }}
+                                                                {{ Number(reviewSummary.count ?? 0) }} {{ Number(reviewSummary.count ?? 0) === 1 ? ui.reviewSingular : ui.reviewPlural }}
                                                             </p>
                                                         </div>
                                                     </section>
@@ -1008,13 +1012,13 @@ onBeforeUnmount(() => {
                                                     >
                                                     <div class="review-form-head">
                                                         <div>
-                                                            <strong class="review-form-title">Rate this supplier</strong>
+                                                            <strong class="review-form-title">{{ ui.rateThisSupplier }}</strong>
                                                             <p class="body-copy review-form-copy">{{ reviewAccessMessage }}</p>
                                                         </div>
                                                     </div>
 
                                                     <label v-if="reviewTargets.length > 1" class="review-form-field">
-                                                        <span class="profile-data-card-title">Confirmed Work</span>
+                                                        <span class="profile-data-card-title">{{ ui.confirmedWork }}</span>
                                                         <select v-model="selectedReviewTargetId" class="review-select">
                                                             <option
                                                                 v-for="target in reviewTargets"
@@ -1027,7 +1031,7 @@ onBeforeUnmount(() => {
                                                     </label>
 
                                                     <div v-else-if="selectedReviewTarget" class="review-selected-target">
-                                                        <span class="profile-data-card-title">Confirmed Work</span>
+                                                        <span class="profile-data-card-title">{{ ui.confirmedWork }}</span>
                                                         <strong>{{ selectedReviewTarget.reference_no }}</strong>
                                                     </div>
 
@@ -1036,20 +1040,20 @@ onBeforeUnmount(() => {
                                                         class="review-saved-state"
                                                     >
                                                         <p class="body-copy review-saved-copy">
-                                                            You already published a review for this confirmed work. Use the edit action below to update it.
+                                                            {{ ui.savedReviewText }}
                                                         </p>
                                                         <button
                                                             type="button"
                                                             class="hero-action hero-action-secondary"
                                                             @click="startEditingReview()"
                                                         >
-                                                            Edit Saved Review
+                                                            {{ ui.editSavedReview }}
                                                         </button>
                                                     </div>
 
                                                     <template v-else>
                                                         <div class="review-form-field">
-                                                            <span class="profile-data-card-title">Star Rating</span>
+                                                            <span class="profile-data-card-title">{{ ui.starRating }}</span>
                                                             <div class="review-stars-input">
                                                                 <button
                                                                     v-for="star in 5"
@@ -1066,13 +1070,13 @@ onBeforeUnmount(() => {
                                                         </div>
 
                                                         <label class="review-form-field">
-                                                            <span class="profile-data-card-title">Buyer Comment</span>
+                                                            <span class="profile-data-card-title">{{ ui.buyerComment }}</span>
                                                             <textarea
                                                                 v-model="reviewForm.review_text"
                                                                 class="review-textarea"
                                                                 rows="5"
                                                                 maxlength="2000"
-                                                                placeholder="Share your experience with this supplier."
+                                                                :placeholder="ui.buyerCommentPlaceholder"
                                                             />
                                                             <p v-if="reviewForm.errors.review_text" class="review-error">{{ reviewForm.errors.review_text }}</p>
                                                         </label>
@@ -1084,7 +1088,7 @@ onBeforeUnmount(() => {
                                                                 class="hero-action hero-action-secondary"
                                                                 @click="cancelReviewEditing"
                                                             >
-                                                                Cancel
+                                                                {{ ui.cancel }}
                                                             </button>
                                                             <button
                                                                 type="button"
@@ -1092,7 +1096,7 @@ onBeforeUnmount(() => {
                                                                 :disabled="reviewForm.processing || !reviewForm.offer_id || !reviewForm.rating || !reviewForm.review_text.trim()"
                                                                 @click="submitReview"
                                                             >
-                                                                {{ isEditingReview ? 'Update Review' : 'Publish Review' }}
+                                                                {{ isEditingReview ? ui.updateReview : ui.publishReview }}
                                                             </button>
                                                         </div>
                                                         </template>
@@ -1130,7 +1134,7 @@ onBeforeUnmount(() => {
                                                                         class="hero-action hero-action-secondary review-edit-button"
                                                                         @click="startEditingReview(item.offer_id)"
                                                                     >
-                                                                        Edit
+                                                                        {{ ui.edit }}
                                                                     </button>
                                                                     <button
                                                                         v-if="item.can_delete_review"
@@ -1152,19 +1156,19 @@ onBeforeUnmount(() => {
                                                                 class="hero-action hero-action-secondary review-edit-button"
                                                                 @click="openSellerReplyEditor(item)"
                                                             >
-                                                                Reply
+                                                                {{ ui.reply }}
                                                             </button>
                                                         </div>
 
                                                         <div v-if="item.can_reply && isSellerReplyEditorOpen(item)" class="review-reply-editor">
                                                             <label class="review-form-field">
-                                                                <span class="profile-data-card-title">Supplier Reply</span>
+                                                                <span class="profile-data-card-title">{{ ui.supplierReply }}</span>
                                                                 <textarea
                                                                     v-model="sellerReplyForm.seller_reply"
                                                                     class="review-textarea"
                                                                     rows="4"
                                                                     maxlength="2000"
-                                                                    placeholder="Write your reply to this buyer review."
+                                                                    :placeholder="ui.supplierReplyPlaceholder"
                                                                 />
                                                                 <p v-if="sellerReplyForm.errors.seller_reply" class="review-error">{{ sellerReplyForm.errors.seller_reply }}</p>
                                                             </label>
@@ -1175,7 +1179,7 @@ onBeforeUnmount(() => {
                                                                     class="hero-action hero-action-secondary review-edit-button"
                                                                     @click="cancelSellerReplyEditing"
                                                                 >
-                                                                    Cancel
+                                                                    {{ ui.cancel }}
                                                                 </button>
                                                                 <button
                                                                     type="button"
@@ -1183,7 +1187,7 @@ onBeforeUnmount(() => {
                                                                     :disabled="sellerReplyForm.processing || !sellerReplyForm.seller_reply.trim()"
                                                                     @click="submitSellerReply(item)"
                                                                 >
-                                                                    Save Reply
+                                                                    {{ ui.saveReply }}
                                                                 </button>
                                                             </div>
                                                         </div>
@@ -1192,14 +1196,14 @@ onBeforeUnmount(() => {
                                                             <div class="review-reply-head">
                                                                 <span class="profile-data-card-title">{{ service.vendor.name }}</span>
                                                                 <div class="review-reply-head-side">
-                                                                    <span class="review-reply-label">Reply</span>
+                                                                    <span class="review-reply-label">{{ ui.reply }}</span>
                                                                     <div v-if="item.can_reply" class="review-reply-card-actions">
                                                                         <button
                                                                             type="button"
                                                                             class="hero-action hero-action-secondary review-edit-button"
                                                                             @click="openSellerReplyEditor(item)"
                                                                         >
-                                                                            Edit Reply
+                                                                            {{ ui.editReply }}
                                                                         </button>
                                                                         <button
                                                                             v-if="item.can_delete_reply"
@@ -1219,9 +1223,9 @@ onBeforeUnmount(() => {
                                                     </section>
 
                                                     <section v-else class="review-placeholder-card">
-                                                        <strong class="review-placeholder-title">No reviews yet</strong>
+                                                        <strong class="review-placeholder-title">{{ ui.noReviewsYet }}</strong>
                                                         <p class="body-copy review-placeholder-copy">
-                                                            This supplier has not received a buyer review yet.
+                                                            {{ ui.noReviewsYetText }}
                                                         </p>
                                                     </section>
                                                 </template>
@@ -1262,18 +1266,18 @@ onBeforeUnmount(() => {
             <section v-if="showSimilarVendorsSection" class="main-related-section related-full-width">
                 <div class="sidebar-head main-related-head">
                     <div>
-                        <span class="sidebar-kicker">Similar vendors</span>
-                        <h2>Other vendors in this category</h2>
+                        <span class="sidebar-kicker">{{ ui.similarVendors }}</span>
+                        <h2>{{ ui.otherVendorsInCategory }}</h2>
                     </div>
 
                     <div v-if="similarVendorServices.length > similarVisibleCount" class="related-nav">
-                        <button type="button" class="related-nav-button" :disabled="!canSlideSimilarPrev" @click="slideSimilarPrev" aria-label="Previous vendors">
+                        <button type="button" class="related-nav-button" :disabled="!canSlideSimilarPrev" @click="slideSimilarPrev" :aria-label="ui.previousVendors">
                             <svg class="related-nav-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                                 <path d="m15 18-6-6 6-6" />
                             </svg>
                             
                         </button>
-                        <button type="button" class="related-nav-button" :disabled="!canSlideSimilarNext" @click="slideSimilarNext" aria-label="Next vendors">
+                        <button type="button" class="related-nav-button" :disabled="!canSlideSimilarNext" @click="slideSimilarNext" :aria-label="ui.nextVendors">
                             <svg class="related-nav-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                                 <path d="m9 18 6-6-6-6" />
                             </svg>
@@ -1287,8 +1291,8 @@ onBeforeUnmount(() => {
                         v-for="item in visibleSimilarVendorServices"
                         :key="item.id"
                         :item="item"
-                        :label="'View Details'"
-                        :no-description="'Company overview has not been added yet.'"
+                        :label="ui.viewDetails"
+                        :no-description="ui.noCompanyOverview"
                     />
                 </div>
             </section>

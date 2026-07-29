@@ -1,4 +1,5 @@
 <script setup>
+import { useI18n } from '../../../lib/i18n';
 import { computed, nextTick, ref, watch } from 'vue';
 import { router, useForm } from '@inertiajs/vue3';
 import OrderInvoicesSection from '../../../Components/OrderInvoicesSection.vue';
@@ -41,7 +42,7 @@ const props = defineProps({
 
 const emit = defineEmits(['close', 'retry']);
 
-const copy = {
+const baseCopy = {
     title: 'Manage Invoices',
     intro: 'Add one or more invoices for this confirmed order. Review buyer payment proofs here as they arrive and confirm payment receipt invoice by invoice.',
     addInvoice: 'Add Invoice',
@@ -88,7 +89,15 @@ const copy = {
     },
     browse: 'Choose File',
     fileTypes: 'Accepted: PDF, JPG, PNG, WEBP up to 15 MB.',
+    maxInvoice: 'Maximum for this invoice: {amount}',
+    amountExceeded: 'Invoice amount cannot exceed the remaining agreed total of {amount}.',
 };
+
+const { section } = useI18n();
+const translatedCopy = section('supplier.invoiceUpload');
+const copy = new Proxy(baseCopy, {
+    get: (target, key) => translatedCopy.value[key] ?? target[key],
+});
 
 const currentOrder = computed(() => props.order ?? {});
 const invoices = computed(() => currentOrder.value.invoices ?? []);
@@ -274,7 +283,7 @@ const validateAmountField = (value, { label }) => {
     }
 
     if (numeric > allowedInvoiceAmount.value + 0.00001) {
-        return `Invoice amount cannot exceed the remaining agreed total of ${formatMoney(allowedInvoiceAmount.value, currentOrder.value.currency || 'USD')}.`;
+        return copy.amountExceeded.replace('{amount}', formatMoney(allowedInvoiceAmount.value, currentOrder.value.currency || 'USD'));
     }
 
     return '';
@@ -571,7 +580,7 @@ const confirmPayment = (invoice) => {
                                                     <span>{{ copy.invoiceAmount }} *</span>
                                                     <span class="field-hint">{{ copy.hints.invoice_amount }}</span>
                                                     <span class="field-hint field-hint-compact">
-                                                        Maximum for this invoice: {{ formatMoney(allowedInvoiceAmountField, currentOrder.currency || 'USD') }}
+                                                        {{ copy.maxInvoice.replace('{amount}', formatMoney(allowedInvoiceAmountField, currentOrder.currency || 'USD')) }}
                                                     </span>
                                                     <div class="input-shell" :class="{ invalid: hasVisualInvalid('invoice_amount') }">
                                                         <input :ref="(el) => registerFieldRef('invoice_amount', el)" v-model="form.invoice_amount" type="number" min="0.01" step="0.01" :placeholder="copy.placeholders.invoice_amount" @input="clearFieldErrorIfValid('invoice_amount')">
@@ -652,7 +661,7 @@ const confirmPayment = (invoice) => {
                                             <span>{{ copy.invoiceAmount }} *</span>
                                             <span class="field-hint">{{ copy.hints.invoice_amount }}</span>
                                             <span class="field-hint field-hint-compact">
-                                                Maximum for this invoice: {{ formatMoney(allowedInvoiceAmountField, currentOrder.currency || 'USD') }}
+                                                {{ copy.maxInvoice.replace('{amount}', formatMoney(allowedInvoiceAmountField, currentOrder.currency || 'USD')) }}
                                             </span>
                                             <div class="input-shell" :class="{ invalid: hasVisualInvalid('invoice_amount') }">
                                                 <input :ref="(el) => registerFieldRef('invoice_amount', el)" v-model="form.invoice_amount" type="number" min="0.01" step="0.01" :placeholder="copy.placeholders.invoice_amount" @input="clearFieldErrorIfValid('invoice_amount')">

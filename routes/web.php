@@ -172,7 +172,6 @@ Route::get('/sitemap.xml', function (Request $request) {
     $staticInfoLastmod = $lastmodFrom(
         $fileLastmod([
             'resources/js/Pages/Static/AboutUs.vue',
-            'resources/js/Pages/Static/Blog.vue',
             'resources/js/Pages/Static/Contact.vue',
             'resources/js/Pages/Static/Disclaimer.vue',
             'resources/js/Pages/Static/Faq.vue',
@@ -201,7 +200,6 @@ Route::get('/sitemap.xml', function (Request $request) {
         ['loc' => $root.'/services', 'lastmod' => $servicesLastmod, 'changefreq' => 'weekly', 'priority' => '0.9'],
         ['loc' => $root.'/requests', 'lastmod' => $requestsLastmod, 'changefreq' => 'weekly', 'priority' => '0.8'],
         ['loc' => $root.'/about-us', 'lastmod' => $staticInfoLastmod, 'changefreq' => 'monthly', 'priority' => '0.45'],
-        ['loc' => $root.'/blog', 'lastmod' => $staticInfoLastmod, 'changefreq' => 'monthly', 'priority' => '0.4'],
         ['loc' => $root.'/contact', 'lastmod' => $staticInfoLastmod, 'changefreq' => 'monthly', 'priority' => '0.55'],
         ['loc' => $root.'/faq', 'lastmod' => $staticInfoLastmod, 'changefreq' => 'monthly', 'priority' => '0.45'],
         ['loc' => $root.'/disclaimer', 'lastmod' => $staticInfoLastmod, 'changefreq' => 'yearly', 'priority' => '0.3'],
@@ -1902,13 +1900,6 @@ Route::get('/privacy-policy', function () use ($staticPageMeta) {
     ]);
 })->name('privacy');
 
-Route::get('/blog', fn () => Inertia::render('Static/Blog', [
-    'meta' => $staticPageMeta(
-        'Blog | Sea Requests',
-        'Follow Sea Requests marketplace updates, product notes, and operational insights for maritime buyers and suppliers.',
-        'blog'
-    ),
-]))->name('blog');
 Route::get('/about-us', fn () => Inertia::render('Static/AboutUs', [
     'meta' => $staticPageMeta(
         'About Sea Requests | Maritime Procurement Platform',
@@ -2093,6 +2084,4 @@ Route::middleware('auth')->group(function () {
     Route::post('/messenger/conversations/{offer}/messages', [OrderMessengerController::class, 'store'])->whereNumber('offer')->name('messenger.conversations.messages.store');
     Route::post('/messenger/conversations/{offer}/read', [OrderMessengerController::class, 'markRead'])->whereNumber('offer')->name('messenger.conversations.read');
   });
-
-
 

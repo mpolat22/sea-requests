@@ -1,4 +1,5 @@
 <script setup>
+import { useI18n } from '../../../lib/i18n';
 import { computed, ref } from 'vue';
 import { Link } from '@inertiajs/vue3';
 import SupplierDashboardShell from './Shell.vue';
@@ -21,7 +22,7 @@ const props = defineProps({
 
 const award = props.order;
 
-const copy = {
+const baseCopy = {
     title: 'Order Detail',
     eyebrow: 'Order Confirmed',
     intro: 'This screen is designed to show the order confirmed to your company clearly. Review the selected lines, accepted commercial terms, and the next invoice workflow from here.',
@@ -57,9 +58,16 @@ const copy = {
     countriesSelected: 'countries selected',
     portsSelected: 'ports selected',
     portsSelectedSuffix: 'ports selected',
+    imoNumber: 'IMO Number',
     allListedPortsIn: 'All listed ports in',
     noData: '-',
 };
+
+const { section } = useI18n();
+const translatedCopy = section('supplier.orderDetail');
+const copy = new Proxy(baseCopy, {
+    get: (target, key) => translatedCopy.value[key] ?? target[key],
+});
 
 const orderWorkflowLabel = computed(() => award.order_workflow_status_label || 'Order Information Pending');
 
@@ -170,7 +178,7 @@ const generalInformationFields = computed(() => [
     },
     {
         key: 'imo_number',
-        label: 'IMO Number',
+        label: copy.imoNumber,
         value: textOrDash(award.imo_number),
     },
     {

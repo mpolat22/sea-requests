@@ -1,5 +1,6 @@
 <script setup>
 import { computed, defineAsyncComponent, ref, watch } from 'vue';
+import { useI18n } from '../../../lib/i18n';
 import { Link } from '@inertiajs/vue3';
 import BuyerDashboardShell from './Shell.vue';
 import { useMessengerStore } from '../../../lib/messengerStore';
@@ -29,39 +30,11 @@ const isModalLoading = ref(false);
 const modalLoadError = ref('');
 const modalRequestToken = ref(0);
 
-const copy = {
-    title: 'Buyer Dashboard',
-    tabTitle: 'Orders',
-    tabText: 'Track supplier-based orders created after your confirmed awards. This is where invoice and payment workflow will continue next.',
-    searchPlaceholder: 'Search ref / supplier / ship / title',
-    search: 'Search',
-    emptyTitle: 'No supplier orders have been created yet.',
-    emptySearchTitle: 'No supplier order matched your search.',
-    emptySearchText: 'Try a different keyword or clear the search and try again.',
-    recordsPerPage: 'Records per page:',
-    showing: 'Showing',
-    of: 'of',
-    records: 'records',
-    prev: 'Prev',
-    next: 'Next',
-    viewOrder: 'Order Detail',
-    manageOrderInformation: 'Order Information',
-    managePaymentProof: 'Invoices & Payment Proof',
-    message: 'Message',
-    newMessage: 'New message',
-    table: {
-        order: '#',
-        statusMini: 'Status',
-        referenceNo: 'Reference No',
-        supplier: 'Supplier',
-        ship: 'Ship',
-        selectedItems: 'Selected Items',
-        confirmedAt: 'Confirmed At',
-        selectedTotal: 'Selected Total',
-        actions: 'Actions',
-    },
-    noData: '-',
-};
+const { section } = useI18n();
+const copySource = section('buyer.dashboard.orders');
+const copy = new Proxy({}, {
+    get: (_, key) => copySource.value[key],
+});
 
 const formatDateTime = (value) => {
     if (!value) return copy.noData;
@@ -201,7 +174,7 @@ const loadActiveOrder = async () => {
 
     if (!modalUrl) {
         activeOrder.value = null;
-        modalLoadError.value = 'Order details could not be loaded right now.';
+        modalLoadError.value = copy.loadError;
         return;
     }
 
@@ -233,7 +206,7 @@ const loadActiveOrder = async () => {
         activeOrder.value = payload?.order ?? null;
 
         if (!activeOrder.value) {
-            modalLoadError.value = 'Order details could not be loaded right now.';
+            modalLoadError.value = copy.loadError;
         }
     } catch (error) {
         if (requestToken !== modalRequestToken.value) {
@@ -241,7 +214,7 @@ const loadActiveOrder = async () => {
         }
 
         activeOrder.value = null;
-        modalLoadError.value = 'Order details could not be loaded right now.';
+        modalLoadError.value = copy.loadError;
     } finally {
         if (requestToken === modalRequestToken.value) {
             isModalLoading.value = false;

@@ -89,7 +89,7 @@ class RegisterController extends Controller
         $redirect = redirect()->route('verification.notice');
 
         if (! $verificationEmail['ok']) {
-            return $redirect->with('error', 'Your account was created, but we could not send the verification email right now. Please use Resend Verification Email to try again shortly.');
+            return $redirect->with('error', 'registration-verification-email-failed');
         }
 
         return $redirect;

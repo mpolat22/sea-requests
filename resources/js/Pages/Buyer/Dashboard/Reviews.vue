@@ -1,5 +1,6 @@
 <script setup>
 import { computed, ref } from 'vue';
+import { useI18n } from '../../../lib/i18n';
 import { Link, router } from '@inertiajs/vue3';
 import BuyerDashboardShell from './Shell.vue';
 
@@ -19,43 +20,11 @@ const reviewRowsPerPage = ref(10);
 const reviewCurrentPage = ref(1);
 const deleteModalReview = ref(null);
 
-const copy = {
-    title: 'Buyer Dashboard',
-    tabTitle: 'Reviews',
-    tabText: 'Manage the supplier reviews you can publish after confirmed award relationships are created.',
-    searchPlaceholder: 'Search supplier / ref / ship',
-    search: 'Search',
-    reviewTable: {
-        order: '#',
-        supplier: 'Supplier',
-        referenceNo: 'Reference No',
-        ship: 'Ship',
-        confirmedAt: 'Award Confirmed',
-        rating: 'Rating',
-        status: 'Status',
-        actions: 'Actions',
-    },
-    recordsPerPage: 'Records per page:',
-    showing: 'Showing',
-    of: 'of',
-    records: 'records',
-    prev: 'Prev',
-    next: 'Next',
-    emptyReviewTitle: 'No supplier review is waiting yet.',
-    emptyReviewText: 'Reviews will appear here after confirmed award relationships are created.',
-    emptyReviewSearchTitle: 'No review record matched your search.',
-    emptyReviewSearchText: 'Try a different keyword or clear the search and try again.',
-    reviewStatus: {
-        pending: 'Pending Review',
-        published: 'Published',
-    },
-    reviewActionPending: 'Write Review',
-    reviewActionPublished: 'View Review',
-    deleteReviewTitle: 'Delete review',
-    deleteReviewBody: 'If you delete this review, your buyer feedback will be removed from the supplier profile. You can publish a new review again later if needed.',
-    deleteCancel: 'Cancel',
-    deleteReviewConfirmButton: 'Delete Review',
-};
+const { section } = useI18n();
+const copySource = section('buyer.dashboard.reviews');
+const copy = new Proxy({}, {
+    get: (_, key) => copySource.value[key],
+});
 
 const filteredReviews = computed(() => {
     const query = reviewSearchQuery.value.trim().toLowerCase();

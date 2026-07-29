@@ -4,6 +4,7 @@ import { Head, Link, router, usePage } from '@inertiajs/vue3';
 import MainLayout from '../../Layouts/MainLayout.vue';
 import ServiceListingCard from '../../Components/ServiceListingCard.vue';
 import { buildServiceDirectoryUrl } from '../../lib/serviceDirectoryUrl.js';
+import { useI18n } from '../../lib/i18n';
 
 const props = defineProps({
     categories: {
@@ -67,14 +68,11 @@ const props = defineProps({
 
 const page = usePage();
 const isAuthenticated = computed(() => Boolean(page.props.auth?.user));
-const defaultHeroCopy = {
-    eyebrow: 'Supplier directory',
-    title: 'Maritime Service Suppliers',
-    text: 'Browse approved supplier companies, compare service coverage and open detailed company profiles.',
-};
-const heroEyebrow = computed(() => props.meta.heroEyebrow || defaultHeroCopy.eyebrow);
-const heroTitle = computed(() => props.meta.heroTitle || defaultHeroCopy.title);
-const heroText = computed(() => props.meta.heroText || defaultHeroCopy.text);
+const { locale, section } = useI18n();
+const ui = section('servicesIndex');
+const heroEyebrow = computed(() => (locale.value === 'zh' ? ui.value.heroEyebrow : (props.meta.heroEyebrow || ui.value.heroEyebrow)));
+const heroTitle = computed(() => (locale.value === 'zh' ? ui.value.heroTitle : (props.meta.heroTitle || ui.value.heroTitle)));
+const heroText = computed(() => (locale.value === 'zh' ? ui.value.heroText : (props.meta.heroText || ui.value.heroText)));
 
 const categoryThemes = [
     {
@@ -171,32 +169,6 @@ const requestJson = async (url) => {
     return response.json();
 };
 
-const ui = computed(() => ({
-        filters: 'Filters',
-        applyFilters: 'Apply filters',
-        clearAll: 'Clear all',
-        search: 'Search',
-        searchPlaceholder: 'Search service, subcategory, brand, country, port...',
-        parentCategory: 'Parent category',
-        subcategory: 'Subcategory',
-        allSubcategories: 'All subcategories',
-        brand: 'Brands',
-        allBrands: 'All brands',
-        country: 'Country',
-        allCountries: 'All countries',
-        port: 'Port',
-        allPorts: 'All ports',
-        chooseCountryFirst: 'Select country first',
-        activeFilters: 'Active filters',
-        noActiveFilters: 'No active filters',
-        results: 'results',
-        viewProfile: 'View Details',
-        noDescription: 'Company overview has not been added yet.',
-        loading: 'Loading more companies...',
-        reachedEnd: 'You have reached the end of the directory.',
-        serviceCountries: 'Service countries',
-        ports: 'ports',
-}));
 
 const filters = reactive({
     search: props.filters.search ?? '',
@@ -639,12 +611,12 @@ const selectedParentCategoriesLabel = computed(() => {
         return selectedParentCategoryOptions.value[0].name;
     }
 
-    return `${selectedParentCategoryOptions.value.length} categories selected`;
+    return `${selectedParentCategoryOptions.value.length} ${ui.value.categoriesSelected}`;
 });
 
 const selectedSubcategoriesLabel = computed(() => {
     if (!filters.parentCategories.length) {
-        return 'Select Categories First';
+        return ui.value.selectCategoriesFirst;
     }
 
     if (!selectedSubcategoryOptions.value.length) {
@@ -655,7 +627,7 @@ const selectedSubcategoriesLabel = computed(() => {
         return selectedSubcategoryOptions.value[0].name;
     }
 
-    return `${selectedSubcategoryOptions.value.length} subcategories selected`;
+    return `${selectedSubcategoryOptions.value.length} ${ui.value.subcategoriesSelected}`;
 });
 
 const selectedBrandsLabel = computed(() => {
@@ -667,7 +639,7 @@ const selectedBrandsLabel = computed(() => {
         return selectedBrandOptions.value[0].name;
     }
 
-    return `${selectedBrandOptions.value.length} brands selected`;
+    return `${selectedBrandOptions.value.length} ${ui.value.brandsSelected}`;
 });
 
 const selectedCountriesLabel = computed(() => {
@@ -695,7 +667,7 @@ const selectedPortsLabel = computed(() => {
         return parsePortToken(filters.ports[0]).port || filters.ports[0];
     }
 
-    return `${filters.ports.length} ports selected`;
+    return `${filters.ports.length} ${ui.value.portsSelected}`;
 });
 
 const appliedParentCategoriesLabel = computed(() => {
@@ -707,12 +679,12 @@ const appliedParentCategoriesLabel = computed(() => {
         return appliedParentCategoryOptions.value[0].name;
     }
 
-    return `${appliedParentCategoryOptions.value.length} categories selected`;
+    return `${appliedParentCategoryOptions.value.length} ${ui.value.categoriesSelected}`;
 });
 
 const appliedSubcategoriesLabel = computed(() => {
     if (!appliedFilters.parentCategories.length) {
-        return 'Select Categories First';
+        return ui.value.selectCategoriesFirst;
     }
 
     if (!appliedSubcategoryOptions.value.length) {
@@ -723,7 +695,7 @@ const appliedSubcategoriesLabel = computed(() => {
         return appliedSubcategoryOptions.value[0].name;
     }
 
-    return `${appliedSubcategoryOptions.value.length} subcategories selected`;
+    return `${appliedSubcategoryOptions.value.length} ${ui.value.subcategoriesSelected}`;
 });
 
 const appliedBrandsLabel = computed(() => {
@@ -735,7 +707,7 @@ const appliedBrandsLabel = computed(() => {
         return appliedBrandOptions.value[0].name;
     }
 
-    return `${appliedBrandOptions.value.length} brands selected`;
+    return `${appliedBrandOptions.value.length} ${ui.value.brandsSelected}`;
 });
 
 const appliedCountriesLabel = computed(() => {
@@ -763,7 +735,7 @@ const appliedPortsLabel = computed(() => {
         return parsePortToken(appliedFilters.ports[0]).port || appliedFilters.ports[0];
     }
 
-    return `${appliedFilters.ports.length} ports selected`;
+    return `${appliedFilters.ports.length} ${ui.value.portsSelected}`;
 });
 
 const hasPendingFilterChanges = computed(() => (
@@ -918,35 +890,35 @@ const emptyState = computed(() => {
 
     if (hasCountry && hasSubcategory) {
         return {
-            title: `No approved suppliers were found in ${primaryCountry} for ${primarySubcategory}.`,
-            text: 'You can broaden the search, switch filters, or join the directory as a supplier for this service area.',
+            title: ui.value.emptyCountrySubcategoryTitle.replace('{country}', primaryCountry).replace('{subcategory}', primarySubcategory),
+            text: ui.value.emptyCountrySubcategoryText,
         };
     }
 
     if (hasCountry && hasCategory) {
         return {
-            title: `No approved suppliers were found in ${primaryCountry} for ${primaryCategory}.`,
-            text: 'There are no matching results for this country and category yet. You can adjust the filters or join the directory as a supplier.',
+            title: ui.value.emptyCountryCategoryTitle.replace('{country}', primaryCountry).replace('{category}', primaryCategory),
+            text: ui.value.emptyCountryCategoryText,
         };
     }
 
     if (hasCountry) {
         return {
-            title: `No approved suppliers were found in ${primaryCountry}.`,
-            text: 'There are no visible matches for this country right now. You can clear filters, choose another country, or join the directory as a supplier.',
+            title: ui.value.emptyCountryTitle.replace('{country}', primaryCountry),
+            text: ui.value.emptyCountryText,
         };
     }
 
     if (hasSearch || hasFilters) {
         return {
-            title: 'No approved suppliers match these filters.',
-            text: 'Try broadening your search or changing the selected category, subcategory, country, or port.',
+            title: ui.value.emptyFilteredTitle,
+            text: ui.value.emptyFilteredText,
         };
     }
 
     return {
-        title: 'No approved suppliers are listed yet.',
-        text: 'When the first approved suppliers go live, this directory will automatically show their services, countries, ports, and company profiles.',
+        title: ui.value.emptyDefaultTitle,
+        text: ui.value.emptyDefaultText,
     };
 });
 
@@ -1333,7 +1305,7 @@ onBeforeUnmount(() => {
                                                 v-model="countrySearch"
                                                 type="text"
                                                 class="dropdown-search-input"
-                                                placeholder="Search..."
+                                                :placeholder="ui.dropdownSearchPlaceholder"
                                             />
                                         </div>
 
@@ -1350,7 +1322,7 @@ onBeforeUnmount(() => {
                                             <span>{{ option }}</span>
                                         </label>
 
-                                        <p v-if="!filteredCountryOptions.length" class="selector-empty">No matching results.</p>
+                                        <p v-if="!filteredCountryOptions.length" class="selector-empty">{{ ui.noMatchingResults }}</p>
                                     </div>
                                 </div>
                             </div>
@@ -1377,7 +1349,7 @@ onBeforeUnmount(() => {
                                                 v-model="portSearch"
                                                 type="text"
                                                 class="dropdown-search-input"
-                                                placeholder="Search..."
+                                                :placeholder="ui.dropdownSearchPlaceholder"
                                             />
                                         </div>
 
@@ -1387,7 +1359,7 @@ onBeforeUnmount(() => {
                                                     All
                                                 </button>
                                                 <button type="button" class="ports-menu-action" @click="clearAllPorts">
-                                                    Clear
+                                                    {{ ui.clear }}
                                                 </button>
                                             </div>
 
@@ -1415,7 +1387,7 @@ onBeforeUnmount(() => {
                                             </section>
                                         </div>
 
-                                        <p v-else class="selector-empty">{{ isLoadingPorts ? 'Loading...' : (filters.countries.length ? 'No matching results.' : 'Select one or more countries to choose ports.') }}</p>
+                                        <p v-else class="selector-empty">{{ isLoadingPorts ? ui.loadingShort : (filters.countries.length ? ui.noMatchingResults : ui.selectCountriesForPorts) }}</p>
                                     </div>
                                 </div>
                             </div>
@@ -1441,7 +1413,7 @@ onBeforeUnmount(() => {
                                                 v-model="categorySearch"
                                                 type="text"
                                                 class="dropdown-search-input"
-                                                placeholder="Search..."
+                                                :placeholder="ui.dropdownSearchPlaceholder"
                                             />
                                         </div>
 
@@ -1458,7 +1430,7 @@ onBeforeUnmount(() => {
                                             <span>{{ option.name }}</span>
                                         </label>
 
-                                        <p v-if="!filteredParentCategoryOptions.length" class="selector-empty">No matching results.</p>
+                                        <p v-if="!filteredParentCategoryOptions.length" class="selector-empty">{{ ui.noMatchingResults }}</p>
                                     </div>
                                 </div>
                             </div>
@@ -1485,16 +1457,16 @@ onBeforeUnmount(() => {
                                                 v-model="subcategorySearch"
                                                 type="text"
                                                 class="dropdown-search-input"
-                                                placeholder="Search..."
+                                                :placeholder="ui.dropdownSearchPlaceholder"
                                             />
                                         </div>
 
                                         <div v-if="filteredSubcategoryOptionGroups.length" class="ports-menu-actions">
                                             <button type="button" class="ports-menu-action" @click="selectAllSubcategories">
-                                                Select all
+                                                {{ ui.selectAll }}
                                             </button>
                                             <button type="button" class="ports-menu-action" @click="clearAllSubcategories">
-                                                Clear
+                                                {{ ui.clear }}
                                             </button>
                                         </div>
 
@@ -1521,11 +1493,11 @@ onBeforeUnmount(() => {
                                                     <span>{{ option.name }}</span>
                                                 </label>
 
-                                                <p v-if="!group.subcategories.length" class="selector-empty">No subcategories in this category.</p>
+                                                <p v-if="!group.subcategories.length" class="selector-empty">{{ ui.noSubcategoriesInCategory }}</p>
                                             </section>
                                         </div>
 
-                                        <p v-else class="selector-empty">{{ isLoadingSubcategories ? 'Loading...' : 'No matching results.' }}</p>
+                                        <p v-else class="selector-empty">{{ isLoadingSubcategories ? ui.loadingShort : ui.noMatchingResults }}</p>
                                     </div>
                                 </div>
                             </div>
@@ -1551,7 +1523,7 @@ onBeforeUnmount(() => {
                                                 v-model="brandSearch"
                                                 type="text"
                                                 class="dropdown-search-input"
-                                                placeholder="Search..."
+                                                :placeholder="ui.dropdownSearchPlaceholder"
                                             />
                                         </div>
 
@@ -1568,7 +1540,7 @@ onBeforeUnmount(() => {
                                             <span>{{ option.name }}</span>
                                         </label>
 
-                                        <p v-if="!filteredBrandOptions.length" class="selector-empty">{{ isLoadingBrands ? 'Loading...' : 'No matching results.' }}</p>
+                                        <p v-if="!filteredBrandOptions.length" class="selector-empty">{{ isLoadingBrands ? ui.loadingShort : ui.noMatchingResults }}</p>
                                     </div>
                                 </div>
                             </div>
@@ -1630,7 +1602,7 @@ onBeforeUnmount(() => {
                                 href="/register"
                                 class="empty-card-button empty-card-button-primary"
                             >
-                                Join as a Supplier
+                                {{ ui.joinAsSupplier }}
                             </Link>
                         </div>
                     </div>
@@ -1643,7 +1615,7 @@ onBeforeUnmount(() => {
                                 :disabled="!hasPreviousPage"
                                 @click="goToPage(currentPage - 1)"
                             >
-                                Previous
+                                {{ ui.previous }}
                             </button>
 
                             <template v-for="item in desktopPaginationItems" :key="item.type === 'page' ? `page-${item.value}` : item.key">
@@ -1670,7 +1642,7 @@ onBeforeUnmount(() => {
                                 :disabled="!hasNextPage"
                                 @click="goToPage(currentPage + 1)"
                             >
-                                Next
+                                {{ ui.next }}
                             </button>
                         </div>
 
@@ -1681,7 +1653,7 @@ onBeforeUnmount(() => {
                                 :disabled="!hasPreviousPage"
                                 @click="goToPage(currentPage - 1)"
                             >
-                                Previous
+                                {{ ui.previous }}
                             </button>
 
                             <span class="pagination-mobile-state">{{ mobilePaginationLabel }}</span>
@@ -1692,7 +1664,7 @@ onBeforeUnmount(() => {
                                 :disabled="!hasNextPage"
                                 @click="goToPage(currentPage + 1)"
                             >
-                                Next
+                                {{ ui.next }}
                             </button>
                         </div>
                     </div>

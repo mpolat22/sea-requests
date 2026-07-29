@@ -22,6 +22,7 @@ class OnboardingCompletionMailer
             return [
                 'ok' => false,
                 'message' => 'Create the platform account before sending the completion email.',
+                'code' => 'onboarding-account-required-before-email',
             ];
         }
 
@@ -39,6 +40,7 @@ class OnboardingCompletionMailer
             return [
                 'ok' => false,
                 'message' => 'Completion email could not be sent. Please check the configured mail account.',
+                'code' => 'onboarding-completion-email-failed',
             ];
         }
 
@@ -66,6 +68,7 @@ class OnboardingCompletionMailer
         return [
             'ok' => true,
             'message' => 'Account completion email sent.',
+            'code' => 'onboarding-completion-email-sent',
         ];
     }
 }

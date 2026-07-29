@@ -1,4 +1,5 @@
 <script setup>
+import { useI18n } from '../../../lib/i18n';
 import { computed } from 'vue';
 import { Link } from '@inertiajs/vue3';
 import SupplierDashboardShell from './Shell.vue';
@@ -10,7 +11,7 @@ const props = defineProps({
     },
 });
 
-const copy = {
+const baseCopy = {
     title: 'Supplier Dashboard',
     countries: 'Countries',
     ports: 'Ports',
@@ -28,6 +29,12 @@ const copy = {
     edit: 'Edit',
     waitingReviewText: 'You cannot submit a new edit until this update request is reviewed.',
 };
+
+const { section } = useI18n();
+const translatedCopy = section('supplier.dashboard');
+const copy = new Proxy(baseCopy, {
+    get: (target, key) => translatedCopy.value[key] ?? target[key],
+});
 
 const statusLabel = computed(() => {
     if (props.dashboard.approval_status === 'rejected') return copy.rejected;
@@ -89,7 +96,7 @@ const formatDate = (value) => {
                     <thead>
                         <tr>
                             <th>{{ copy.business }}</th>
-                            <th>Coverage</th>
+                            <th>{{ copy.coverage }}</th>
                             <th>{{ copy.registrationDate }}</th>
                             <th>{{ copy.status }}</th>
                             <th>{{ copy.action }}</th>
@@ -152,7 +159,7 @@ const formatDate = (value) => {
 
                 <div class="mobile-card-grid">
                     <div class="mobile-card-field">
-                        <span class="mobile-field-label">Coverage</span>
+                        <span class="mobile-field-label">{{ copy.coverage }}</span>
                         <div class="coverage-cell">
                             <div v-for="item in coverageSummary" :key="item.label" class="coverage-pill">
                                 <span class="coverage-label">{{ item.label }}</span>

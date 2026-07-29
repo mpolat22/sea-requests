@@ -1,5 +1,6 @@
 <script setup>
 import { computed } from 'vue';
+import { useI18n } from '../../../lib/i18n';
 import { Head, Link, useForm } from '@inertiajs/vue3';
 import MainLayout from '../../../Layouts/MainLayout.vue';
 import { countryOptions, dialCodes, parseDialPhone, sanitizePhoneDigits } from '../../../lib/accountContactOptions';
@@ -19,39 +20,11 @@ const props = defineProps({
     },
 });
 
-const copy = {
-    eyebrow: 'Buyer Account',
-    title: 'Edit Profile',
-    text: 'Update the same buyer account details used during registration and future communication.',
-    emailNote: 'If you change your email address, a new verification link will be sent before you continue.',
-    back: 'Back to My RFQs',
-    save: 'Save Changes',
-    saving: 'Saving...',
-    fields: {
-        name: 'Full Name',
-        email: 'Email Address',
-        country: 'Country',
-        phone: 'Phone Number',
-        whatsapp: 'WhatsApp Number',
-    },
-    hints: {
-        name: 'Enter the full name that should appear on your buyer account.',
-        email: 'This email is used for login and important account notifications.',
-        country: 'Choose the main country for your buyer account.',
-        phone: 'Select a country code and enter a phone number between 6 and 15 digits.',
-        whatsapp: 'Optional. Add a WhatsApp number if you want suppliers or support to reach you there.',
-    },
-    selectCountry: 'Select Country',
-    selectCode: 'Select Code',
-    placeholders: {
-        name: 'Your full name',
-        email: 'name@company.com',
-        phone: 'Enter phone number',
-        whatsapp: 'Enter WhatsApp number',
-    },
-    verified: 'Email verified',
-    verificationRequired: 'Email verification required',
-};
+const { section } = useI18n();
+const copySource = section('buyer.dashboard.profile');
+const copy = new Proxy({}, {
+    get: (_, key) => copySource.value[key],
+});
 
 const parsedPhone = parseDialPhone(props.profile.phone);
 const parsedWhatsapp = parseDialPhone(props.profile.whatsapp_number, parsedPhone.code || '');
@@ -82,13 +55,13 @@ const profileCountryOptions = computed(() => mergeOption(
 const phoneDialOptions = computed(() => mergeOption(
     dialCodes,
     parsedPhone.code,
-    (value) => ({ label: `${value} (saved)`, value })
+    (value) => ({ label: `${value} (${copy.saved})`, value })
 ));
 
 const whatsappDialOptions = computed(() => mergeOption(
     dialCodes,
     parsedWhatsapp.code,
-    (value) => ({ label: `${value} (saved)`, value })
+    (value) => ({ label: `${value} (${copy.saved})`, value })
 ));
 
 const form = useForm({
@@ -126,7 +99,7 @@ const submit = () => {
 </script>
 
 <template>
-    <Head title="Edit Profile | Sea Requests" />
+    <Head :title="copy.headTitle" />
 
     <MainLayout>
         <section class="profile-shell">

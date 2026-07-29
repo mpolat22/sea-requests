@@ -4,6 +4,7 @@ import { Head, Link } from '@inertiajs/vue3';
 import MainLayout from '../../../Layouts/MainLayout.vue';
 import OfferCommercialSummary from '../../../Components/OfferCommercialSummary.vue';
 import RfqGeneralInformationSection from '../../../Components/RfqGeneralInformationSection.vue';
+import { useI18n } from '../../../lib/i18n';
 
 const props = defineProps({
     rfq: {
@@ -128,7 +129,21 @@ const copy = {
 };
 
 const isSpareParts = computed(() => props.rfq.request_type === 'spare_parts');
-const currentCopy = computed(() => copy);
+const { section } = useI18n();
+const translatedCopy = section('buyer.rfq.show');
+const mergeCopy = (base, override) => {
+    if (!override || typeof override !== 'object') {
+        return base;
+    }
+
+    return Object.entries(override).reduce((merged, [key, value]) => ({
+        ...merged,
+        [key]: value && typeof value === 'object' && !Array.isArray(value)
+            ? mergeCopy(base?.[key] ?? {}, value)
+            : value,
+    }), { ...base });
+};
+const currentCopy = computed(() => mergeCopy(copy, translatedCopy.value));
 const hasSubmittedOffers = computed(() => Number(props.rfq.offers_count ?? 0) > 0);
 const showCompareButton = computed(() => hasSubmittedOffers.value && Boolean(props.rfq.compare_url));
 const heroTitle = computed(() => {

@@ -329,7 +329,7 @@ class AdminOutreachController extends Controller
         ImportOutreachContactsJob::dispatch($run->id)->onQueue('outreach');
 
         return back()->with('success', [
-            'message' => 'Supplier CSV import queued. The outreach worker will process it in the background.',
+            'code' => 'outreach-import-queued',
         ]);
     }
 
@@ -387,9 +387,10 @@ class AdminOutreachController extends Controller
         );
 
         return back()->with('success', [
-            'message' => $contact->wasRecentlyCreated
-                ? 'Supplier outreach contact added to '.$regions->regionLabel($regionKey).'.'
-                : 'Supplier outreach contact updated in '.$regions->regionLabel($regionKey).'.',
+            'code' => $contact->wasRecentlyCreated
+                ? 'outreach-contact-added'
+                : 'outreach-contact-updated',
+            'params' => ['region' => $regions->regionLabel($regionKey)],
         ]);
     }
 
@@ -404,7 +405,8 @@ class AdminOutreachController extends Controller
         $contact->delete();
 
         return back()->with('success', [
-            'message' => 'Supplier outreach contact deleted from '.$regionLabel.'.',
+            'code' => 'outreach-contact-deleted',
+            'params' => ['region' => $regionLabel],
         ]);
     }
 
@@ -426,7 +428,7 @@ class AdminOutreachController extends Controller
         $contact->save();
 
         return back()->with('success', [
-            'message' => 'Supplier outreach contact reactivated.',
+            'code' => 'outreach-contact-reactivated',
         ]);
     }
 
@@ -443,7 +445,7 @@ class AdminOutreachController extends Controller
         ]);
 
         return back()->with('success', [
-            'message' => 'Outreach mail template created.',
+            'code' => 'outreach-template-created',
         ]);
     }
 
@@ -460,7 +462,7 @@ class AdminOutreachController extends Controller
         ]);
 
         return back()->with('success', [
-            'message' => 'Outreach sender account created.',
+            'code' => 'outreach-sender-created',
         ]);
     }
 
@@ -477,7 +479,7 @@ class AdminOutreachController extends Controller
         ]);
 
         return back()->with('success', [
-            'message' => 'Outreach sender account updated.',
+            'code' => 'outreach-sender-updated',
         ]);
     }
 
@@ -517,7 +519,7 @@ class AdminOutreachController extends Controller
         $senderAccounts->destroy($sender);
 
         return back()->with('success', [
-            'message' => 'Outreach sender account deleted.',
+            'code' => 'outreach-sender-deleted',
         ]);
     }
 
@@ -529,7 +531,7 @@ class AdminOutreachController extends Controller
         $template->update($this->validateTemplate($request));
 
         return back()->with('success', [
-            'message' => 'Outreach mail template updated.',
+            'code' => 'outreach-template-updated',
         ]);
     }
 
@@ -541,7 +543,7 @@ class AdminOutreachController extends Controller
         $template->delete();
 
         return back()->with('success', [
-            'message' => 'Outreach mail template deleted.',
+            'code' => 'outreach-template-deleted',
         ]);
     }
 
@@ -627,7 +629,8 @@ class AdminOutreachController extends Controller
         $schedule->save();
 
         return back()->with('success', [
-            'message' => $regions->regionLabel($regionKey).' outreach plan updated.',
+            'code' => 'outreach-plan-updated',
+            'params' => ['region' => $regions->regionLabel($regionKey)],
         ]);
     }
 
@@ -670,7 +673,8 @@ class AdminOutreachController extends Controller
         $schedule->save();
 
         return back()->with('success', [
-            'message' => $regions->regionLabel($regionKey).' outreach plan cleared. Imported contacts were kept.',
+            'code' => 'outreach-plan-cleared',
+            'params' => ['region' => $regions->regionLabel($regionKey)],
         ]);
     }
 
@@ -759,7 +763,7 @@ class AdminOutreachController extends Controller
 
         if (blank($recipientEmail)) {
             return back()->with('error', [
-                'message' => 'A valid sender mailbox is required before a test email can be sent.',
+                'code' => 'outreach-test-sender-required',
             ]);
         }
 
@@ -794,12 +798,13 @@ class AdminOutreachController extends Controller
             report($exception);
 
             return back()->with('error', [
-                'message' => 'Test email could not be sent. Please check the SMTP host, port, username, password, and security settings.',
+                'code' => 'outreach-test-email-failed',
             ]);
         }
 
         return back()->with('success', [
-            'message' => 'Test email sent to '.$recipientEmail.'.',
+            'code' => 'outreach-test-email-sent',
+            'params' => ['email' => $recipientEmail],
         ]);
     }
 

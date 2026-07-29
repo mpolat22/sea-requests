@@ -1,6 +1,7 @@
 <script setup>
 import { computed, nextTick, watch } from 'vue';
 import { useForm } from '@inertiajs/vue3';
+import { useI18n } from '../../../lib/i18n';
 
 const props = defineProps({
     isOpen: {
@@ -35,98 +36,11 @@ const props = defineProps({
 
 const emit = defineEmits(['close', 'retry']);
 
-const copy = {
-    title: 'Order Information',
-    intro: 'Complete buyer-side billing and delivery or service instructions before invoice upload starts.',
-    save: 'Save Order Information',
-    update: 'Update Order Information',
-    cancel: 'Cancel',
-    retry: 'Retry',
-    billing: 'Billing Information',
-    billingIntro: 'Share the invoice party and billing contact details the supplier should rely on for invoicing and payment paperwork.',
-    invoiceCompany: 'Invoice Company Name',
-    invoiceAddress: 'Invoice Address',
-    taxId: 'Tax / VAT / Company ID',
-    billingContactName: 'Billing Contact Name',
-    billingContactEmail: 'Billing Contact Email',
-    billingContactPhone: 'Billing Contact Phone',
-    deliveryInstructions: 'Delivery Instructions',
-    deliveryIntro: 'Confirm the delivery destination and the receiving contact the supplier should use for the awarded spare parts order.',
-    deliveryType: 'Delivery Type',
-    deliveryCountry: 'Delivery Country',
-    deliveryPort: 'Delivery Port',
-    deliveryAddress: 'Delivery Address',
-    receiverName: 'Receiver Name',
-    receiverEmail: 'Receiver Email',
-    receiverPhone: 'Receiver Phone',
-    requiredDeliveryDate: 'Required Delivery Date',
-    serviceInstructions: 'Service Instructions',
-    serviceIntro: 'Confirm the attendance location and operational contact details the supplier should use before mobilization.',
-    serviceLocationType: 'Service Location Type',
-    serviceLocation: 'Attendance Location',
-    serviceContactName: 'Contact Name',
-    serviceContactEmail: 'Contact Email',
-    serviceContactPhone: 'Contact Phone',
-    serviceRequiredDate: 'Preferred Attendance Date',
-    serviceNotes: 'Access / Technical Notes',
-    hints: {
-        billing_company_name: 'Use the legal company name exactly as it should appear on the supplier invoice.',
-        billing_tax_id: 'Add the tax, VAT, or company registration number the supplier should print on the invoice.',
-        billing_address: 'Provide the invoice address the supplier should use on billing and official documents.',
-        billing_contact_name: 'Name the person the supplier should contact for invoice or payment questions.',
-        billing_contact_email: 'Use the email address that should receive invoices and payment-related communication.',
-        billing_contact_phone: 'Use the direct phone number the supplier can call about invoice or payment matters.',
-        delivery_target_type: 'Choose the destination type the supplier should plan the delivery against.',
-        delivery_country: 'Confirm the country where the supplier should deliver the awarded spare parts.',
-        delivery_port: 'State the delivery port the supplier should reference on delivery paperwork.',
-        delivery_required_date: 'Tell the supplier the target date the awarded items should be delivered by.',
-        delivery_address: 'Provide the full delivery address, vessel note, warehouse note, or agent instruction.',
-        delivery_contact_name: 'Name the person who will receive or coordinate the delivered goods.',
-        delivery_contact_email: 'Use the email address the supplier should use for delivery coordination.',
-        delivery_contact_phone: 'Use the phone number the supplier should use for delivery coordination.',
-        service_location_type: 'Choose the type of attendance location the supplier team should prepare for.',
-        service_location: 'Specify the exact place where the supplier team should attend for service.',
-        service_required_date: 'Tell the supplier the preferred attendance date for the awarded service scope.',
-        service_contact_name: 'Name the operational contact the supplier team should coordinate with on arrival.',
-        service_contact_email: 'Use the email address the supplier should contact for service attendance coordination.',
-        service_contact_phone: 'Use the phone number the supplier should call for service attendance coordination.',
-        service_instruction_notes: 'Add any boarding, permit, access, safety, or technical notes the supplier should know in advance.',
-    },
-    placeholders: {
-        billing_company_name: 'Enter the legal company name the supplier should invoice.',
-        billing_tax_id: 'Enter the tax, VAT, or company ID the supplier should print on the invoice.',
-        billing_address: 'Enter the full invoice address the supplier should use on billing documents.',
-        billing_contact_name: 'Enter the billing contact person the supplier should communicate with.',
-        billing_contact_email: 'Enter the billing contact email the supplier should send invoices to.',
-        billing_contact_phone: 'Enter the billing contact phone number the supplier should use.',
-        delivery_country: 'Enter the country where the supplier should deliver the awarded items.',
-        delivery_port: 'Enter the port the supplier should use for delivery coordination.',
-        delivery_address: 'Enter the full delivery address, vessel note, warehouse note, or agent instruction.',
-        delivery_contact_name: 'Enter the receiving contact name the supplier should coordinate with.',
-        delivery_contact_email: 'Enter the receiving contact email the supplier should use for delivery updates.',
-        delivery_contact_phone: 'Enter the receiving contact phone number the supplier should use.',
-        service_location: 'Enter the exact attendance location the supplier team should go to.',
-        service_contact_name: 'Enter the operational contact name the supplier team should coordinate with.',
-        service_contact_email: 'Enter the operational contact email the supplier should use for attendance planning.',
-        service_contact_phone: 'Enter the operational contact phone number the supplier should use.',
-        service_instruction_notes: 'Enter access, permit, safety, technical, or attendance notes the supplier should know.',
-    },
-    options: {
-        delivery_target_type: {
-            vessel: 'Vessel',
-            warehouse: 'Warehouse',
-            office: 'Office',
-            agent: 'Agent',
-            other: 'Other',
-        },
-        service_location_type: {
-            on_board: 'On board',
-            port: 'Port',
-            yard: 'Yard',
-            other: 'Other',
-        },
-    },
-};
+const { section } = useI18n();
+const copySource = section('buyer.dashboard.orderInformation');
+const copy = new Proxy({}, {
+    get: (_, key) => copySource.value[key],
+});
 
 const currentOrder = computed(() => props.order ?? {});
 const isSpareParts = computed(() => currentOrder.value.request_type === 'spare_parts');
@@ -205,7 +119,7 @@ const validateTextField = (value, { label, required = false, max = null }) => {
     const text = textValue(value);
 
     if (required && !text) {
-        return `${label} is required.`;
+        return copy.isRequired.replace('{label}', label);
     }
 
     if (!text) {
@@ -213,7 +127,7 @@ const validateTextField = (value, { label, required = false, max = null }) => {
     }
 
     if (max && text.length > max) {
-        return `${label} must be ${max} characters or less.`;
+        return copy.maxChars.replace('{label}', label).replace('{max}', max);
     }
 
     return '';
@@ -223,7 +137,7 @@ const validateEmailField = (value, { label, required = false, max = 255 }) => {
     const text = textValue(value);
 
     if (required && !text) {
-        return `${label} is required.`;
+        return copy.isRequired.replace('{label}', label);
     }
 
     if (!text) {
@@ -231,11 +145,11 @@ const validateEmailField = (value, { label, required = false, max = 255 }) => {
     }
 
     if (text.length > max) {
-        return `${label} must be ${max} characters or less.`;
+        return copy.maxChars.replace('{label}', label).replace('{max}', max);
     }
 
     if (!emailPattern.test(text)) {
-        return `Enter a valid ${label.toLowerCase()}.`;
+        return copy.validEmail.replace('{label}', label.toLowerCase());
     }
 
     return '';
@@ -245,11 +159,11 @@ const validateSelectField = (value, { label, allowedValues }) => {
     const text = textValue(value);
 
     if (!text) {
-        return `${label} is required.`;
+        return copy.isRequired.replace('{label}', label);
     }
 
     if (!allowedValues.includes(text)) {
-        return `Select a valid ${label.toLowerCase()}.`;
+        return copy.validSelect.replace('{label}', label.toLowerCase());
     }
 
     return '';
@@ -259,11 +173,11 @@ const validateDateField = (value, { label }) => {
     const text = textValue(value);
 
     if (!text) {
-        return `${label} is required.`;
+        return copy.isRequired.replace('{label}', label);
     }
 
     if (Number.isNaN(Date.parse(text))) {
-        return `Enter a valid ${label.toLowerCase()}.`;
+        return copy.validDate.replace('{label}', label.toLowerCase());
     }
 
     return '';
@@ -407,12 +321,12 @@ const submitOrderInformation = async () => {
 
             <div class="detail-modal-body">
                 <div v-if="isLoading" class="modal-state-card">
-                    <strong>Loading order details...</strong>
-                    <p>Please wait while the latest order information is prepared.</p>
+                    <strong>{{ copy.loadingTitle }}</strong>
+                    <p>{{ copy.loading }}</p>
                 </div>
 
                 <div v-else-if="loadError" class="modal-state-card modal-state-card-error">
-                    <strong>Order details could not be loaded.</strong>
+                    <strong>{{ copy.loadErrorTitle }}</strong>
                     <p>{{ loadError }}</p>
                     <div class="form-actions">
                         <button type="button" class="primary-action" @click="emit('retry')">

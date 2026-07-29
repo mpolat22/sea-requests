@@ -1,5 +1,6 @@
 <script setup>
 import { Link } from '@inertiajs/vue3';
+import { useI18n } from '../../../lib/i18n';
 import BuyerDashboardShell from './Shell.vue';
 
 const props = defineProps({
@@ -13,21 +14,11 @@ const props = defineProps({
     },
 });
 
-const copy = {
-    title: 'Buyer Dashboard',
-    requestsTitle: 'RFQs',
-    requestsText: 'Open your full RFQ list to manage drafts, compare incoming offers, and update active requests.',
-    ordersTitle: 'Orders',
-    ordersText: 'Track supplier-based orders created after confirmed awards and prepare for the next invoice and payment workflow.',
-    reviewsTitle: 'Reviews',
-    reviewsText: 'Track the supplier reviews you can still publish or update after confirmed awards.',
-    createTitle: 'Create a new RFQ',
-    createText: 'Start a new spare parts or service request and send it to matched suppliers in minutes.',
-    openRequests: 'Open Requests',
-    openOrders: 'Open Orders',
-    openReviews: 'Open Reviews',
-    newRfq: '+ New RFQ',
-};
+const { section } = useI18n();
+const copySource = section('buyer.dashboard.home');
+const copy = new Proxy({}, {
+    get: (_, key) => copySource.value[key],
+});
 </script>
 
 <template>

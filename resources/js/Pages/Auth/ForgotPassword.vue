@@ -3,25 +3,13 @@ import { computed, onBeforeUnmount, ref, watch } from 'vue';
 import { Head, Link, useForm, usePage } from '@inertiajs/vue3';
 import MainLayout from '../../Layouts/MainLayout.vue';
 import { normalizeEmailInput } from '../../lib/normalizeEmailInput';
+import { useI18n } from '../../lib/i18n';
 
 const page = usePage();
 const emailPattern = /^[^\s@]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/;
 
-const copy = {
-    eyebrow: 'Forgot Password',
-    title: 'Reset your password',
-    text: 'Enter your email address and we will send you a password reset link.',
-    email: 'Email',
-    emailPlaceholder: 'name@company.com',
-    button: 'Send Reset Link',
-    buttonSent: 'Reset Link Sent',
-    buttonResend: 'Resend Reset Link',
-    successTitle: 'Check your email',
-    successText: 'If an account exists for this email address, we sent a password reset link.',
-    spamHint: 'If you do not see it soon, please check your spam or junk folder.',
-    useAnotherEmail: 'Use another email',
-    back: 'Back to Sign In',
-};
+const { section } = useI18n();
+const copy = section('auth.forgotPassword');
 
 const form = useForm({
     email: '',
@@ -74,23 +62,23 @@ const inlineSuccessMessage = computed(() => {
         return null;
     }
 
-    return copy.successText;
+    return copy.value.successText;
 });
 
 const submitButtonLabel = computed(() => {
     if (form.processing) {
-        return hasSentState.value ? copy.buttonResend : copy.button;
+        return hasSentState.value ? copy.value.buttonResend : copy.value.button;
     }
 
     if (hasSentState.value && cooldown.value > 0) {
-        return `${copy.buttonSent} (${cooldown.value}s)`;
+        return `${copy.value.buttonSent} (${cooldown.value}s)`;
     }
 
     if (hasSentState.value) {
-        return copy.buttonResend;
+        return copy.value.buttonResend;
     }
 
-    return copy.button;
+    return copy.value.button;
 });
 
 const inputReadonly = computed(() => hasSentState.value && cooldown.value > 0);
@@ -125,7 +113,7 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-    <Head title="Forgot Password | Sea Requests">
+    <Head :title="copy.headTitle">
         <meta head-key="robots" name="robots" content="noindex, nofollow" />
     </Head>
 

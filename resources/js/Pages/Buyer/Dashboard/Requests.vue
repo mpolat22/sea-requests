@@ -1,5 +1,6 @@
 <script setup>
 import { computed, ref, watch } from 'vue';
+import { useI18n } from '../../../lib/i18n';
 import { Link, router } from '@inertiajs/vue3';
 import BuyerDashboardShell from './Shell.vue';
 
@@ -33,62 +34,13 @@ const searchQuery = ref(props.filters.search ?? '');
 const rowsPerPage = ref(Number(props.filters.per_page ?? props.rfqsPage.per_page ?? 10));
 const deleteModalRfq = ref(null);
 
-const copy = {
-    title: 'Buyer Dashboard',
-    tabTitle: 'My RFQs',
-    tabText: 'Manage your RFQ records, compare supplier offers, and keep your request pipeline under control.',
-    create: '+ New RFQ',
-    searchPlaceholder: 'Search ref / title / port / company / ship',
-    search: 'Search',
-    table: {
-        order: '#',
-        statusMini: 'Status',
-        referenceNo: 'Reference No',
-        company: 'Company',
-        ship: 'Ship',
-        requisitionDate: 'Requisition Date',
-        dueDate: 'Due Date',
-        priority: 'Priority',
-        offers: 'Offers',
-        actions: 'Actions',
-    },
-    recordsPerPage: 'Records per page:',
-    showing: 'Showing',
-    of: 'of',
-    records: 'records',
-    prev: 'Prev',
-    next: 'Next',
-    priority: {
-        low: 'low',
-        normal: 'normal',
-        high: 'high',
-        critical: 'urgent',
-    },
-    emptyTitle: 'No RFQs have been created yet.',
-    emptyText: 'Your RFQ records will appear here once you create the first one.',
-    emptySearchTitle: 'No RFQs matched your search.',
-    emptySearchText: 'Try a different keyword or clear the search and try again.',
-    compareOffers: 'Compare Offers',
-    compareLocked: 'No submitted offers are available to compare yet.',
-    compareCompleted: 'This RFQ is completed. Offers are now view only.',
-    editLocked: 'This RFQ cannot be edited now.',
-    editLockedOffers: 'Offers have already started to arrive. Only General Information can be updated now.',
-    editLockedAwards: 'Offer evaluation has already started. Once an award draft or confirmation begins, this RFQ can no longer be edited.',
-    editLockedCancelled: 'Cancelled RFQs cannot be edited.',
-    editReopenable: 'This RFQ is closed. You can edit it and reopen it.',
-    editGeneralOnlyOverdue: 'The due date has passed. Only General Information can be updated so you can extend the timeline.',
-    editOverdueHardLocked: 'This RFQ can no longer be edited because the due date has passed.',
-    deleteTitle: 'Delete draft RFQ',
-    deleteTitleClosed: 'Delete RFQ',
-    deleteLocked: 'This RFQ cannot be deleted right now.',
-    deleteBodyDraft: 'This RFQ is still a draft. If you delete it, its line items, files, and supplier targeting details will be removed permanently.',
-    deleteBodyClosed: 'This RFQ is closed and has not received any offers yet. If you delete it, its line items, files, and supplier targeting details will be removed permanently.',
-    deleteCancel: 'Cancel',
-    deleteConfirmDraftButton: 'Delete Draft',
-    deleteConfirmClosedButton: 'Delete RFQ',
-};
+const { section } = useI18n();
+const copySource = section('buyer.dashboard.requests');
+const copy = new Proxy({}, {
+    get: (_, key) => copySource.value[key],
+});
 
-const offerText = (count) => `${Number(count ?? 0)} Received`;
+const offerText = (count) => `${Number(count ?? 0)} ${copy.received}`;
 const rfqs = computed(() => props.rfqsPage.data ?? []);
 const currentPage = computed(() => props.rfqsPage.current_page ?? 1);
 const totalPages = computed(() => props.rfqsPage.last_page ?? 1);
@@ -121,15 +73,7 @@ const statusTone = (status) => {
     return 'is-draft';
 };
 
-const statusLabel = (status) => {
-    if (status === 'open') return 'Open';
-    if (status === 'award_in_progress') return 'Award In Progress';
-    if (status === 'award_confirmed') return 'Award Confirmed';
-    if (status === 'completed') return 'Completed';
-    if (status === 'closed') return 'Closed';
-    if (status === 'cancelled') return 'Cancelled';
-    return 'Draft';
-};
+const statusLabel = (status) => copy.statuses[status] ?? copy.statuses.draft;
 
 const canCompareOffers = (rfq) => Boolean(rfq?.compare_url);
 
@@ -195,7 +139,7 @@ const editTitle = (rfq) => {
             return copy.editReopenable;
         }
 
-        return 'Edit';
+        return copy.edit;
     }
 
     if (rfq?.edit_reason === 'overdue') {

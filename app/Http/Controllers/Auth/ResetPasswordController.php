@@ -65,7 +65,7 @@ class ResetPasswordController extends Controller
         }
 
         if (! $resetUser) {
-            return redirect()->route('login')->with('success', __($status));
+            return redirect()->route('login')->with('success', 'password-reset-success');
         }
 
         $this->markPreRegisteredAccountCompleted($resetUser->email);
@@ -74,10 +74,10 @@ class ResetPasswordController extends Controller
         $request->session()->regenerate();
 
         $target = $redirector->blockingRouteFor($resetUser) ?: $redirector->intendedOrHome($resetUser);
-        $redirect = redirect()->to($target)->with('success', __($status));
+        $redirect = redirect()->to($target)->with('success', 'password-reset-success');
 
         if (! $confirmationEmailSent) {
-            return $redirect->with('error', 'Your password was reset, but we could not send the confirmation email right now.');
+            return $redirect->with('error', 'password-reset-confirmation-email-failed');
         }
 
         return $redirect;

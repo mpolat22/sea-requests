@@ -1,4 +1,5 @@
 <script setup>
+import { useI18n } from '../../../lib/i18n';
 import { computed, ref } from 'vue';
 import { router, useForm } from '@inertiajs/vue3';
 import AdminDashboardShell from './Shell.vue';
@@ -70,7 +71,7 @@ const removalReviewForm = useForm({
     note: '',
 });
 
-const copy = computed(() => ({
+const baseCopy = {
     title: 'Admin Dashboard',
     eyebrow: 'Management area',
     subtitle: 'Manage users, businesses, submissions and feedback flows from this panel.',
@@ -255,6 +256,29 @@ const copy = computed(() => ({
     aiExtractedRegistrationNumber: 'Extracted Registration Number',
     aiSummary: 'Review Summary',
     aiReasoning: 'Reasoning',
+};
+
+const { section } = useI18n();
+const translatedCopy = section('admin.dashboard');
+const copy = computed(() => ({
+    ...baseCopy,
+    ...translatedCopy.value,
+    reasons: {
+        ...baseCopy.reasons,
+        ...(translatedCopy.value.reasons ?? {}),
+    },
+    fields: {
+        ...baseCopy.fields,
+        ...(translatedCopy.value.fields ?? {}),
+    },
+    roles: {
+        ...baseCopy.roles,
+        ...(translatedCopy.value.roles ?? {}),
+    },
+    statuses: {
+        ...baseCopy.statuses,
+        ...(translatedCopy.value.statuses ?? {}),
+    },
 }));
 
 const regularUsers = computed(() => props.userTable.data ?? []);
@@ -939,16 +963,16 @@ const chooseBusinessStatus = (status) => {
                         <p class="directory-eyebrow">{{ copy.status }}</p>
                         <h2 class="directory-section-title">{{ activeUser.company_name || activeUser.name }}</h2>
                         <p class="admin-modal-copy">
-                            Choose the new status for this supplier company registration.
+                            {{ copy.statusModalDefaultCopy }}
                         </p>
                         <div class="status-choice-grid">
                             <button type="button" class="status-choice status-choice-approved" @click="chooseBusinessStatus('approved')">
                                 <strong>{{ statusLabel('approved') }}</strong>
-                                <span>Keep this record approved.</span>
+                                <span>{{ copy.approveRecordText }}</span>
                             </button>
                             <button type="button" class="status-choice status-choice-rejected" @click="chooseBusinessStatus('rejected')">
                                 <strong>{{ statusLabel('rejected') }}</strong>
-                                <span>Add a rejection reason and explanation.</span>
+                                <span>{{ copy.rejectRecordText }}</span>
                             </button>
                         </div>
                         <div class="admin-actions">

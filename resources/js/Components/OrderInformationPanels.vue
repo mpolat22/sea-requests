@@ -1,6 +1,7 @@
 <script setup>
 import { computed } from 'vue';
 import RfqGeneralInformationSection from './RfqGeneralInformationSection.vue';
+import { useI18n } from '../lib/i18n';
 
 const props = defineProps({
     order: {
@@ -13,42 +14,13 @@ const props = defineProps({
     },
 });
 
-const copy = {
-    billing: 'Billing Information',
-    invoiceCompany: 'Invoice Company Name',
-    invoiceAddress: 'Invoice Address',
-    taxId: 'Tax / VAT / Company ID',
-    billingContactName: 'Billing Contact Name',
-    billingContactEmail: 'Billing Contact Email',
-    billingContactPhone: 'Billing Contact Phone',
-    deliveryInstructions: 'Delivery Instructions',
-    deliveryType: 'Delivery Type',
-    deliveryCountry: 'Delivery Country',
-    deliveryPort: 'Delivery Port',
-    deliveryAddress: 'Delivery Address',
-    receiverName: 'Receiver Name',
-    receiverEmail: 'Receiver Email',
-    receiverPhone: 'Receiver Phone',
-    requiredDeliveryDate: 'Required Delivery Date',
-    serviceInstructions: 'Service Instructions',
-    serviceLocationType: 'Service Location Type',
-    serviceLocation: 'Attendance Location',
-    serviceContactName: 'Contact Name',
-    serviceContactEmail: 'Contact Email',
-    serviceContactPhone: 'Contact Phone',
-    serviceRequiredDate: 'Preferred Attendance Date',
-    serviceNotes: 'Access / Technical Notes',
-    billingPendingTitle: 'Billing information pending',
-    buyerBillingPendingText: 'Add the invoice company and billing contact details so this order can move to the invoice stage.',
-    supplierBillingPendingText: 'The buyer has not shared invoice company and billing contact details yet.',
-    deliveryPendingTitle: 'Delivery instructions pending',
-    buyerDeliveryPendingText: 'Add the delivery location and receiver details so the supplier can continue with this spare parts order.',
-    supplierDeliveryPendingText: 'The buyer has not shared delivery location and receiver details yet.',
-    servicePendingTitle: 'Service instructions pending',
-    buyerServicePendingText: 'Add the attendance location and service contact details so the supplier can continue with this service order.',
-    supplierServicePendingText: 'The buyer has not shared attendance location and service contact details yet.',
-    noData: '-',
-};
+const { locale, section } = useI18n();
+const copySource = section('layout.orderInformationPanels');
+const copy = new Proxy({}, {
+    get(_, key) {
+        return copySource.value?.[key] ?? key;
+    },
+});
 
 const textOrDash = (value) => {
     const text = `${value ?? ''}`.trim();
@@ -63,7 +35,7 @@ const formatDate = (value) => {
     const date = new Date(value);
     if (Number.isNaN(date.getTime())) return value;
 
-    return new Intl.DateTimeFormat('en-GB', {
+    return new Intl.DateTimeFormat(locale.value === 'zh' ? 'zh-CN' : 'en-GB', {
         day: '2-digit',
         month: '2-digit',
         year: 'numeric',
@@ -157,7 +129,7 @@ const billingPendingText = computed(() => (
         ? copy.buyerBillingPendingText
         : (
             isAdminView.value
-                ? 'Buyer has not completed billing details yet.'
+                ? copy.adminBillingPendingText
                 : copy.supplierBillingPendingText
         )
 ));
@@ -174,7 +146,7 @@ const instructionPendingText = computed(() => {
             ? copy.buyerDeliveryPendingText
             : (
                 isAdminView.value
-                    ? 'Buyer has not completed delivery instructions yet.'
+                    ? copy.adminDeliveryPendingText
                     : copy.supplierDeliveryPendingText
             );
     }
@@ -183,7 +155,7 @@ const instructionPendingText = computed(() => {
         ? copy.buyerServicePendingText
         : (
             isAdminView.value
-                ? 'Buyer has not completed service instructions yet.'
+                ? copy.adminServicePendingText
                 : copy.supplierServicePendingText
         );
 });

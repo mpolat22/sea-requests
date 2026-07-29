@@ -1,6 +1,7 @@
 <script setup>
 import { computed, nextTick, ref, watch } from 'vue';
 import { Head, Link, useForm } from '@inertiajs/vue3';
+import { useI18n } from '../../lib/i18n';
 import AuthPasswordInput from '../../Components/AuthPasswordInput.vue';
 import MainLayout from '../../Layouts/MainLayout.vue';
 import { dialCodes } from '../../lib/accountContactOptions';
@@ -25,55 +26,21 @@ const props = defineProps({
     },
 });
 
-const copy = {
-    eyebrow: 'Create Account',
-    title: 'Join Sea Requests',
-    text: 'Create your buyer or supplier account to start managing requests and offers.',
-    buyer: 'Buyer',
-    seller: 'Supplier',
-    fullName: 'Full Name *',
-    fullNamePlaceholder: 'Your full name',
-    email: 'Email *',
-    emailPlaceholder: 'name@company.com',
-    country: 'Country *',
-    selectCountry: 'Select Country',
-    companyName: 'Company Name *',
-    companyNamePlaceholder: 'Your company name',
-    phone: 'Phone Number *',
-    selectCode: 'Select Code',
-    phonePlaceholder: 'Enter phone number',
-    whatsApp: 'WhatsApp Number',
-    whatsappPlaceholder: 'Enter WhatsApp number',
-    companyDescription: 'Company Description',
-    companyDescriptionPlaceholder: 'Describe your company, services, and strengths.',
-    password: 'Password *',
-    passwordPlaceholder: 'Create a password',
-    passwordConfirmation: 'Password Confirmation *',
-    passwordConfirmationPlaceholder: 'Repeat your password',
-    agreementLead: 'I have read and agree to the',
-    agreementTerms: 'Terms of Service',
-    agreementJoiner: 'and',
-    agreementPrivacy: 'Privacy Policy',
-    agreementTail: '.',
-    button: 'Create Account',
-    loginPrompt: 'Already have an account?',
-    loginLink: 'Sign In',
-};
+const { section } = useI18n();
+const copy = section('register');
 const ui = computed(() => ({
-    required: 'This field is required.',
-    email: 'Please enter a valid email address.',
-    phone: 'Phone Number must be between 6 and 15 digits.',
-    whatsapp: 'WhatsApp Number must be between 6 and 15 digits.',
-    countryCode: 'Please select a country code.',
-    password: 'Password must be at least 8 characters and include at least 1 letter and 1 number.',
-    passwordConfirmation: 'Password confirmation must match.',
-    terms: 'You must accept the terms to continue.',
-    countrySearch: 'Search country',
-    codeSearch: 'Search code',
-    passwordRules: 'Password Rules',
-    minChars: 'At least 8 characters',
-    hasLetter: 'At least 1 letter',
-    hasNumber: 'At least 1 number',
+    required: copy.value.required,
+    email: copy.value.emailError,
+    phone: copy.value.phoneError,
+    whatsapp: copy.value.whatsappError,
+    countryCode: copy.value.countryCodeError,
+    password: copy.value.passwordError,
+    passwordConfirmation: copy.value.passwordConfirmationError,
+    terms: copy.value.termsError,
+    passwordRules: copy.value.passwordRules,
+    minChars: copy.value.minChars,
+    hasLetter: copy.value.hasLetter,
+    hasNumber: copy.value.hasNumber,
 }));
 
 const resolveAccountType = (role) => (role === 'buyer' ? 'buyer' : 'seller');
@@ -242,7 +209,7 @@ const submit = () => {
 </script>
 
 <template>
-    <Head title="Register | Sea Requests">
+    <Head :title="copy.headTitle">
         <meta head-key="robots" name="robots" content="noindex, nofollow" />
     </Head>
 

@@ -227,7 +227,7 @@ class AdminOnboardingController extends Controller
         );
 
         if (! $result['contact']) {
-            return back()->with('error', 'Manual onboarding profile could not be saved. Please try again.');
+            return back()->with('error', 'manual-onboarding-save-failed');
         }
 
         $payload = $result['contact']->source_payload ?? [];
@@ -244,12 +244,12 @@ class AdminOnboardingController extends Controller
         $emailResult = $this->sendCompletionEmailForContact($contact, $mail);
 
         if (! $emailResult['ok']) {
-            return back()->with('error', $emailResult['message']);
+            return back()->with('error', $emailResult['code'] ?? 'onboarding-completion-email-failed');
         }
 
         return back()->with('success', $result['result'] === 'duplicate'
-            ? 'Manual onboarding profile updated, account linked, and completion email sent.'
-            : 'Manual onboarding profile saved, account created, and completion email sent.');
+            ? 'manual-onboarding-profile-updated-email-sent'
+            : 'manual-onboarding-profile-saved-email-sent');
     }
 
     public function storeBulkImport(Request $request, OnboardingDraftCreator $drafts): RedirectResponse
@@ -369,27 +369,31 @@ class AdminOnboardingController extends Controller
         if ($accountsTouched === 0 && $skippedRows === 0) {
             return back()->withErrors([
                 'file' => 'No accounts were created. Please check duplicates, existing users, and email format.',
-            ])->with('error', 'No onboarding accounts were created from this file.');
+            ])->with('error', 'onboarding-import-none-created');
         }
 
         if ($accountsTouched === 0) {
-            return back()->with('success', sprintf(
-                'Import completed. No new accounts were created because all valid rows were already in the system. Existing accounts skipped: %d. Duplicate rows skipped: %d. Invalid rows skipped: %d.',
-                $stats['existing_users'],
-                $stats['duplicates'],
-                $stats['invalid'],
-            ));
+            return back()->with('success', [
+                'code' => 'onboarding-import-all-existing',
+                'params' => [
+                    'existing' => $stats['existing_users'],
+                    'duplicates' => $stats['duplicates'],
+                    'invalid' => $stats['invalid'],
+                ],
+            ]);
         }
 
-        return back()->with('success', sprintf(
-            'Import completed. New accounts created: %d. Existing onboarding records updated: %d. Completion emails queued: %d. Emails will be sent one by one every 2 minutes. Existing platform accounts skipped: %d. Duplicate rows skipped: %d. Invalid rows skipped: %d.',
-            $stats['created'],
-            $stats['updated'],
-            $stats['emails_queued'],
-            $stats['existing_users'],
-            $stats['duplicates'],
-            $stats['invalid'],
-        ));
+        return back()->with('success', [
+            'code' => 'onboarding-import-completed',
+            'params' => [
+                'created' => $stats['created'],
+                'updated' => $stats['updated'],
+                'queued' => $stats['emails_queued'],
+                'existing' => $stats['existing_users'],
+                'duplicates' => $stats['duplicates'],
+                'invalid' => $stats['invalid'],
+            ],
+        ]);
     }
     public function update(Request $request, OutreachContact $contact): RedirectResponse
     {
@@ -447,7 +451,7 @@ class AdminOnboardingController extends Controller
             ]),
         ])->save();
 
-        return back()->with('success', 'Onboarding profile updated.');
+        return back()->with('success', 'onboarding-profile-updated');
     }
 
     public function createAccount(Request $request, OutreachContact $contact): RedirectResponse
@@ -551,7 +555,7 @@ class AdminOnboardingController extends Controller
             ]),
         ])->save();
 
-        return back()->with('success', 'Platform account created and linked to this onboarding record.');
+        return back()->with('success', 'onboarding-account-created');
     }
 
     public function sendCompletionEmail(Request $request, OutreachContact $contact, UserFacingMail $mail): RedirectResponse
@@ -566,7 +570,7 @@ class AdminOnboardingController extends Controller
             ]);
         }
 
-        return back()->with('success', 'Account completion email sent.');
+        return back()->with('success', 'onboarding-completion-email-sent');
     }
 
     /**
@@ -583,7 +587,7 @@ class AdminOnboardingController extends Controller
 
         $contact->delete();
 
-        return back()->with('success', 'Onboarding record deleted.');
+        return back()->with('success', 'onboarding-record-deleted');
     }
 
     private function statusCount(string $status): int

@@ -1,5 +1,6 @@
 <script setup>
 import { computed } from 'vue';
+import { useI18n } from '../../../../../lib/i18n';
 
 const props = defineProps({
     form: {
@@ -179,20 +180,59 @@ const portSearchModel = computed({
     get: () => props.portSearch,
     set: (value) => emit('update:portSearch', value),
 });
+
+const baseCopy = {
+    title: 'General Information',
+    templateHelp: 'Use the same vendor or internal form often? Save your usual column names once and we will detect them more accurately next time.',
+    savedTemplate: 'Saved import template ready',
+    setupTemplate: 'Set up my import template',
+    referenceNo: 'Reference No',
+    company: 'Company',
+    ship: 'Ship',
+    imoNumber: 'IMO Number',
+    rfqStatus: 'RFQ Status',
+    requestCountry: 'Request Country',
+    requestPorts: 'Request Ports',
+    requisitionDate: 'Requisition Date',
+    dueDate: 'Due Date',
+    currency: 'Currency',
+    priority: 'Priority',
+    generalNotes: 'General Notes',
+    companyPlaceholder: 'Enter Company Name',
+    shipPlaceholder: 'Enter Ship Name',
+    imoPlaceholder: 'Enter IMO Number',
+    selectCurrency: 'Select Currency',
+    selectPriority: 'Select Priority',
+    generalNotesPlaceholder: 'Enter General Notes',
+    open: 'Open',
+    closed: 'Closed',
+    search: 'Search...',
+    selectAll: 'Select all',
+    clearAll: 'Clear all',
+    loadingPorts: '{{ copy.loadingPorts }}',
+    noPorts: '{{ copy.noPorts }}',
+    noCountries: '{{ copy.noCountries }}',
+};
+
+const { section } = useI18n();
+const translatedCopy = section('buyerCreate.generalInformation');
+const copy = new Proxy(baseCopy, {
+    get: (target, key) => translatedCopy.value[key] ?? target[key],
+});
 </script>
 
 <template>
     <div class="subsection-surface">
         <div class="section-heading">
             <div>
-                <h2 class="directory-section-title">General Information</h2>
+                <h2 class="directory-section-title">{{ copy.title }}</h2>
                 <p v-if="props.scopeNote" class="general-scope-note">{{ props.scopeNote }}</p>
             </div>
             <div class="items-head-actions general-head-actions">
-                <p class="import-template-copy">Use the same vendor or internal form often? Save your usual column names once and we will detect them more accurately next time.</p>
+                <p class="import-template-copy">{{ copy.templateHelp }}</p>
                 <div class="general-template-actions">
                     <button type="button" class="secondary-button compact-button general-template-button unified-head-control" @click="props.openImportTemplate">
-                        {{ props.importTemplateSaved ? 'Saved import template ready' : 'Set up my import template' }}
+                        {{ props.importTemplateSaved ? copy.savedTemplate : copy.setupTemplate }}
                     </button>
                 </div>
             </div>
@@ -200,7 +240,7 @@ const portSearchModel = computed({
 
         <div class="form-grid">
             <label class="field">
-                <span>Reference No <span class="required-star">*</span></span>
+                <span>{{ copy.referenceNo }} <span class="required-star">*</span></span>
                 <input
                     v-model="props.form.reference_no"
                     :class="{ 'has-error': props.hasError('reference_no') }"
@@ -212,53 +252,53 @@ const portSearchModel = computed({
             </label>
 
             <label class="field">
-                <span>Company <span class="required-star">*</span></span>
+                <span>{{ copy.company }} <span class="required-star">*</span></span>
                 <input
                     v-model="props.form.company_name"
                     :class="{ 'has-error': props.hasError('company_name') }"
                     type="text"
-                    placeholder="Enter Company Name"
+                    :placeholder="copy.companyPlaceholder"
                     @input="props.clearFieldErrorIfValid('company_name', props.validateRequiredText(props.form.company_name))"
                 />
                 <small v-if="props.hasError('company_name')" class="field-error">{{ props.getError('company_name') }}</small>
             </label>
 
             <label class="field">
-                <span>Ship <span class="required-star">*</span></span>
+                <span>{{ copy.ship }} <span class="required-star">*</span></span>
                 <input
                     v-model="props.form.ship_name"
                     :class="{ 'has-error': props.hasError('ship_name') }"
                     type="text"
-                    placeholder="Enter Ship Name"
+                    :placeholder="copy.shipPlaceholder"
                     @input="props.clearFieldErrorIfValid('ship_name', props.validateRequiredText(props.form.ship_name))"
                 />
                 <small v-if="props.hasError('ship_name')" class="field-error">{{ props.getError('ship_name') }}</small>
             </label>
 
             <label class="field">
-                <span>IMO Number <span class="required-star">*</span></span>
+                <span>{{ copy.imoNumber }} <span class="required-star">*</span></span>
                 <input
                     v-model="props.form.imo_number"
                     :class="{ 'has-error': props.hasError('imo_number') }"
                     type="text"
                     inputmode="numeric"
                     maxlength="7"
-                    placeholder="Enter IMO Number"
+                    :placeholder="copy.imoPlaceholder"
                     @input="props.form.imo_number = props.normalizeImoNumber(props.form.imo_number); props.clearFieldErrorIfValid('imo_number', props.validateImoNumber(props.form.imo_number))"
                 />
                 <small v-if="props.hasError('imo_number')" class="field-error">{{ props.getError('imo_number') }}</small>
             </label>
 
             <label class="field">
-                <span>RFQ Status <span class="required-star">*</span></span>
+                <span>{{ copy.rfqStatus }} <span class="required-star">*</span></span>
                 <select v-model="props.form.status" class="choice-control">
-                    <option value="open">Open</option>
-                    <option value="closed">Closed</option>
+                    <option value="open">{{ copy.open }}</option>
+                    <option value="closed">{{ copy.closed }}</option>
                 </select>
             </label>
 
             <label class="field selection-field">
-                <span>Request Country <span class="required-star">*</span></span>
+                <span>{{ copy.requestCountry }} <span class="required-star">*</span></span>
                 <div :ref="props.setCountryMenuRef" class="dropdown-shell">
                     <button
                         type="button"
@@ -303,14 +343,14 @@ const portSearchModel = computed({
                             />
                             <span>{{ country }}</span>
                         </label>
-                        <p v-if="!props.filteredCountryOptions.length" class="selector-empty">No countries found.</p>
+                        <p v-if="!props.filteredCountryOptions.length" class="selector-empty">{{ copy.noCountries }}</p>
                     </div>
                 </div>
                 <small v-if="props.form.errors.country_names" class="field-error">{{ props.form.errors.country_names }}</small>
             </label>
 
             <div class="field selection-field">
-                <span>Request Ports <span class="required-star">*</span></span>
+                <span>{{ copy.requestPorts }} <span class="required-star">*</span></span>
                 <div :ref="props.setPortMenuRef" class="dropdown-shell">
                     <button
                         type="button"
@@ -394,7 +434,7 @@ const portSearchModel = computed({
             </div>
 
             <label class="field">
-                <span>Requisition Date <span class="required-star">*</span></span>
+                <span>{{ copy.requisitionDate }} <span class="required-star">*</span></span>
                 <input
                     v-model="props.form.requisition_date"
                     :class="{ 'has-error': props.hasError('requisition_date') }"
@@ -405,7 +445,7 @@ const portSearchModel = computed({
             </label>
 
             <label class="field">
-                <span>Due Date <span class="required-star">*</span></span>
+                <span>{{ copy.dueDate }} <span class="required-star">*</span></span>
                 <input
                     v-model="props.form.due_date"
                     :class="{ 'has-error': props.hasError('due_date') }"
@@ -417,14 +457,14 @@ const portSearchModel = computed({
             </label>
 
             <label class="field">
-                <span>Currency <span class="required-star">*</span></span>
+                <span>{{ copy.currency }} <span class="required-star">*</span></span>
                 <select
                     v-model="props.form.currency"
                     class="choice-control"
                     :class="{ 'has-error': props.hasError('currency') }"
                     @change="props.clearFieldErrorIfValid('currency', props.validateRequiredSelect(props.form.currency))"
                 >
-                    <option disabled value="">Select Currency</option>
+                    <option disabled value="">{{ copy.selectCurrency }}</option>
                     <option value="USD">USD</option>
                     <option value="EUR">EUR</option>
                     <option value="CNY">CNY</option>
@@ -434,14 +474,14 @@ const portSearchModel = computed({
             </label>
 
             <label class="field">
-                <span>Priority <span class="required-star">*</span></span>
+                <span>{{ copy.priority }} <span class="required-star">*</span></span>
                 <select
                     v-model="props.form.priority"
                     class="choice-control"
                     :class="{ 'has-error': props.hasError('priority') }"
                     @change="props.clearFieldErrorIfValid('priority', props.validateRequiredSelect(props.form.priority))"
                 >
-                    <option disabled value="">Select Priority</option>
+                    <option disabled value="">{{ copy.selectPriority }}</option>
                     <option value="low">Low</option>
                     <option value="normal">Normal</option>
                     <option value="high">High</option>
@@ -451,8 +491,8 @@ const portSearchModel = computed({
             </label>
 
             <label class="field field-span-2 notes-field">
-                <span>General Notes</span>
-                <textarea v-model="props.form.general_notes" rows="1" placeholder="Enter General Notes"></textarea>
+                <span>{{ copy.generalNotes }}</span>
+                <textarea v-model="props.form.general_notes" rows="1" :placeholder="copy.generalNotesPlaceholder"></textarea>
             </label>
         </div>
     </div>

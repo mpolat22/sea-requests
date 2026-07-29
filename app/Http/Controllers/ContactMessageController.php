@@ -38,9 +38,9 @@ class ContactMessageController extends Controller
         });
 
         if (! $delivery['ok']) {
-            return back()->with('error', 'We could not send your message right now. Please try again shortly.');
+            return back()->with('error', 'contact-message-send-failed');
         }
 
-        return back()->with('success', 'Your message has been sent successfully.');
+        return back()->with('success', 'contact-message-sent');
     }
 }

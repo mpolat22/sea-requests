@@ -27,7 +27,7 @@ class EmailVerificationNotificationController extends Controller
         $attempt = $mail->attempt(fn () => $request->user()->sendEmailVerificationNotification());
 
         if (! $attempt['ok']) {
-            return back()->with('error', 'We could not send the verification email right now. Please try again shortly.');
+            return back()->with('error', 'verification-email-send-failed');
         }
 
         return back()->with('success', 'verification-link-sent');

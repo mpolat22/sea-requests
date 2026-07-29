@@ -1,4 +1,5 @@
 <script setup>
+import { useI18n } from '../../../../../lib/i18n';
 const props = defineProps({
     importPreview: {
         type: Object,
@@ -69,6 +70,28 @@ const props = defineProps({
         required: true,
     },
 });
+
+const baseCopy = {
+    title: 'Import Preview',
+    copy: 'Review the extracted data before applying it to this RFQ.',
+    doneEditing: 'Done Editing',
+    editPreview: 'Edit Preview',
+    reset: 'Reset',
+    discard: 'Discard',
+    applyImport: 'Apply Import',
+    importedItems: 'Imported items',
+    detectedFields: 'Detected fields',
+    source: 'Source',
+    addRow: 'Add Row',
+    action: 'Action',
+    remove: 'Remove',
+};
+
+const { section } = useI18n();
+const translatedCopy = section('buyerCreate.importPreview');
+const copy = new Proxy(baseCopy, {
+    get: (target, key) => translatedCopy.value[key] ?? target[key],
+});
 </script>
 
 <template>
@@ -77,12 +100,12 @@ const props = defineProps({
             <div class="import-preview-card">
                 <div class="import-preview-head">
                     <div>
-                        <h3 class="directory-section-title import-preview-main-title">Import Preview</h3>
-                        <p class="import-preview-copy">Review the extracted data before applying it to this RFQ.</p>
+                        <h3 class="directory-section-title import-preview-main-title">{{ copy.title }}</h3>
+                        <p class="import-preview-copy">{{ copy.copy }}</p>
                     </div>
                     <div class="import-preview-actions">
                         <button type="button" class="ghost-button compact-button" @click="props.toggleImportPreviewEditing">
-                            {{ props.importPreviewEditing ? 'Done Editing' : 'Edit Preview' }}
+                            {{ props.importPreviewEditing ? copy.doneEditing : copy.editPreview }}
                         </button>
                         <button v-if="props.importPreviewEditing" type="button" class="secondary-button compact-button" @click="props.resetImportPreviewDraft">
                             Reset
@@ -98,15 +121,15 @@ const props = defineProps({
 
                 <div class="import-preview-meta">
                     <div class="preview-stat">
-                        <span class="preview-stat-label">Imported items</span>
+                        <span class="preview-stat-label">{{ copy.importedItems }}</span>
                         <strong class="preview-stat-value">{{ props.previewDraftItems.length || props.importPreview.summary?.items_count || 0 }}</strong>
                     </div>
                     <div class="preview-stat">
-                        <span class="preview-stat-label">Detected fields</span>
+                        <span class="preview-stat-label">{{ copy.detectedFields }}</span>
                         <strong class="preview-stat-value">{{ props.importPreview.summary?.mapped_columns?.length ?? 0 }}</strong>
                     </div>
                     <div class="preview-stat">
-                        <span class="preview-stat-label">Source</span>
+                        <span class="preview-stat-label">{{ copy.source }}</span>
                         <strong class="preview-stat-value">{{ props.importPreview.summary?.sheet_name ?? '-' }}</strong>
                     </div>
                 </div>
@@ -127,7 +150,7 @@ const props = defineProps({
 
                 <div class="import-preview-surface">
                     <div class="import-preview-subhead">
-                        <h4 class="directory-section-title import-preview-subtitle">Imported items</h4>
+                        <h4 class="directory-section-title import-preview-subtitle">{{ copy.importedItems }}</h4>
                         <button v-if="props.importPreviewEditing" type="button" class="secondary-button compact-button" @click="props.addPreviewItemRow">
                             Add Row
                         </button>
@@ -155,7 +178,7 @@ const props = defineProps({
                                     <th v-for="column in props.previewItemColumns" :key="`head-${column.key}`">
                                         <span class="import-preview-header-label">{{ column.label }}</span>
                                     </th>
-                                    <th v-if="props.importPreviewEditing">Action</th>
+                                    <th v-if="props.importPreviewEditing">{{ copy.action }}</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -183,7 +206,7 @@ const props = defineProps({
                                         </template>
                                     </td>
                                     <td v-if="props.importPreviewEditing">
-                                        <button type="button" class="preview-row-remove" @click="props.removePreviewItemRow(previewIndex)">Remove</button>
+                                        <button type="button" class="preview-row-remove" @click="props.removePreviewItemRow(previewIndex)">{{ copy.remove }}</button>
                                     </td>
                                 </tr>
                             </tbody>

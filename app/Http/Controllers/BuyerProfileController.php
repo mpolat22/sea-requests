@@ -100,7 +100,7 @@ class BuyerProfileController extends Controller
                 ->with('success', 'buyer-email-updated');
 
             if (! $verificationEmail['ok']) {
-                return $redirect->with('error', 'Your email address was updated, but we could not send the verification email right now. Please try again shortly.');
+                return $redirect->with('error', 'buyer-email-verification-send-failed');
             }
 
             return $redirect;

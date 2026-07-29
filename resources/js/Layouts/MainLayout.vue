@@ -3,13 +3,14 @@ import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import { Link, router, usePage } from '@inertiajs/vue3';
 import BrandLogo from '../Components/BrandLogo.vue';
 import MessengerDrawer from '../Components/MessengerDrawer.vue';
-import { copy } from '../lib/translations';
+import { useI18n } from '../lib/i18n';
 import { useMessengerStore } from '../lib/messengerStore';
 
 const page = usePage();
 const messenger = useMessengerStore();
 
-const t = copy;
+const { locale, locales, setLocale, section, t: translate } = useI18n();
+const t = section('layout');
 const user = computed(() => page.props.auth?.user ?? null);
 const flashSuccess = computed(() => page.props.flash?.success ?? null);
 const flashError = computed(() => page.props.flash?.error ?? null);
@@ -43,36 +44,36 @@ const profileHref = computed(() => {
     return '/dashboard/buyer/profile';
 });
 
-const footerBrand = {
-    name: 'Sea Requests',
-    text: 'Sea Requests is a marine procurement marketplace where buyers create spare parts RFQs and service requests, and suppliers submit offers for the right opportunities.',
-};
+const footerBrand = computed(() => ({
+    name: t.value.brand.name,
+    text: t.value.footer.brandText,
+}));
 
-const footerSections = [
+const footerSections = computed(() => [
     {
-        title: 'Platform',
+        title: t.value.footer.platform,
         links: [
-            { label: 'Services', href: '/services' },
-            { label: 'Request', href: '/requests' },
+            { label: t.value.footer.services, href: '/services' },
+            { label: t.value.footer.request, href: '/requests' },
         ],
     },
     {
-        title: 'Company',
+        title: t.value.footer.company,
         links: [
-            { label: 'About Us', href: '/about-us' },
-            { label: 'Contact', href: '/contact' },
-            { label: 'FAQ', href: '/faq' },
+            { label: t.value.footer.aboutUs, href: '/about-us' },
+            { label: t.value.footer.contact, href: '/contact' },
+            { label: t.value.footer.faq, href: '/faq' },
         ],
     },
     {
-        title: 'Support',
+        title: t.value.footer.support,
         links: [
-            { label: 'Privacy Policy', href: '/privacy-policy' },
-            { label: 'Terms & Conditions', href: '/terms-of-service' },
-            { label: 'Disclaimer', href: '/disclaimer' },
+            { label: t.value.footer.privacyPolicy, href: '/privacy-policy' },
+            { label: t.value.footer.terms, href: '/terms-of-service' },
+            { label: t.value.footer.disclaimer, href: '/disclaimer' },
         ],
     },
-];
+]);
 const whatsappSupportUrl = "https://wa.me/905078149176?text=Hello%2C%20I%20need%20support%20for%20the%20searequests.ai%20website.";
 
 
@@ -90,19 +91,37 @@ const flashCode = (message) => {
     return null;
 };
 
+const interpolateMessage = (message, params = {}) => {
+    if (typeof message !== 'string') {
+        return message;
+    }
+
+    return message.replace(/\{([A-Za-z0-9_]+)\}/g, (match, key) => {
+        const value = params?.[key];
+        return value === undefined || value === null ? match : String(value);
+    });
+};
+
 const resolveToastMessage = (message) => {
     if (!message) {
         return null;
     }
 
-    if (message && typeof message === 'object' && typeof message.message === 'string' && message.message.trim() !== '') {
-        return message.message.trim();
-    }
-
     const code = flashCode(message);
+    const params = message && typeof message === 'object' ? (message.params ?? {}) : {};
 
     if (!code) {
-        return null;
+        return typeof message === 'string' ? message : null;
+    }
+
+    const translatedFlash = translate(`layout.flash.${code}`, null);
+
+    if (translatedFlash) {
+        return interpolateMessage(translatedFlash, params);
+    }
+
+    if (message && typeof message === 'object' && typeof message.message === 'string' && message.message.trim() !== '') {
+        return interpolateMessage(message.message.trim(), params);
     }
 
     const flashMap = {
@@ -145,7 +164,7 @@ const resolveToastMessage = (message) => {
     };
 
     if (flashMap[code]) {
-        return flashMap[code];
+        return interpolateMessage(flashMap[code], params);
     }
 
     return t.common?.[code] ?? code;
@@ -172,15 +191,7 @@ const showToast = (message, tone = 'success') => {
     }, 5000);
 };
 
-const notificationText = {
-    title: 'Notifications',
-    empty: 'You do not have any notifications yet.',
-    loading: 'Loading notifications...',
-    allRead: 'Mark all as read',
-    viewAll: 'View all notifications',
-    unread: 'unread',
-    open: 'Open notifications',
-};
+const notificationText = computed(() => t.value.notifications);
 
 const formatNotificationTime = (value) => {
     if (!value) {
@@ -197,7 +208,24 @@ const formatNotificationTime = (value) => {
     }
 };
 
-const notificationList = computed(() => notificationItems.value);
+const localizeNotificationItem = (notification) => {
+    const translated = notification.translations?.[locale.value]
+        ?? notification.translations?.en
+        ?? null;
+
+    if (!translated) {
+        return notification;
+    }
+
+    return {
+        ...notification,
+        title: translated.title ?? notification.title,
+        message: translated.message ?? notification.message,
+        action_label: translated.action_label ?? notification.action_label,
+    };
+};
+
+const notificationList = computed(() => notificationItems.value.map(localizeNotificationItem));
 
 const loadNotifications = async ({ force = false } = {}) => {
     if (!user.value) {
@@ -444,6 +472,23 @@ onBeforeUnmount(() => {
                     <Link v-else :class="['nav-link', { active: isActive('/register') }]" href="/register">{{ t.nav.register }}</Link>
                     <Link v-if="!user" :class="['nav-link', { active: isActive('/login') }]" href="/login">{{ t.nav.login }}</Link>
 
+                    <div class="language-switcher language-switcher-mobile" :aria-label="t.nav.language">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <circle cx="12" cy="12" r="9" />
+                            <path d="M3 12h18" />
+                            <path d="M12 3c2.2 2.4 3.3 5.4 3.3 9S14.2 18.6 12 21" />
+                            <path d="M12 3C9.8 5.4 8.7 8.4 8.7 12S9.8 18.6 12 21" />
+                        </svg>
+                        <button
+                            v-for="option in locales"
+                            :key="option.code"
+                            type="button"
+                            :class="{ active: locale === option.code }"
+                            @click="setLocale(option.code)"
+                        >
+                            {{ option.shortLabel }}
+                        </button>
+                    </div>
                     <div class="nav-mobile-actions">
                         <div v-if="user" class="notifications-mobile">
                             <button
@@ -518,6 +563,23 @@ onBeforeUnmount(() => {
                 </nav>
 
                 <div class="topbar-side">
+                    <div class="language-switcher" :aria-label="t.nav.language">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <circle cx="12" cy="12" r="9" />
+                            <path d="M3 12h18" />
+                            <path d="M12 3c2.2 2.4 3.3 5.4 3.3 9S14.2 18.6 12 21" />
+                            <path d="M12 3C9.8 5.4 8.7 8.4 8.7 12S9.8 18.6 12 21" />
+                        </svg>
+                        <button
+                            v-for="option in locales"
+                            :key="option.code"
+                            type="button"
+                            :class="{ active: locale === option.code }"
+                            @click="setLocale(option.code)"
+                        >
+                            {{ option.shortLabel }}
+                        </button>
+                    </div>
                     <div v-if="user" class="notifications-shell">
                         <button
                             class="notifications-trigger"
@@ -660,7 +722,7 @@ onBeforeUnmount(() => {
                 </div>
 
                 <div class="footer-bottom">
-                    <p class="footer-meta">&#169; 2026 {{ footerBrand.name }}. All rights reserved.</p>
+                    <p class="footer-meta">&#169; 2026 {{ footerBrand.name }}. {{ t.footer.rights }}</p>
                 </div>
             </div>
         </footer>
@@ -671,7 +733,7 @@ onBeforeUnmount(() => {
             :href="whatsappSupportUrl"
             target="_blank"
             rel="noopener noreferrer"
-            aria-label="Contact Sea Requests support on WhatsApp"
+            :aria-label="t.whatsapp.aria"
         >
             <span class="whatsapp-support-icon" aria-hidden="true">
                 <svg viewBox="0 0 24 24" fill="none">
@@ -680,8 +742,8 @@ onBeforeUnmount(() => {
                 </svg>
             </span>
             <span class="whatsapp-support-copy">
-                <strong>Need help?</strong>
-                <span>Contact us on WhatsApp</span>
+                <strong>{{ t.whatsapp.title }}</strong>
+                <span>{{ t.whatsapp.text }}</span>
             </span>
         </a>
     </div>
@@ -879,6 +941,47 @@ onBeforeUnmount(() => {
     display: flex;
     align-items: center;
     gap: 14px;
+}
+
+.language-switcher {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    min-height: 40px;
+    padding: 4px;
+    border: 1px solid rgba(4, 21, 31, 0.08);
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.82);
+    color: rgba(4, 21, 31, 0.72);
+}
+
+.language-switcher svg {
+    width: 18px;
+    height: 18px;
+    margin-left: 7px;
+    color: rgba(15, 118, 110, 0.82);
+}
+
+.language-switcher button {
+    border: 0;
+    border-radius: 999px;
+    padding: 8px 10px;
+    background: transparent;
+    color: rgba(4, 21, 31, 0.72);
+    font-size: 0.82rem;
+    font-weight: 700;
+    line-height: 1;
+}
+
+.language-switcher button.active {
+    background: var(--color-ink);
+    color: white;
+}
+
+.language-switcher-mobile {
+    display: none;
+    justify-content: flex-start;
+    width: fit-content;
 }
 
 .account-shell {
@@ -1347,6 +1450,10 @@ onBeforeUnmount(() => {
         border-radius: 10px;
         background: rgba(4, 21, 31, 0.04);
         white-space: normal;
+    }
+
+    .language-switcher-mobile {
+        display: inline-flex;
     }
 
     .nav-mobile-actions {

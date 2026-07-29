@@ -1,6 +1,7 @@
 ﻿<script setup>
 import { computed, nextTick, onBeforeUnmount, reactive, ref, watch } from 'vue';
 import { useForm } from '@inertiajs/vue3';
+import { useI18n } from '../../../../lib/i18n';
 import SupplierVerificationForm from '../../../Auth/Partials/SupplierVerificationForm.vue';
 
 const props = defineProps({
@@ -10,7 +11,10 @@ const props = defineProps({
 
 const emit = defineEmits(['close', 'saved']);
 
-const displayLocale = 'en';
+const { locale, section } = useI18n();
+const copy = section('admin.onboardingForm');
+const displayLocale = computed(() => locale.value === 'zh' ? 'zh-CN' : 'en');
+const t = (key, fallback) => copy.value[key] ?? fallback;
 
 const form = useForm({
     audience: 'seller',
@@ -51,68 +55,68 @@ const form = useForm({
 });
 
 const ui = computed(() => ({
-    title: `${form.audience === 'buyer' ? 'Buyer' : 'Supplier'} Onboarding Profile | Sea Requests`,
-    eyebrow: 'Pre-registration',
-    heading: `Create a ${form.audience === 'buyer' ? 'buyer' : 'supplier'} onboarding profile`,
+    title: form.audience === 'buyer' ? t('buyerTitle', 'Buyer Onboarding Profile | Sea Requests') : t('supplierTitle', 'Supplier Onboarding Profile | Sea Requests'),
+    eyebrow: t('eyebrow', 'Pre-registration'),
+    heading: form.audience === 'buyer' ? t('buyerHeading', 'Create a buyer onboarding profile') : t('supplierHeading', 'Create a supplier onboarding profile'),
     text: form.audience === 'buyer'
-        ? 'Create the buyer account with the same controlled profile structure. Only company name and email are required; the buyer can update profile details later.'
-        : 'Fill the same supplier verification structure before creating the platform account. Only business name and company email are required at this stage; the supplier can complete missing fields later.',
-    identityHeading: 'Business Identity',
-    locationHeading: 'Location',
-    galleryHeading: 'Gallery',
-    contactHeading: 'Contact',
-    officialHeading: 'Official Details and Documents',
-    businessName: 'Business Name *',
-    primaryCategory: 'Business Primary Category',
-    subcategory: 'Business Subcategory',
-    brands: 'Brands',
-    selectCategory: 'Select category',
-    selectSubcategory: 'Select subcategory',
-    brandSearchPlaceholder: 'Search and add brands',
-    categoryHelper: 'Select any known categories and subcategories from the source profile. The supplier can confirm or update them during verification.',
-    brandHelper: 'Select known brands if the source profile clearly mentions them. Leave empty when the information is not reliable.',
-    serviceCoverageHelper: 'Select known service countries and ports from the source profile. These fields help prefill the supplier verification form later.',
-    brandEmpty: 'No matching brands were found.',
-    serviceCoverageHeading: 'Service Countries and Ports',
-    serviceCountries: 'Service Countries',
-    servicePorts: 'Service Ports',
-    selectServiceCountries: 'Select countries',
-    selectPorts: 'Select ports',
-    serviceCountryLimit: 'You can select up to 10 countries.',
-    servicePortRequired: 'Select at least one port for each country when service countries are selected.',
-    noPortsForCountry: 'No ports available for this country.',
-    country: 'Country',
-    city: 'City',
-    district: 'District',
-    neighborhood: 'Neighborhood',
-    postalCode: 'Postal Code',
-    fullAddress: 'Full Address',
-    fullAddressPlaceholder: 'Street, building number, floor, office or company address',
-    logo: 'Logo',
-    addFiles: 'Add Files',
-    openFile: 'Open',
-    removeFile: 'Remove',
-    noFiles: 'No files added yet.',
-    mobilePhone: 'Mobile / GSM Line',
-    landlinePhone: 'Landline Business Phone',
-    website: 'Website',
-    email: 'Company Email *',
-    whatsapp: 'WhatsApp',
-    telegram: 'Telegram',
-    instagram: 'Instagram',
-    linkedin: 'LinkedIn',
-    facebook: 'Facebook',
-    twitter: 'Twitter',
-    phonePlaceholder: '+90 555 000 00 00',
-    landlinePlaceholder: '+90 212 000 00 00',
-    websitePlaceholder: 'https://www.example.com',
-    emailPlaceholder: 'contact@example.com',
-    socialPlaceholder: 'https://',
-    registrationNumber: 'Company Registration Number',
-    registrationDocuments: 'Company Registration Documents',
-    fileRules: 'PDF, JPG, JPEG, PNG or WEBP. Each file can be up to 10 MB.',
-    submit: 'Create Account & Send Email',
-    submitting: 'Creating Account...',
+        ? t('buyerText', 'Create the buyer account with the same controlled profile structure. Only company name and email are required; the buyer can update profile details later.')
+        : t('supplierText', 'Fill the same supplier verification structure before creating the platform account. Only business name and company email are required at this stage; the supplier can complete missing fields later.'),
+    identityHeading: t('identityHeading', 'Business Identity'),
+    locationHeading: t('locationHeading', 'Location'),
+    galleryHeading: t('galleryHeading', 'Gallery'),
+    contactHeading: t('contactHeading', 'Contact'),
+    officialHeading: t('officialHeading', 'Official Details and Documents'),
+    businessName: t('businessName', 'Business Name *'),
+    primaryCategory: t('primaryCategory', 'Business Primary Category'),
+    subcategory: t('subcategory', 'Business Subcategory'),
+    brands: t('brands', 'Brands'),
+    selectCategory: t('selectCategory', 'Select category'),
+    selectSubcategory: t('selectSubcategory', 'Select subcategory'),
+    brandSearchPlaceholder: t('brandSearchPlaceholder', 'Search and add brands'),
+    categoryHelper: t('categoryHelper', 'Select any known categories and subcategories from the source profile. The supplier can confirm or update them during verification.'),
+    brandHelper: t('brandHelper', 'Select known brands if the source profile clearly mentions them. Leave empty when the information is not reliable.'),
+    serviceCoverageHelper: t('serviceCoverageHelper', 'Select known service countries and ports from the source profile. These fields help prefill the supplier verification form later.'),
+    brandEmpty: t('brandEmpty', 'No matching brands were found.'),
+    serviceCoverageHeading: t('serviceCoverageHeading', 'Service Countries and Ports'),
+    serviceCountries: t('serviceCountries', 'Service Countries'),
+    servicePorts: t('servicePorts', 'Service Ports'),
+    selectServiceCountries: t('selectServiceCountries', 'Select countries'),
+    selectPorts: t('selectPorts', 'Select ports'),
+    serviceCountryLimit: t('serviceCountryLimit', 'You can select up to 10 countries.'),
+    servicePortRequired: t('servicePortRequired', 'Select at least one port for each country when service countries are selected.'),
+    noPortsForCountry: t('noPortsForCountry', 'No ports available for this country.'),
+    country: t('country', 'Country'),
+    city: t('city', 'City'),
+    district: t('district', 'District'),
+    neighborhood: t('neighborhood', 'Neighborhood'),
+    postalCode: t('postalCode', 'Postal Code'),
+    fullAddress: t('fullAddress', 'Full Address'),
+    fullAddressPlaceholder: t('fullAddressPlaceholder', 'Street, building number, floor, office or company address'),
+    logo: t('logo', 'Logo'),
+    addFiles: t('addFiles', 'Add Files'),
+    openFile: t('openFile', 'Open'),
+    removeFile: t('removeFile', 'Remove'),
+    noFiles: t('noFiles', 'No files added yet.'),
+    mobilePhone: t('mobilePhone', 'Mobile / GSM Line'),
+    landlinePhone: t('landlinePhone', 'Landline Business Phone'),
+    website: t('website', 'Website'),
+    email: t('email', 'Company Email *'),
+    whatsapp: t('whatsapp', 'WhatsApp'),
+    telegram: t('telegram', 'Telegram'),
+    instagram: t('instagram', 'Instagram'),
+    linkedin: t('linkedin', 'LinkedIn'),
+    facebook: t('facebook', 'Facebook'),
+    twitter: t('twitter', 'Twitter'),
+    phonePlaceholder: t('phonePlaceholder', '+90 555 000 00 00'),
+    landlinePlaceholder: t('landlinePlaceholder', '+90 212 000 00 00'),
+    websitePlaceholder: t('websitePlaceholder', 'https://www.example.com'),
+    emailPlaceholder: t('emailPlaceholder', 'contact@example.com'),
+    socialPlaceholder: t('socialPlaceholder', 'https://'),
+    registrationNumber: t('registrationNumber', 'Company Registration Number'),
+    registrationDocuments: t('registrationDocuments', 'Company Registration Documents'),
+    fileRules: t('fileRules', 'PDF, JPG, JPEG, PNG or WEBP. Each file can be up to 10 MB.'),
+    submit: t('submit', 'Create Account & Send Email'),
+    submitting: t('submitting', 'Creating Account...'),
 }));
 
 const fieldRefs = {
@@ -136,7 +140,7 @@ const brandOptions = computed(() => props.options.brands ?? []);
 
 const serviceCountries = computed(() => {
     const displayNames = typeof Intl !== 'undefined' && typeof Intl.DisplayNames === 'function'
-        ? new Intl.DisplayNames([displayLocale], { type: 'region' })
+        ? new Intl.DisplayNames([displayLocale.value], { type: 'region' })
         : null;
 
     return [...(props.options.serviceCountries ?? [])]
@@ -151,7 +155,7 @@ const serviceCountries = computed(() => {
                 name: code === 'TR' ? 'Turkey' : resolvedName,
             };
         })
-        .sort((left, right) => left.name.localeCompare(right.name, displayLocale));
+        .sort((left, right) => left.name.localeCompare(right.name, displayLocale.value));
 });
 
 const serviceCountryNameMap = computed(() => new Map(
@@ -338,29 +342,29 @@ onBeforeUnmount(() => {
     <section class="onboarding-verification-shell">
         <header class="onboarding-verification-header">
             <div>
-                <p class="directory-eyebrow">Pre-registration</p>
-                <h3>Add Manual Onboarding Profile</h3>
-                <span>Select the account type, complete the known company details, and save. The platform account and completion email are created automatically.</span>
+                <p class="directory-eyebrow">{{ copy.eyebrow }}</p>
+                <h3>{{ copy.headerTitle }}</h3>
+                <span>{{ copy.headerText }}</span>
             </div>
-            <button type="button" class="secondary-action" @click="emit('close')">Close</button>
+            <button type="button" class="secondary-action" @click="emit('close')">{{ copy.close }}</button>
         </header>
 
         <section class="account-type-panel">
             <div>
-                <p class="directory-eyebrow">Account Type</p>
-                <h4>Who are we creating this profile for?</h4>
-                <span>Supplier profiles continue to verification after login. Buyer profiles open the buyer dashboard after account completion.</span>
+                <p class="directory-eyebrow">{{ copy.accountTypeEyebrow }}</p>
+                <h4>{{ copy.accountTypeTitle }}</h4>
+                <span>{{ copy.accountTypeText }}</span>
             </div>
-            <div class="account-type-options" role="radiogroup" aria-label="Onboarding account type">
+            <div class="account-type-options" role="radiogroup" :aria-label="copy.accountTypeAria">
                 <label :class="['account-type-option', { active: form.audience === 'seller' }]">
                     <input v-model="form.audience" type="radio" value="seller" />
-                    <strong>Supplier</strong>
-                    <span>For companies that will complete verification and submit offers.</span>
+                    <strong>{{ copy.supplierLabel }}</strong>
+                    <span>{{ copy.supplierDescription }}</span>
                 </label>
                 <label :class="['account-type-option', { active: form.audience === 'buyer' }]">
                     <input v-model="form.audience" type="radio" value="buyer" />
-                    <strong>Buyer</strong>
-                    <span>For companies that will create RFQs and manage orders.</span>
+                    <strong>{{ copy.buyerLabel }}</strong>
+                    <span>{{ copy.buyerDescription }}</span>
                 </label>
             </div>
         </section>

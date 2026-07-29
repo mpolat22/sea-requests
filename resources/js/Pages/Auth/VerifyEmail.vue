@@ -1,15 +1,10 @@
 <script setup>
 import { Head, Link, useForm } from '@inertiajs/vue3';
 import MainLayout from '../../Layouts/MainLayout.vue';
+import { useI18n } from '../../lib/i18n';
 
-const copy = {
-    eyebrow: 'Verify Email',
-    title: 'Confirm your email address',
-    text: 'Please verify your email address before continuing.',
-    sending: 'Sending...',
-    resend: 'Resend Verification Email',
-    logout: 'Log Out',
-};
+const { section } = useI18n();
+const copy = section('auth.verifyEmail');
 
 const form = useForm({});
 
@@ -19,7 +14,7 @@ const resend = () => {
 </script>
 
 <template>
-    <Head title="Verify Email | Sea Requests" />
+    <Head :title="copy.headTitle" />
 
     <MainLayout>
         <section class="notice-shell">

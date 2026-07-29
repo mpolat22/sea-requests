@@ -4,6 +4,7 @@ import { Head, router, useForm } from '@inertiajs/vue3';
 import AdminDashboardShell from '../Dashboard/Shell.vue';
 import PaginationControls from '../Dashboard/Components/PaginationControls.vue';
 import OnboardingVerificationForm from './Partials/OnboardingVerificationForm.vue';
+import { useI18n } from '../../../lib/i18n';
 
 const props = defineProps({
     dashboard: { type: Object, required: true },
@@ -21,6 +22,8 @@ const isImportSubmitting = ref(false);
 const search = ref(props.filters.search ?? '');
 const audience = ref(props.filters.audience ?? 'seller');
 const status = ref(props.filters.status ?? 'all');
+const { section } = useI18n();
+const copy = section('admin.onboarding');
 
 const records = computed(() => props.records.data ?? []);
 const meta = computed(() => ({
@@ -63,29 +66,29 @@ const importForm = useForm({
     audience: 'seller',
     file: null,
 });
-const importButtonLabel = computed(() => isImportSubmitting.value ? 'Creating Accounts & Queueing Emails...' : 'Create Accounts & Queue Emails');
+const importButtonLabel = computed(() => isImportSubmitting.value ? copy.value.importBusy : copy.value.importButton);
 
 const summaryCards = computed(() => [
-    { label: 'Supplier Records', value: props.summary.seller_total ?? 0 },
-    { label: 'Buyer Records', value: props.summary.buyer_total ?? 0 },
-    { label: 'Accounts Created', value: props.summary.account_created ?? 0 },
-    { label: 'Emails Queued', value: props.summary.email_queued ?? 0 },
-    { label: 'Completion Emails Sent', value: props.summary.email_sent ?? 0 },
+    { label: copy.value.supplierRecords, value: props.summary.seller_total ?? 0 },
+    { label: copy.value.buyerRecords, value: props.summary.buyer_total ?? 0 },
+    { label: copy.value.accountsCreated, value: props.summary.account_created ?? 0 },
+    { label: copy.value.emailsQueued, value: props.summary.email_queued ?? 0 },
+    { label: copy.value.completionEmailsSent, value: props.summary.email_sent ?? 0 },
 ]);
 
-const statusOptions = [
-    { value: 'all', label: 'All statuses' },
-    { value: 'draft', label: 'Draft' },
-    { value: 'ready', label: 'Ready' },
-    { value: 'account_created', label: 'Account created' },
-    { value: 'email_queued', label: 'Email queued' },
-    { value: 'email_sent', label: 'Email sent' },
-];
+const statusOptions = computed(() => [
+    { value: 'all', label: copy.value.allStatuses },
+    { value: 'draft', label: copy.value.draft },
+    { value: 'ready', label: copy.value.ready },
+    { value: 'account_created', label: copy.value.accountCreated },
+    { value: 'email_queued', label: copy.value.emailQueued },
+    { value: 'email_sent', label: copy.value.emailSent },
+]);
 
-const audienceOptions = [
-    { value: 'seller', label: 'Suppliers' },
-    { value: 'buyer', label: 'Buyers' },
-];
+const audienceOptions = computed(() => [
+    { value: 'seller', label: copy.value.suppliers },
+    { value: 'buyer', label: copy.value.buyers },
+]);
 
 let filterTimer = null;
 watch([search, audience, status], () => {
@@ -136,7 +139,7 @@ function submitImport() {
     if (isImportSubmitting.value) return;
 
     if (!importForm.file) {
-        importForm.setError('file', 'Please select an Excel or CSV file before creating accounts.');
+        importForm.setError('file', copy.value.selectFileError);
         return;
     }
 
@@ -221,26 +224,26 @@ function formatDate(value) {
 }
 
 function statusLabel(value) {
-    return statusOptions.find((option) => option.value === value)?.label ?? value ?? 'Draft';
+    return statusOptions.value.find((option) => option.value === value)?.label ?? value ?? copy.value.draft;
 }
 </script>
 
 <template>
-    <Head title="Onboarding | Sea Requests" />
+    <Head :title="copy.headTitle" />
 
-    <AdminDashboardShell :dashboard="dashboard" title="Admin Dashboard" active-tab="onboarding">
+    <AdminDashboardShell :dashboard="dashboard" :title="copy.pageTitle" active-tab="onboarding">
         <section class="onboarding-page">
             <div class="toolbar surface-panel">
                 <div>
-                    <p class="directory-eyebrow">Pre-registration</p>
-                    <h2>Supplier & Buyer Onboarding</h2>
+                    <p class="directory-eyebrow">{{ copy.eyebrow }}</p>
+                    <h2>{{ copy.heading }}</h2>
                     <p>
-                        Create supplier or buyer onboarding profiles manually. Saving a profile now creates the platform account and sends the secure completion email automatically.
+                        {{ copy.intro }}
                     </p>
                 </div>
                 <div class="toolbar-actions">
-                    <button class="secondary-action" type="button" @click="openImportModal">Import Excel / CSV</button>
-                    <button class="primary-action" type="button" @click="openManualModal">Add Manual Profile</button>
+                    <button class="secondary-action" type="button" @click="openImportModal">{{ copy.importAction }}</button>
+                    <button class="primary-action" type="button" @click="openManualModal">{{ copy.addManual }}</button>
                 </div>
             </div>
 
@@ -253,7 +256,7 @@ function statusLabel(value) {
 
             <section class="table-panel surface-panel">
                 <div class="table-toolbar">
-                    <input v-model="search" type="search" placeholder="Search company or email" />
+                    <input v-model="search" type="search" :placeholder="copy.searchPlaceholder" />
                     <select v-model="audience">
                         <option v-for="option in audienceOptions" :key="option.value" :value="option.value">{{ option.label }}</option>
                     </select>
@@ -267,12 +270,12 @@ function statusLabel(value) {
                         <thead>
                             <tr>
                                 <th>#</th>
-                                <th>Company</th>
-                                <th>Email</th>
-                                <th>Type</th>
-                                <th>Status</th>
-                                <th>Last Email</th>
-                                <th>Action</th>
+                                <th>{{ copy.company }}</th>
+                                <th>{{ copy.email }}</th>
+                                <th>{{ copy.type }}</th>
+                                <th>{{ copy.status }}</th>
+                                <th>{{ copy.lastEmail }}</th>
+                                <th>{{ copy.action }}</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -283,22 +286,22 @@ function statusLabel(value) {
                                     <span>{{ record.parsed?.country || '-' }}</span>
                                 </td>
                                 <td>{{ record.email }}</td>
-                                <td>{{ record.audience === 'buyer' ? 'Buyer' : 'Supplier' }}</td>
+                                <td>{{ record.audience === 'buyer' ? copy.buyer : copy.supplier }}</td>
                                 <td>
                                     <span class="status-pill">{{ statusLabel(record.status) }}</span>
                                 </td>
                                 <td>{{ formatDate(record.last_sent_at) }}</td>
                                 <td>
                                     <div class="actions">
-                                        <button type="button" title="Edit" @click="openEditModal(record)">Edit</button>
-                                        <button type="button" title="Create account" :disabled="accountForm.processing || record.user" @click="createAccount(record)">Create</button>
-                                        <button type="button" title="Send completion email" :disabled="emailForm.processing || !record.user" @click="sendCompletionEmail(record)">Send</button>
-                                        <button type="button" class="danger" title="Delete" @click="openDeleteModal(record)">Delete</button>
+                                        <button type="button" :title="copy.edit" @click="openEditModal(record)">{{ copy.edit }}</button>
+                                        <button type="button" :title="copy.create" :disabled="accountForm.processing || record.user" @click="createAccount(record)">{{ copy.create }}</button>
+                                        <button type="button" :title="copy.send" :disabled="emailForm.processing || !record.user" @click="sendCompletionEmail(record)">{{ copy.send }}</button>
+                                        <button type="button" class="danger" :title="copy.delete" @click="openDeleteModal(record)">{{ copy.delete }}</button>
                                     </div>
                                 </td>
                             </tr>
                             <tr v-if="records.length === 0">
-                                <td colspan="7" class="empty-state">No onboarding records matched the current filters.</td>
+                                <td colspan="7" class="empty-state">{{ copy.empty }}</td>
                             </tr>
                         </tbody>
                     </table>
@@ -315,32 +318,32 @@ function statusLabel(value) {
         <div v-if="activeModal" class="modal-backdrop">
             <section v-if="activeModal === 'import'" class="modal-card">
                 <header>
-                    <h3>Import Company List</h3>
-                    <p>Upload an Excel or CSV file with exactly two columns: Company Name and Email. Accounts are created and secure completion emails are sent automatically.</p>
+                    <h3>{{ copy.importTitle }}</h3>
+                    <p>{{ copy.importIntro }}</p>
                 </header>
                 <div class="import-format-box">
-                    <strong>Required format</strong>
-                    <code>Company Name | Email</code>
-                    <span>Existing platform accounts are skipped safely. New rows are created first, then completion emails are queued one by one every 2 minutes; duplicate or invalid rows are reported in the import result.</span>
+                    <strong>{{ copy.requiredFormat }}</strong>
+                    <code>{{ copy.requiredFormatCode }}</code>
+                    <span>{{ copy.importFormatHelp }}</span>
                 </div>
                 <div class="form-grid">
                     <label>
-                        Account Type *
+                        {{ copy.accountType }}
                         <select v-model="importForm.audience">
-                            <option value="seller">Supplier</option>
-                            <option value="buyer">Buyer</option>
+                            <option value="seller">{{ copy.supplier }}</option>
+                            <option value="buyer">{{ copy.buyer }}</option>
                         </select>
                         <span v-if="importForm.errors.audience" class="field-error">{{ importForm.errors.audience }}</span>
                     </label>
                     <label>
-                        Company List File *
+                        {{ copy.companyListFile }}
                         <input type="file" accept=".csv,.txt,.xlsx,.xls" @change="handleImportFile" />
                         <span v-if="importForm.file" class="file-name">{{ importForm.file.name }}</span>
                         <span v-if="importForm.errors.file" class="field-error">{{ importForm.errors.file }}</span>
                     </label>
                 </div>
                 <footer>
-                    <button type="button" class="secondary-action" :disabled="isImportSubmitting" @click="activeModal = null">Close</button>
+                    <button type="button" class="secondary-action" :disabled="isImportSubmitting" @click="activeModal = null">{{ copy.close }}</button>
                     <button type="button" class="primary-action" :disabled="isImportSubmitting" :aria-busy="isImportSubmitting ? 'true' : 'false'" @click="submitImport">{{ importButtonLabel }}</button>
                 </footer>
             </section>
@@ -356,48 +359,48 @@ function statusLabel(value) {
 
             <section v-if="activeModal === 'edit'" class="modal-card large">
                 <header>
-                    <h3>Review Onboarding Profile</h3>
-                    <p>Review the pre-registration profile in the same structure suppliers will later complete. Required verification documents and final approval still remain inside the supplier verification flow.</p>
+                    <h3>{{ copy.reviewTitle }}</h3>
+                    <p>{{ copy.reviewIntro }}</p>
                 </header>
                 <div v-if="activeRecord?.parsed?.logo_url" class="logo-preview">
-                    <img :src="activeRecord.parsed.logo_url" alt="Parsed company logo" />
-                    <span>Logo detected from the public company profile. Supplier can still upload the official logo during verification.</span>
+                    <img :src="activeRecord.parsed.logo_url" :alt="copy.logoAlt" />
+                    <span>{{ copy.logoDetected }}</span>
                 </div>
                 <div class="verification-preview-grid">
                     <section class="verification-section">
                         <div class="section-heading">
-                            <p class="directory-eyebrow">Business Identity</p>
-                            <h4>Company and Account Details</h4>
-                            <span>Only account type, company name, and email are required before account creation.</span>
+                            <p class="directory-eyebrow">{{ copy.businessIdentity }}</p>
+                            <h4>{{ copy.companyAccountDetails }}</h4>
+                            <span>{{ copy.companyAccountHelp }}</span>
                         </div>
                         <div class="form-grid">
                             <label>
-                                Account Type *
+                                {{ copy.accountType }}
                                 <select v-model="editForm.audience">
-                                    <option value="seller">Supplier</option>
-                                    <option value="buyer">Buyer</option>
+                                    <option value="seller">{{ copy.supplier }}</option>
+                                    <option value="buyer">{{ copy.buyer }}</option>
                                 </select>
                             </label>
                             <label>
-                                Company Name *
+                                {{ copy.companyNameRequired }}
                                 <input v-model="editForm.company_name" type="text" />
                                 <span v-if="editForm.errors.company_name" class="field-error">{{ editForm.errors.company_name }}</span>
                             </label>
                             <label>
-                                Email *
+                                {{ copy.emailRequired }}
                                 <input v-model="editForm.email" type="email" />
                                 <span v-if="editForm.errors.email" class="field-error">{{ editForm.errors.email }}</span>
                             </label>
                             <label>
-                                Contact Name
-                                <input v-model="editForm.contact_name" type="text" placeholder="Supplier may complete this later" />
+                                {{ copy.contactName }}
+                                <input v-model="editForm.contact_name" type="text" :placeholder="copy.completeLater" />
                             </label>
                             <label>
-                                Phone
-                                <input v-model="editForm.phone" type="text" placeholder="Supplier may complete this later" />
+                                {{ copy.phone }}
+                                <input v-model="editForm.phone" type="text" :placeholder="copy.completeLater" />
                             </label>
                             <label>
-                                Website
+                                {{ copy.website }}
                                 <input v-model="editForm.website_url" type="text" placeholder="https://example.com" />
                             </label>
                         </div>
@@ -405,51 +408,51 @@ function statusLabel(value) {
 
                     <section class="verification-section">
                         <div class="section-heading">
-                            <p class="directory-eyebrow">Category and Service Scope</p>
-                            <h4>Business Activity and Parsed Ports</h4>
-                            <span>These values help pre-fill context only. Supplier will still confirm exact categories, brands, countries, and ports during verification.</span>
+                            <p class="directory-eyebrow">{{ copy.categoryScope }}</p>
+                            <h4>{{ copy.activityPorts }}</h4>
+                            <span>{{ copy.activityHelp }}</span>
                         </div>
                         <label>
-                            Business Activity
-                            <textarea v-model="editForm.business_activity" rows="4" placeholder="Parsed activity or service scope from the external profile"></textarea>
+                            {{ copy.businessActivity }}
+                            <textarea v-model="editForm.business_activity" rows="4" :placeholder="copy.businessActivityPlaceholder"></textarea>
                         </label>
                         <div class="parsed-port-panel">
                             <div>
-                                <strong>Parsed Serviced Ports</strong>
-                                <span>{{ activeServicedPorts.length ? `${activeServicedPorts.length} ports detected` : 'No ports detected from pasted profile' }}</span>
+                                <strong>{{ copy.parsedPorts }}</strong>
+                                <span>{{ activeServicedPorts.length ? copy.portsDetected.replace('{count}', activeServicedPorts.length) : copy.noPortsDetected }}</span>
                             </div>
                             <ul v-if="activeServicedPorts.length">
                                 <li v-for="port in activeServicedPorts" :key="`${port.port}-${port.country}-${port.unlocode || port.raw_port}`" :class="{ unmatched: port.matched === false }">
-                                    {{ port.port }}<span v-if="port.country"> / {{ port.country }}</span><span v-if="port.unlocode"> ({{ port.unlocode }})</span><span v-if="port.matched === false"> - not matched</span>
+                                    {{ port.port }}<span v-if="port.country"> / {{ port.country }}</span><span v-if="port.unlocode"> ({{ port.unlocode }})</span><span v-if="port.matched === false"> - {{ copy.notMatched }}</span>
                                 </li>
                             </ul>
                             <p v-else>
-                                Supplier will select service countries and ports during verification before becoming publicly listed.
+                                {{ copy.supplierPortsLater }}
                             </p>
                         </div>
                     </section>
 
                     <section class="verification-section">
                         <div class="section-heading">
-                            <p class="directory-eyebrow">Location</p>
-                            <h4>Registered Business Location</h4>
-                            <span>These fields are optional for pre-registration and can be completed by the supplier later.</span>
+                            <p class="directory-eyebrow">{{ copy.location }}</p>
+                            <h4>{{ copy.registeredLocation }}</h4>
+                            <span>{{ copy.locationHelp }}</span>
                         </div>
                         <div class="form-grid">
                             <label>
-                                Country
+                                {{ copy.country }}
                                 <input v-model="editForm.country" type="text" />
                             </label>
                             <label>
-                                City
+                                {{ copy.city }}
                                 <input v-model="editForm.city" type="text" />
                             </label>
                             <label>
-                                Postal Code
+                                {{ copy.postalCode }}
                                 <input v-model="editForm.postal_code" type="text" />
                             </label>
                             <label class="span-2">
-                                Address
+                                {{ copy.address }}
                                 <input v-model="editForm.address" type="text" />
                             </label>
                         </div>
@@ -457,42 +460,42 @@ function statusLabel(value) {
 
                     <section class="verification-section">
                         <div class="section-heading">
-                            <p class="directory-eyebrow">Company Overview</p>
-                            <h4>Public Profile Summary</h4>
-                            <span>This can be pre-filled from the external profile, but supplier may edit it before submitting verification.</span>
+                            <p class="directory-eyebrow">{{ copy.companyOverviewEyebrow }}</p>
+                            <h4>{{ copy.publicProfileSummary }}</h4>
+                            <span>{{ copy.overviewHelp }}</span>
                         </div>
                         <label>
-                            Company Overview
+                            {{ copy.companyOverview }}
                             <textarea v-model="editForm.company_overview" rows="6"></textarea>
                         </label>
                     </section>
 
                     <section class="verification-section muted">
                         <div class="section-heading">
-                            <p class="directory-eyebrow">Official Details and Documents</p>
-                            <h4>Supplier Verification Next Step</h4>
-                            <span>Company Registration Number and Company Registration Documents are intentionally not required in this admin onboarding modal. The supplier will complete them after opening the secure account completion link.</span>
+                            <p class="directory-eyebrow">{{ copy.officialDetails }}</p>
+                            <h4>{{ copy.supplierNextStep }}</h4>
+                            <span>{{ copy.supplierNextStepHelp }}</span>
                         </div>
                     </section>
                 </div>
                 <footer>
-                    <button type="button" class="secondary-action" :disabled="isImportSubmitting" @click="activeModal = null">Close</button>
-                    <button type="button" class="primary-action" :disabled="editForm.processing" @click="submitEdit">Save Profile</button>
+                    <button type="button" class="secondary-action" :disabled="isImportSubmitting" @click="activeModal = null">{{ copy.close }}</button>
+                    <button type="button" class="primary-action" :disabled="editForm.processing" @click="submitEdit">{{ copy.saveProfile }}</button>
                 </footer>
             </section>
 
             <section v-if="activeModal === 'delete'" class="modal-card">
                 <header>
-                    <h3>Delete Onboarding Record</h3>
-                    <p>This removes only the onboarding record. It does not delete an already created user account.</p>
+                    <h3>{{ copy.deleteTitle }}</h3>
+                    <p>{{ copy.deleteIntro }}</p>
                 </header>
                 <div class="confirm-box">
                     <strong>{{ activeRecord?.company_name || '-' }}</strong>
                     <span>{{ activeRecord?.email || '-' }}</span>
                 </div>
                 <footer>
-                    <button type="button" class="secondary-action" @click="activeModal = null">Cancel</button>
-                    <button type="button" class="danger-action" :disabled="deleteForm.processing" @click="submitDelete">Confirm Delete</button>
+                    <button type="button" class="secondary-action" @click="activeModal = null">{{ copy.cancel }}</button>
+                    <button type="button" class="danger-action" :disabled="deleteForm.processing" @click="submitDelete">{{ copy.confirmDelete }}</button>
                 </footer>
             </section>
         </div>

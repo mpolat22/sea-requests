@@ -2,6 +2,7 @@
 import { Head } from '@inertiajs/vue3';
 import { computed } from 'vue';
 import MainLayout from '../../Layouts/MainLayout.vue';
+import { useI18n } from '../../lib/i18n';
 
 const props = defineProps({
     isSeller: {
@@ -14,23 +15,22 @@ const props = defineProps({
     },
 });
 
-const copy = {
-    eyebrow: 'Approval Pending',
-};
+const { section } = useI18n();
+const copy = section('auth.approvalPending');
 
 const ui = computed(() => (props.isSeller && props.hasSubmittedSellerVerification
     ? {
-        title: 'Your account will be available after administrator approval.',
-        text: 'Your documents have been received. Your account will be activated after the admin review is completed.',
+        title: copy.value.sellerSubmittedTitle,
+        text: copy.value.sellerSubmittedText,
     }
     : {
-        title: 'Your account is waiting for administrator approval.',
-        text: 'Your account will become available after the admin review is completed.',
+        title: copy.value.defaultTitle,
+        text: copy.value.defaultText,
     }));
 </script>
 
 <template>
-    <Head title="Approval Pending | Sea Requests" />
+    <Head :title="copy.headTitle" />
 
     <MainLayout>
         <section class="notice-shell">

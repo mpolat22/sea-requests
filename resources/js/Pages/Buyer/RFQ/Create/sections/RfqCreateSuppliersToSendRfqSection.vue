@@ -1,5 +1,6 @@
 <script setup>
 import { computed } from 'vue';
+import { useI18n } from '../../../../../lib/i18n';
 
 const props = defineProps({
     isGeneralOnlyEdit: {
@@ -290,6 +291,54 @@ const supplierBrandSearchModel = computed({
 });
 
 const isSupplierTargetedRequest = computed(() => Boolean(props.supplierTarget?.company_name));
+
+const baseCopy = {
+    title: 'Suppliers to Send RFQ',
+    manual: 'Manual',
+    suggested: 'Suggested',
+    helper: 'The request country and ports selected in General Information flow here automatically. Use category, subcategory, and brand only to narrow the supplier match.',
+    suggestedApplied: 'Suggested filters applied.',
+    checkingCoverage: 'Checking approved supplier coverage for the current request scope...',
+    noMatches: 'No approved suppliers match the current RFQ scope yet. You can still submit this RFQ publicly so suppliers can discover it and respond later.',
+    matchesOne: '1 approved supplier matches the current RFQ scope.',
+    matchesMany: '{count} approved suppliers match the current RFQ scope.',
+    selectedSupplier: 'Selected Supplier',
+    supplier: 'Supplier',
+    requestCountry: 'Request Country',
+    requestPorts: 'Request Ports',
+    selectCountries: 'Select Countries',
+    clearFilters: 'Clear Filters',
+    category: 'Category',
+    subcategory: 'Subcategory',
+    brands: 'Brands',
+    search: 'Search...',
+    noCategories: 'No categories found.',
+    selectAll: 'Select all',
+    clearAll: 'Clear all',
+    loadingSubcategories: 'Loading subcategories...',
+    noSubcategories: 'No subcategories found for the selected categories.',
+    loadingBrands: 'Loading brands...',
+    noBrands: 'No brands found.',
+    suggestionsTitle: 'Select Suggested Supplier Filters',
+    suggestionsCopy: 'Review the detected brand, category, and subcategory filters item by item before applying them.',
+    close: 'Close',
+    applySuggested: 'Apply Suggested Filters',
+    checking: 'Checking...',
+    detectedItem: 'Detected item',
+    detectedBrands: 'Detected brands',
+    suggestedCategories: 'Suggested categories',
+    suggestedSubcategories: 'Suggested subcategories',
+};
+
+const { section } = useI18n();
+const translatedCopy = section('buyerCreate.suppliersToSend');
+const copy = new Proxy(baseCopy, {
+    get: (target, key) => translatedCopy.value[key] ?? target[key],
+});
+
+const supplierMatchesLabel = computed(() => (props.supplierMatchesCount === 1
+    ? copy.matchesOne
+    : copy.matchesMany.replace('{count}', props.supplierMatchesCount)));
 </script>
 
 <template>
@@ -297,7 +346,7 @@ const isSupplierTargetedRequest = computed(() => Boolean(props.supplierTarget?.c
         <div class="subsection-surface">
             <div class="section-heading supplier-section-heading">
                 <div class="supplier-title-wrap">
-                    <h2 class="directory-section-title supplier-section-title">Suppliers to Send RFQ</h2>
+                    <h2 class="directory-section-title supplier-section-title">{{ copy.title }}</h2>
                 </div>
                 <div class="items-head-actions supplier-head-actions">
                     <div v-if="!isSupplierTargetedRequest" class="request-mode-toggle supplier-mode-toggle" role="tablist" aria-label="Supplier selection mode">
@@ -321,7 +370,7 @@ const isSupplierTargetedRequest = computed(() => Boolean(props.supplierTarget?.c
                         </button>
                     </div>
                     <p class="import-helper-copy supplier-helper-copy">
-                        {{ isSupplierTargetedRequest ? (props.supplierTarget?.scope_note || props.supplierTarget?.message) : 'The request country and ports selected in General Information flow here automatically. Use category, subcategory, and brand only to narrow the supplier match.' }}
+                        {{ isSupplierTargetedRequest ? (props.supplierTarget?.scope_note || props.supplierTarget?.message) : copy.helper }}
                     </p>
                 </div>
             </div>
@@ -329,14 +378,14 @@ const isSupplierTargetedRequest = computed(() => Boolean(props.supplierTarget?.c
             <fieldset class="section-lock-fieldset" :disabled="props.isGeneralOnlyEdit">
                 <div class="supplier-filter-panel">
                     <p v-if="!isSupplierTargetedRequest && props.supplierSuggestionsApplied" class="supplier-suggestion-applied">
-                        Suggested filters applied.
+                        {{ copy.suggestedApplied }}
                     </p>
 
                     <div
                         v-if="!isSupplierTargetedRequest && props.supplierMatchesLoading"
                         class="supplier-match-feedback supplier-match-feedback-neutral"
                     >
-                        Checking approved supplier coverage for the current request scope...
+                        {{ copy.checkingCoverage }}
                     </div>
 
                     <div
@@ -350,40 +399,40 @@ const isSupplierTargetedRequest = computed(() => Boolean(props.supplierTarget?.c
                         v-else-if="!isSupplierTargetedRequest && props.hasSupplierRequestScope && props.supplierMatchesLoaded && props.supplierMatchesCount === 0"
                         class="supplier-match-feedback supplier-match-feedback-warning"
                     >
-                        No approved suppliers match the current RFQ scope yet. You can still submit this RFQ publicly so suppliers can discover it and respond later.
+                        {{ copy.noMatches }}
                     </div>
 
                     <div
                         v-else-if="!isSupplierTargetedRequest && props.hasSupplierRequestScope && props.supplierMatchesLoaded && props.supplierMatchesCount > 0"
                         class="supplier-match-feedback supplier-match-feedback-success"
                     >
-                        {{ props.supplierMatchesCount }} approved {{ props.supplierMatchesCount === 1 ? 'supplier matches' : 'suppliers match' }} the current RFQ scope.
+                        {{ supplierMatchesLabel }}
                     </div>
 
                     <div v-if="isSupplierTargetedRequest" class="supplier-target-panel">
                         <div class="supplier-target-summary">
-                            <span class="supplier-target-label">Selected Supplier</span>
+                            <span class="supplier-target-label">{{ copy.selectedSupplier }}</span>
                             <strong class="supplier-target-name">{{ props.supplierTarget.company_name }}</strong>
                             <p v-if="props.supplierTarget?.message" class="supplier-target-message">{{ props.supplierTarget.message }}</p>
                         </div>
 
                         <div class="form-grid supplier-filter-grid supplier-target-grid">
                             <div class="field selection-field">
-                                <span>Supplier</span>
+                                <span>{{ copy.supplier }}</span>
                                 <div class="choice-control supplier-scope-summary">
                                     <span>{{ props.supplierTarget.company_name }}</span>
                                 </div>
                             </div>
 
                             <div class="field selection-field">
-                                <span>Request Country</span>
-                                <div class="choice-control supplier-scope-summary" :class="{ 'is-placeholder': !props.selectedCountriesLabel || props.selectedCountriesLabel === 'Select Countries' }">
+                                <span>{{ copy.requestCountry }}</span>
+                                <div class="choice-control supplier-scope-summary" :class="{ 'is-placeholder': !props.selectedCountriesLabel || props.selectedCountriesLabel === copy.selectCountries }">
                                     <span>{{ props.selectedCountriesLabel }}</span>
                                 </div>
                             </div>
 
                             <div class="field selection-field">
-                                <span>Request Ports</span>
+                                <span>{{ copy.requestPorts }}</span>
                                 <div class="choice-control supplier-scope-summary" :class="{ 'is-placeholder': !props.selectedPortsCount }">
                                     <span>{{ props.selectedPortsLabel }}</span>
                                 </div>
@@ -399,27 +448,27 @@ const isSupplierTargetedRequest = computed(() => Boolean(props.supplierTarget?.c
                                 class="secondary-button compact-button"
                                 @click="props.clearSupplierFilters"
                             >
-                                Clear Filters
+                                {{ copy.clearFilters }}
                             </button>
                         </div>
 
                         <div class="form-grid supplier-filter-grid">
                             <div class="field selection-field">
-                                <span>Request Country</span>
+                                <span>{{ copy.requestCountry }}</span>
                                 <div class="choice-control supplier-scope-summary">
                                     <span>{{ props.selectedCountriesLabel }}</span>
                                 </div>
                             </div>
 
                             <div class="field selection-field">
-                                <span>Request Ports</span>
+                                <span>{{ copy.requestPorts }}</span>
                                 <div class="choice-control supplier-scope-summary" :class="{ 'is-placeholder': !props.selectedPortsCount }">
                                     <span>{{ props.selectedPortsLabel }}</span>
                                 </div>
                             </div>
 
                             <div :ref="props.setSupplierCategoryMenuRef" class="field selection-field">
-                                <span>Category</span>
+                                <span>{{ copy.category }}</span>
                                 <div class="dropdown-shell">
                                     <button
                                         type="button"
@@ -439,7 +488,7 @@ const isSupplierTargetedRequest = computed(() => Boolean(props.supplierTarget?.c
                                                 v-model="supplierCategorySearchModel"
                                                 type="text"
                                                 class="dropdown-search-input"
-                                                placeholder="Search..."
+                                                :placeholder="copy.search"
                                             />
                                         </div>
                                         <label
@@ -454,13 +503,13 @@ const isSupplierTargetedRequest = computed(() => Boolean(props.supplierTarget?.c
                                             />
                                             <span>{{ category.name }}</span>
                                         </label>
-                                        <p v-if="!props.filteredSupplierCategoryOptions.length" class="selector-empty">No categories found.</p>
+                                        <p v-if="!props.filteredSupplierCategoryOptions.length" class="selector-empty">{{ copy.noCategories }}</p>
                                     </div>
                                 </div>
                             </div>
 
                             <div :ref="props.setSupplierSubcategoryMenuRef" class="field selection-field">
-                                <span>Subcategory</span>
+                                <span>{{ copy.subcategory }}</span>
                                 <div class="dropdown-shell">
                                     <button
                                         type="button"
@@ -481,7 +530,7 @@ const isSupplierTargetedRequest = computed(() => Boolean(props.supplierTarget?.c
                                                 v-model="supplierSubcategorySearchModel"
                                                 type="text"
                                                 class="dropdown-search-input"
-                                                placeholder="Search..."
+                                                :placeholder="copy.search"
                                                 :disabled="props.supplierSubcategoryOptionsLoading"
                                             />
                                         </div>
@@ -494,7 +543,7 @@ const isSupplierTargetedRequest = computed(() => Boolean(props.supplierTarget?.c
                                             </button>
                                         </div>
                                         <p v-if="props.supplierSubcategoryOptionsLoading" class="selector-empty">
-                                            Loading subcategories...
+                                            {{ copy.loadingSubcategories }}
                                         </p>
                                         <p v-else-if="props.supplierSubcategoryOptionsError" class="selector-empty">
                                             {{ props.supplierSubcategoryOptionsError }}
@@ -526,13 +575,13 @@ const isSupplierTargetedRequest = computed(() => Boolean(props.supplierTarget?.c
                                                 </div>
                                             </section>
                                         </div>
-                                        <p v-if="!props.supplierSubcategoryOptionsLoading && !props.supplierSubcategoryOptionsError && !props.filteredSupplierSubcategoryOptions.length" class="selector-empty">No subcategories found for the selected categories.</p>
+                                        <p v-if="!props.supplierSubcategoryOptionsLoading && !props.supplierSubcategoryOptionsError && !props.filteredSupplierSubcategoryOptions.length" class="selector-empty">{{ copy.noSubcategories }}</p>
                                     </div>
                                 </div>
                             </div>
 
                             <div :ref="props.setSupplierBrandMenuRef" class="field selection-field">
-                                <span>Brands</span>
+                                <span>{{ copy.brands }}</span>
                                 <div class="dropdown-shell">
                                     <button
                                         type="button"
@@ -552,12 +601,12 @@ const isSupplierTargetedRequest = computed(() => Boolean(props.supplierTarget?.c
                                                 v-model="supplierBrandSearchModel"
                                                 type="text"
                                                 class="dropdown-search-input"
-                                                placeholder="Search..."
+                                                :placeholder="copy.search"
                                                 :disabled="props.supplierBrandOptionsLoading"
                                             />
                                         </div>
                                         <p v-if="props.supplierBrandOptionsLoading" class="selector-empty">
-                                            Loading brands...
+                                            {{ copy.loadingBrands }}
                                         </p>
                                         <p v-else-if="props.supplierBrandOptionsError" class="selector-empty">
                                             {{ props.supplierBrandOptionsError }}
@@ -576,7 +625,7 @@ const isSupplierTargetedRequest = computed(() => Boolean(props.supplierTarget?.c
                                                 <span>{{ brand.name }}</span>
                                             </label>
                                         </template>
-                                        <p v-if="!props.supplierBrandOptionsLoading && !props.supplierBrandOptionsError && !props.filteredSupplierBrandOptions.length" class="selector-empty">No brands found.</p>
+                                        <p v-if="!props.supplierBrandOptionsLoading && !props.supplierBrandOptionsError && !props.filteredSupplierBrandOptions.length" class="selector-empty">{{ copy.noBrands }}</p>
                                     </div>
                                 </div>
                             </div>
@@ -592,9 +641,9 @@ const isSupplierTargetedRequest = computed(() => Boolean(props.supplierTarget?.c
                     <div class="import-preview-card">
                         <div class="import-preview-head">
                             <div>
-                                <h3 class="directory-section-title import-preview-main-title">Select Suggested Supplier Filters</h3>
+                                <h3 class="directory-section-title import-preview-main-title">{{ copy.suggestionsTitle }}</h3>
                                 <p class="import-preview-copy">
-                                    {{ props.supplierSuggestions?.summary || props.supplierSuggestions?.empty_message || 'Review the detected brand, category, and subcategory filters item by item before applying them.' }}
+                                    {{ props.supplierSuggestions?.summary || props.supplierSuggestions?.empty_message || copy.suggestionsCopy }}
                                 </p>
                             </div>
                             <div class="import-preview-actions">
@@ -607,7 +656,7 @@ const isSupplierTargetedRequest = computed(() => Boolean(props.supplierTarget?.c
                                     class="primary-button compact-button"
                                     @click="props.applySupplierSuggestions"
                                 >
-                                    Apply Suggested Filters
+                                    {{ copy.applySuggested }}
                                 </button>
                             </div>
                         </div>
@@ -618,7 +667,7 @@ const isSupplierTargetedRequest = computed(() => Boolean(props.supplierTarget?.c
 
                         <div class="import-preview-surface supplier-suggestion-surface">
                             <div v-if="props.supplierSuggestionsLoading" class="selector-empty">
-                                Checking...
+                                {{ copy.checking }}
                             </div>
                             <p v-else-if="props.supplierSuggestionsError" class="import-error">{{ props.supplierSuggestionsError }}</p>
                             <p v-else-if="props.supplierSuggestions?.empty_message" class="selector-empty">
@@ -634,10 +683,10 @@ const isSupplierTargetedRequest = computed(() => Boolean(props.supplierTarget?.c
                                     </colgroup>
                                     <thead>
                                         <tr>
-                                            <th>Detected item</th>
-                                            <th>Detected brands</th>
-                                            <th>Suggested categories</th>
-                                            <th>Suggested subcategories</th>
+                                            <th>{{ copy.detectedItem }}</th>
+                                            <th>{{ copy.detectedBrands }}</th>
+                                            <th>{{ copy.suggestedCategories }}</th>
+                                            <th>{{ copy.suggestedSubcategories }}</th>
                                         </tr>
                                     </thead>
                                     <tbody>

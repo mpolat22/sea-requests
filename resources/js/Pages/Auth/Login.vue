@@ -3,6 +3,7 @@ import { Head, Link, useForm } from '@inertiajs/vue3';
 import AuthPasswordInput from '../../Components/AuthPasswordInput.vue';
 import MainLayout from '../../Layouts/MainLayout.vue';
 import { normalizeEmailInput } from '../../lib/normalizeEmailInput';
+import { useI18n } from '../../lib/i18n';
 
 const emailPattern = /^[^\s@]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/;
 
@@ -13,20 +14,8 @@ const props = defineProps({
     },
 });
 
-const copy = {
-    eyebrow: 'Access your account',
-    title: 'Log in to Sea Requests',
-    text: 'Review your RFQs, supplier activity, and business profile from one place.',
-    email: 'Email address',
-    emailPlaceholder: 'name@company.com',
-    password: 'Password',
-    passwordPlaceholder: 'Enter your password',
-    remember: 'Keep me signed in',
-    forgot: 'Forgot password?',
-    button: 'Log in',
-    registerPrompt: "Don't have an account yet?",
-    registerLink: 'Create an account',
-};
+const { section } = useI18n();
+const copy = section('auth.login');
 
 const form = useForm({
     email: '',
@@ -49,7 +38,7 @@ const submit = () => {
 </script>
 
 <template>
-    <Head title="Login | Sea Requests">
+    <Head :title="copy.headTitle">
         <meta head-key="robots" name="robots" content="noindex, nofollow" />
     </Head>
 

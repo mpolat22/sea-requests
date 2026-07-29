@@ -1,4 +1,5 @@
 <script setup>
+import { useI18n } from '../../../lib/i18n';
 import { computed, defineAsyncComponent, ref, watch } from 'vue';
 import { Link, router } from '@inertiajs/vue3';
 import AdminDashboardShell from './Shell.vue';
@@ -27,7 +28,7 @@ const isModalLoading = ref(false);
 const modalLoadError = ref('');
 const modalRequestToken = ref(0);
 
-const copy = {
+const baseCopy = {
     title: 'Admin Dashboard',
     tabTitle: 'Orders',
     tabText: 'Manage every confirmed supplier-based order, intervene in order information, invoices, and payment workflow when a deal needs admin support.',
@@ -61,6 +62,24 @@ const copy = {
     emptySearchText: 'Try a different keyword or clear the search and try again.',
     noData: '-',
 };
+
+const { section } = useI18n();
+const translatedCopy = section('admin.orders');
+const mergedCopy = computed(() => ({
+    ...baseCopy,
+    ...translatedCopy.value,
+    table: {
+        ...baseCopy.table,
+        ...(translatedCopy.value.table ?? {}),
+    },
+    requestType: {
+        ...baseCopy.requestType,
+        ...(translatedCopy.value.requestType ?? {}),
+    },
+}));
+const copy = new Proxy(baseCopy, {
+    get: (target, key) => mergedCopy.value[key] ?? target[key],
+});
 
 const orders = computed(() => props.ordersTable.data ?? []);
 const meta = computed(() => props.ordersTable.meta ?? {});
@@ -119,12 +138,12 @@ const statusTone = (status) => {
 
 const requestTypeLabel = (order) => {
     if (order?.is_private_request) {
-        return 'Private Request';
+        return copy.requestType.private;
     }
 
     return order?.request_type === 'service_request'
-        ? 'Service Request'
-        : 'Spare Parts';
+        ? copy.requestType.service_request
+        : copy.requestType.spare_parts;
 };
 
 const changeRowsPerPage = (event) => {

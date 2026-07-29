@@ -1,4 +1,5 @@
 <script setup>
+import { useI18n } from '../../../lib/i18n';
 import { computed, ref } from 'vue';
 import { Link, router } from '@inertiajs/vue3';
 import SupplierDashboardShell from './Shell.vue';
@@ -26,7 +27,7 @@ const rowsPerPage = ref(10);
 const currentPage = ref(1);
 const deleteModalReview = ref(null);
 
-const copy = {
+const baseCopy = {
     title: 'Supplier Dashboard',
     tabTitle: 'Reviews',
     tabText: 'Track buyer reviews for confirmed work here. You can reply from the Reviews area on your supplier profile.',
@@ -61,6 +62,12 @@ const copy = {
     prev: 'Prev',
     next: 'Next',
 };
+
+const { section } = useI18n();
+const translatedCopy = section('supplier.reviews');
+const copy = new Proxy(baseCopy, {
+    get: (target, key) => translatedCopy.value[key] ?? target[key],
+});
 
 const formatDate = (value) => {
     if (!value) return '-';

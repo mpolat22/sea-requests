@@ -1,4 +1,5 @@
 <script setup>
+import { useI18n } from '../../../lib/i18n';
 import { computed } from 'vue';
 import { Head, Link } from '@inertiajs/vue3';
 import MainLayout from '../../../Layouts/MainLayout.vue';
@@ -26,7 +27,7 @@ const props = defineProps({
     },
 });
 
-const copy = computed(() => ({
+const baseCopy = {
     eyebrow: 'Control center',
     subtitle: 'Monitor users, supplier verification, RFQs, and order workflow from one admin workspace.',
     usersTab: 'Users',
@@ -34,6 +35,13 @@ const copy = computed(() => ({
     rfqsTab: 'RFQs',
     ordersTab: 'Orders',
     onboardingTab: 'Onboarding',
+};
+
+const { section } = useI18n();
+const translatedCopy = section('admin.shell');
+const copy = computed(() => ({
+    ...baseCopy,
+    ...translatedCopy.value,
 }));
 
 const usersTabLabel = computed(() => `${copy.value.usersTab}(${Number(props.dashboard.navigation?.users_count ?? 0)})`);

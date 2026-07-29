@@ -1,4 +1,5 @@
 <script setup>
+import { useI18n } from '../../../../../lib/i18n';
 const props = defineProps({
     form: {
         type: Object,
@@ -189,12 +190,76 @@ const props = defineProps({
         required: true,
     },
 });
+
+const baseCopy = {
+    title: 'Items to Quote',
+    spareParts: 'Spare Parts',
+    serviceRequest: 'Service Request',
+    uploadHelp: 'Upload your own RFQ file in any usual company format. We will try to map it into this form automatically.',
+    readingFile: 'Reading file...',
+    uploadImport: 'Upload PDF / Image / Excel / CSV',
+    importPreview: 'Import Preview',
+    importReady: 'Import file is ready for review.',
+    importedItems: '{count} imported items.',
+    discard: 'Discard',
+    openPreview: 'Open Preview',
+    product: 'Product',
+    partNo: 'Part No',
+    manufacturer: 'Manufacturer',
+    modelType: 'MFG Model / Type',
+    catalogCode: 'Catalog Code',
+    serialNumber: 'Serial Number',
+    drawingNumber: 'Drawing Number',
+    qty: 'Qty',
+    unit: 'Unit',
+    rob: 'ROB',
+    quality: 'Quality',
+    comments: 'Comments',
+    files: 'Files',
+    action: 'Action',
+    select: 'Select',
+    uploadFiles: 'Upload Files',
+    oneFileSelected: '1 file selected',
+    filesSelected: '{count} files selected',
+    removeItem: 'Remove item',
+    addItem: 'Add item',
+    titleLabel: 'Title',
+    titlePlaceholder: 'e.g. Drydock maintenance support',
+    titleNote: 'Keep it within {max} characters. {count}/{max} used.',
+    description: 'Description',
+    descriptionPlaceholder: 'Describe the scope, preferred timeline, and key requirements',
+    descriptionNote: 'Use at least {min} characters. {count}/{min} characters.',
+};
+
+const { section } = useI18n();
+const translatedCopy = section('buyerCreate.itemsToQuote');
+const copy = new Proxy(baseCopy, {
+    get: (target, key) => translatedCopy.value[key] ?? target[key],
+});
+
+const fileSelectionLabel = (files) => {
+    const count = Array.isArray(files) ? files.length : 0;
+
+    if (count === 0) {
+        return copy.uploadFiles;
+    }
+
+    return count === 1 ? copy.oneFileSelected : copy.filesSelected.replace('{count}', count);
+};
+
+const serviceTitleNote = (count, max) => copy.titleNote
+    .replaceAll('{count}', count)
+    .replaceAll('{max}', max);
+
+const serviceDescriptionNote = (count, min) => copy.descriptionNote
+    .replaceAll('{count}', count)
+    .replaceAll('{min}', min);
 </script>
 
 <template>
     <div class="subsection-surface">
         <div class="items-head">
-            <h2 class="directory-section-title">Items to Quote</h2>
+            <h2 class="directory-section-title">{{ copy.title }}</h2>
             <div class="items-head-actions">
                 <div v-if="!props.isEditMode && !props.requestTypeLocked" class="request-mode-toggle" role="tablist" aria-label="Request type">
                     <button
@@ -215,7 +280,7 @@ const props = defineProps({
                     </button>
                 </div>
                 <template v-if="!props.isServiceRequest && props.canEditRequestContent">
-                    <p class="import-helper-copy">Upload your own RFQ file in any usual company format. We will try to map it into this form automatically.</p>
+                    <p class="import-helper-copy">{{ copy.uploadHelp }}</p>
                     <input
                         :ref="props.setImportFileInputRef"
                         class="import-file-input"
@@ -228,9 +293,9 @@ const props = defineProps({
                             <svg class="import-spinner" viewBox="0 0 20 20" aria-hidden="true">
                                 <circle cx="10" cy="10" r="7" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-dasharray="28 18" />
                             </svg>
-                            <span>Reading file...</span>
+                            <span>{{ copy.readingFile }}</span>
                         </span>
-                        <span v-else>Upload PDF / Image / Excel / CSV</span>
+                        <span v-else>{{ copy.uploadImport }}</span>
                     </button>
                 </template>
             </div>
@@ -245,10 +310,10 @@ const props = defineProps({
 
             <section v-if="!props.isServiceRequest && props.importPreview" class="import-preview-banner">
                 <div>
-                    <h3 class="import-preview-banner-title">Import Preview</h3>
+                    <h3 class="import-preview-banner-title">{{ copy.importPreview }}</h3>
                     <p class="import-preview-banner-copy">
-                        Import file is ready for review.
-                        {{ props.importPreview.summary?.items_count ?? 0 }} imported items.
+                        {{ copy.importReady }}
+                        {{ copy.importedItems.replace('{count}', props.importPreview.summary?.items_count ?? 0) }}
                     </p>
                 </div>
                 <div class="import-preview-actions">
@@ -265,20 +330,20 @@ const props = defineProps({
                 <div class="items-scroll-track">
                     <div class="item-table-head" aria-hidden="true">
                         <span>#</span>
-                        <span>Product<span class="required-star">*</span></span>
-                        <span>Part No</span>
-                        <span>Manufacturer</span>
-                        <span>MFG Model / Type</span>
-                        <span>Catalog Code</span>
-                        <span>Serial Number</span>
-                        <span>Drawing Number</span>
-                        <span>Qty<span class="required-star">*</span></span>
-                        <span>Unit<span class="required-star">*</span></span>
-                        <span>ROB</span>
-                        <span>Quality</span>
-                        <span>Comments</span>
-                        <span>Files</span>
-                        <span class="item-action-head">Action</span>
+                        <span>{{ copy.product }}<span class="required-star">*</span></span>
+                        <span>{{ copy.partNo }}</span>
+                        <span>{{ copy.manufacturer }}</span>
+                        <span>{{ copy.modelType }}</span>
+                        <span>{{ copy.catalogCode }}</span>
+                        <span>{{ copy.serialNumber }}</span>
+                        <span>{{ copy.drawingNumber }}</span>
+                        <span>{{ copy.qty }}<span class="required-star">*</span></span>
+                        <span>{{ copy.unit }}<span class="required-star">*</span></span>
+                        <span>{{ copy.rob }}</span>
+                        <span>{{ copy.quality }}</span>
+                        <span>{{ copy.comments }}</span>
+                        <span>{{ copy.files }}</span>
+                        <span class="item-action-head">{{ copy.action }}</span>
                     </div>
 
                     <article v-for="(item, index) in props.form.items" :key="index" class="item-card">
@@ -286,45 +351,45 @@ const props = defineProps({
                             <div class="item-row-index" aria-label="Item number">{{ index + 1 }}</div>
 
                             <label class="field item-mobile-field">
-                                <span>Product <span class="required-star">*</span></span>
+                                <span>{{ copy.product }} <span class="required-star">*</span></span>
                                 <input
                                     v-model="item.product_name"
                                     :class="{ 'has-error': props.hasItemError(index, 'product_name') }"
                                     type="text"
-                                    placeholder="Product"
+                                    :placeholder="copy.product"
                                     @input="props.clearFieldErrorIfValid(props.itemKey(index, 'product_name'), props.validateRequiredText(item.product_name))"
                                 />
                                 <small v-if="props.hasItemError(index, 'product_name')" class="field-error">{{ props.getItemError(index, 'product_name') }}</small>
                             </label>
 
                             <label class="field item-mobile-field">
-                                <span>Part No</span>
-                                <input v-model="item.part_no" type="text" placeholder="Part No" />
+                                <span>{{ copy.partNo }}</span>
+                                <input v-model="item.part_no" type="text" :placeholder="copy.partNo" />
                             </label>
 
                             <label class="field item-mobile-field">
-                                <span>Manufacturer</span>
-                                <input v-model="item.manufacturer" type="text" placeholder="Manufacturer" />
+                                <span>{{ copy.manufacturer }}</span>
+                                <input v-model="item.manufacturer" type="text" :placeholder="copy.manufacturer" />
                             </label>
 
                             <label class="field item-mobile-field">
-                                <span>MFG Model / Type</span>
-                                <input v-model="item.model_type" type="text" placeholder="MFG Model / Type" />
+                                <span>{{ copy.modelType }}</span>
+                                <input v-model="item.model_type" type="text" :placeholder="copy.modelType" />
                             </label>
 
                             <label class="field item-mobile-field">
-                                <span>Catalog Code</span>
+                                <span>{{ copy.catalogCode }}</span>
                                 <input v-model="item.catalog_code" type="text" placeholder="IMPA / ISSA / Unitor / Nitor code" />
                             </label>
 
                             <label class="field item-mobile-field">
-                                <span>Serial Number</span>
-                                <input v-model="item.serial_number" type="text" placeholder="Serial Number" />
+                                <span>{{ copy.serialNumber }}</span>
+                                <input v-model="item.serial_number" type="text" :placeholder="copy.serialNumber" />
                             </label>
 
                             <label class="field item-mobile-field">
-                                <span>Drawing Number</span>
-                                <input v-model="item.drawing_number" type="text" placeholder="Drawing Number" />
+                                <span>{{ copy.drawingNumber }}</span>
+                                <input v-model="item.drawing_number" type="text" :placeholder="copy.drawingNumber" />
                             </label>
 
                             <label class="field item-mobile-field">
@@ -335,7 +400,7 @@ const props = defineProps({
                                     type="number"
                                     min="0.01"
                                     step="0.01"
-                                    placeholder="Qty"
+                                    :placeholder="copy.qty"
                                     @input="props.clearFieldErrorIfValid(props.itemKey(index, 'quantity'), props.validateQuantity(item.quantity))"
                                 />
                                 <small v-if="props.hasItemError(index, 'quantity')" class="field-error">{{ props.getItemError(index, 'quantity') }}</small>
@@ -348,21 +413,21 @@ const props = defineProps({
                                     :class="{ 'has-error': props.hasItemError(index, 'unit') }"
                                     @change="props.clearFieldErrorIfValid(props.itemKey(index, 'unit'), props.validateRequiredSelect(item.unit))"
                                 >
-                                    <option disabled value="">Select</option>
+                                    <option disabled value="">{{ copy.select }}</option>
                                     <option v-for="unit in props.unitOptions" :key="unit" :value="unit">{{ unit }}</option>
                                 </select>
                                 <small v-if="props.hasItemError(index, 'unit')" class="field-error">{{ props.getItemError(index, 'unit') }}</small>
                             </label>
 
                             <label class="field item-mobile-field">
-                                <span>ROB</span>
-                                <input v-model="item.rob" type="number" min="0" step="0.01" placeholder="ROB" />
+                                <span>{{ copy.rob }}</span>
+                                <input v-model="item.rob" type="number" min="0" step="0.01" :placeholder="copy.rob" />
                             </label>
 
                             <label class="field item-mobile-field">
-                                <span>Quality</span>
+                                <span>{{ copy.quality }}</span>
                                 <select v-model="item.quality" :class="{ 'has-error': props.hasItemError(index, 'quality') }">
-                                    <option disabled value="">Select</option>
+                                    <option disabled value="">{{ copy.select }}</option>
                                     <option v-for="quality in props.qualityOptions" :key="quality" :value="quality">
                                         {{ props.formatOptionLabel(quality) }}
                                     </option>
@@ -371,15 +436,15 @@ const props = defineProps({
                             </label>
 
                             <label class="field item-mobile-field">
-                                <span>Comments</span>
-                                <input v-model="item.comments" type="text" placeholder="Comments" />
+                                <span>{{ copy.comments }}</span>
+                                <input v-model="item.comments" type="text" :placeholder="copy.comments" />
                             </label>
 
                             <label class="field item-mobile-field">
-                                <span>Files</span>
+                                <span>{{ copy.files }}</span>
                                 <div class="file-upload-field">
                                     <button type="button" class="file-upload-trigger" :class="{ 'has-error': props.hasItemError(index, 'files') }" @click="props.openFilePicker(index)">
-                                        {{ Array.isArray(item.files) && item.files.length ? `${item.files.length} file${item.files.length === 1 ? '' : 's'} selected` : 'Upload Files' }}
+                                        {{ fileSelectionLabel(item.files) }}
                                     </button>
                                     <input
                                         :ref="props.setFileInputRef(index)"
@@ -409,8 +474,8 @@ const props = defineProps({
                                 <button
                                     type="button"
                                     class="item-icon-button item-remove-button"
-                                    title="Remove item"
-                                    aria-label="Remove item"
+                                    :title="copy.removeItem"
+                                    :aria-label="copy.removeItem"
                                     @click="props.removeItem(index)"
                                 >
                                     <svg viewBox="0 0 20 20" aria-hidden="true">
@@ -422,8 +487,8 @@ const props = defineProps({
                                     v-if="index === props.form.items.length - 1"
                                     type="button"
                                     class="item-icon-button item-add-button"
-                                    title="Add item"
-                                    aria-label="Add item"
+                                    :title="copy.addItem"
+                                    :aria-label="copy.addItem"
                                     @click="props.addItem"
                                 >
                                     <svg viewBox="0 0 20 20" aria-hidden="true">
@@ -440,38 +505,38 @@ const props = defineProps({
                 <div class="service-request-card">
                     <div class="service-request-stack">
                         <label class="field field-span-2">
-                            <span>Title <span class="required-star">*</span></span>
+                            <span>{{ copy.titleLabel }} <span class="required-star">*</span></span>
                             <input
                                 v-model="props.form.service_title"
                                 :class="{ 'has-error': props.hasError('service_title') }"
                                 type="text"
                                 :maxlength="props.serviceTitleMaxCharacters"
-                                placeholder="e.g. Drydock maintenance support"
+                                :placeholder="copy.titlePlaceholder"
                                 @input="props.clearFieldErrorIfValid('service_title', props.validateServiceTitle(props.form.service_title))"
                             />
                             <small class="field-note">
-                                Keep it within {{ props.serviceTitleMaxCharacters }} characters. {{ props.serviceTitleCharacterCount }}/{{ props.serviceTitleMaxCharacters }} used.
+                                {{ serviceTitleNote(props.serviceTitleCharacterCount, props.serviceTitleMaxCharacters) }}
                             </small>
                             <small v-if="props.hasError('service_title')" class="field-error">{{ props.getError('service_title') }}</small>
                         </label>
 
                         <label class="field field-span-2 service-request-description">
-                            <span>Description <span class="required-star">*</span></span>
+                            <span>{{ copy.description }} <span class="required-star">*</span></span>
                             <textarea
                                 v-model="props.form.service_description"
                                 :class="{ 'has-error': props.hasError('service_description') }"
                                 rows="8"
-                                placeholder="Describe the scope, preferred timeline, and key requirements"
+                                :placeholder="copy.descriptionPlaceholder"
                                 @input="props.clearFieldErrorIfValid('service_description', props.validateServiceDescription(props.form.service_description))"
                             ></textarea>
                             <small class="field-note">
-                                Use at least {{ props.serviceDescriptionMinCharacters }} characters. {{ props.serviceDescriptionCharacterCount }}/{{ props.serviceDescriptionMinCharacters }} characters.
+                                {{ serviceDescriptionNote(props.serviceDescriptionCharacterCount, props.serviceDescriptionMinCharacters) }}
                             </small>
                             <small v-if="props.hasError('service_description')" class="field-error">{{ props.getError('service_description') }}</small>
                         </label>
 
                         <label class="field field-span-2">
-                            <span>Files</span>
+                            <span>{{ copy.files }}</span>
                             <div class="file-upload-field service-request-files">
                                 <button type="button" class="file-upload-trigger" :class="{ 'has-error': props.hasError('service_files') }" @click="props.openServiceFilePicker">
                                     {{ props.serviceFileTriggerLabel }}

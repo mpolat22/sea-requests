@@ -1,5 +1,6 @@
 <script setup>
 import { computed } from 'vue';
+import { useI18n } from '../../../lib/i18n';
 import { Head, Link } from '@inertiajs/vue3';
 import MainLayout from '../../../Layouts/MainLayout.vue';
 
@@ -26,7 +27,10 @@ const props = defineProps({
     },
 });
 
-const copy = computed(() => ({
+const { section } = useI18n();
+const translatedCopy = section('supplier.shell');
+
+const baseCopy = {
     eyebrow: 'Management area',
     subtitle: 'Manage your business profile and track the requests that reach you from this screen.',
     rejectionTitle: 'Your application needs updates',
@@ -37,9 +41,14 @@ const copy = computed(() => ({
     incomingTab: 'Incoming Requests',
     ordersTab: 'Orders',
     reviewsTab: 'Reviews',
+};
+
+const copy = computed(() => ({
+    ...baseCopy,
+    ...translatedCopy.value,
 }));
 
-const fieldLabels = computed(() => ({
+const baseFieldLabels = {
     company_name: 'Business name',
     service_category_ids: 'Category and subcategory',
     service_brand_ids: 'Brands',
@@ -66,6 +75,11 @@ const fieldLabels = computed(() => ({
     registration_number: 'Registration number',
     company_logo: 'Logo',
     company_registration_documents: 'Company registration documents',
+};
+
+const fieldLabels = computed(() => ({
+    ...baseFieldLabels,
+    ...(translatedCopy.value.fields ?? {}),
 }));
 
 const hiddenFieldLabels = new Set(['tax_certificate_documents', 'service_authorization_documents']);

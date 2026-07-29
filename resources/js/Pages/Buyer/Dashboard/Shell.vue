@@ -1,5 +1,6 @@
 <script setup>
 import { computed } from 'vue';
+import { useI18n } from '../../../lib/i18n';
 import { Head, Link } from '@inertiajs/vue3';
 import MainLayout from '../../../Layouts/MainLayout.vue';
 
@@ -26,13 +27,8 @@ const props = defineProps({
     },
 });
 
-const copy = computed(() => ({
-    eyebrow: 'Procurement center',
-    subtitle: 'Manage your RFQ flow, buyer-side reviews, and supplier-facing procurement activity from one place.',
-    requestsTab: 'My RFQs',
-    ordersTab: 'Orders',
-    reviewsTab: 'Reviews',
-}));
+const { section } = useI18n();
+const copy = section('buyer.dashboard.shell');
 
 const requestsTabLabel = computed(() => `${copy.value.requestsTab}(${Number(props.dashboard.navigation?.requests_count ?? 0)})`);
 const ordersTabLabel = computed(() => `${copy.value.ordersTab}(${Number(props.dashboard.navigation?.orders_count ?? 0)})`);

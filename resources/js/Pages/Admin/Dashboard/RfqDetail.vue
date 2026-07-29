@@ -1,4 +1,5 @@
 <script setup>
+import { useI18n } from '../../../lib/i18n';
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue';
 import { Link, router } from '@inertiajs/vue3';
 import AdminDashboardShell from './Shell.vue';
@@ -22,7 +23,7 @@ const props = defineProps({
 
 const rfq = props.rfq;
 
-const copy = {
+const baseCopy = {
     title: 'RFQ Detail',
     eyebrow: 'Admin RFQ Detail',
     heroSparePartsTitle: 'Spare Parts RFQ',
@@ -167,6 +168,44 @@ const copy = {
         service_request: 'Service Request',
     },
 };
+
+const { section } = useI18n();
+const translatedCopy = section('admin.rfqDetail');
+const mergedCopy = computed(() => ({
+    ...baseCopy,
+    ...translatedCopy.value,
+    table: {
+        ...baseCopy.table,
+        ...(translatedCopy.value.table ?? {}),
+    },
+    offerTable: {
+        ...baseCopy.offerTable,
+        ...(translatedCopy.value.offerTable ?? {}),
+    },
+    recipientTable: {
+        ...baseCopy.recipientTable,
+        ...(translatedCopy.value.recipientTable ?? {}),
+    },
+    labels: {
+        ...baseCopy.labels,
+        ...(translatedCopy.value.labels ?? {}),
+    },
+    statuses: {
+        ...baseCopy.statuses,
+        ...(translatedCopy.value.statuses ?? {}),
+    },
+    priority: {
+        ...baseCopy.priority,
+        ...(translatedCopy.value.priority ?? {}),
+    },
+    requestType: {
+        ...baseCopy.requestType,
+        ...(translatedCopy.value.requestType ?? {}),
+    },
+}));
+const copy = new Proxy(baseCopy, {
+    get: (target, key) => mergedCopy.value[key] ?? target[key],
+});
 
 const isSpareParts = computed(() => rfq.request_type === 'spare_parts');
 const deleteModalOpen = ref(false);
