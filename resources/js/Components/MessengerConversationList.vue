@@ -1,5 +1,7 @@
 <script setup>
+import { computed } from 'vue';
 import { Link } from '@inertiajs/vue3';
+import { useI18n } from '../lib/i18n';
 
 const props = defineProps({
     conversations: {
@@ -21,14 +23,10 @@ const props = defineProps({
 });
 
 const emit = defineEmits(['select']);
+const { locale, section } = useI18n();
+const copy = section('layout.messenger');
 
-const copy = {
-    title: 'Messenger',
-    empty: 'No order conversation is available yet.',
-    loading: 'Loading conversations...',
-    openProfile: 'Open profile',
-    openOrder: 'Open order',
-};
+const errorText = computed(() => (props.error === 'messenger-list-load-failed' ? copy.value.listLoadFailed : props.error));
 
 const formatTime = (value) => {
     if (!value) return '';
@@ -36,7 +34,7 @@ const formatTime = (value) => {
     const date = new Date(value);
     if (Number.isNaN(date.getTime())) return '';
 
-    return new Intl.DateTimeFormat('en-GB', {
+    return new Intl.DateTimeFormat(locale.value === 'zh' ? 'zh-CN' : 'en-GB', {
         day: '2-digit',
         month: '2-digit',
         hour: '2-digit',
@@ -52,15 +50,15 @@ const formatTime = (value) => {
         </div>
 
         <div v-if="loading" class="messenger-list-state">
-            {{ copy.loading }}
+            {{ copy.loadingList }}
         </div>
 
         <div v-else-if="error" class="messenger-list-state messenger-list-error">
-            {{ error }}
+            {{ errorText }}
         </div>
 
         <div v-else-if="!conversations.length" class="messenger-list-state">
-            {{ copy.empty }}
+            {{ copy.listEmpty }}
         </div>
 
         <div v-else class="messenger-list-body">

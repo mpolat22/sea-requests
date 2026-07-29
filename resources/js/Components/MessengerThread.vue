@@ -2,6 +2,7 @@
 import { computed, nextTick, ref, watch } from 'vue';
 import { Link } from '@inertiajs/vue3';
 import MessengerComposer from './MessengerComposer.vue';
+import { useI18n } from '../lib/i18n';
 
 const props = defineProps({
     conversation: {
@@ -30,14 +31,10 @@ const props = defineProps({
     },
 });
 
-const copy = {
-    empty: 'Select an order conversation to start chatting.',
-    loading: 'Loading conversation...',
-    files: 'Attachment',
-    noMessages: 'No messages yet. Start the conversation here.',
-    openProfile: 'Open profile',
-    openRfq: 'Open RFQ',
-};
+const { locale, section } = useI18n();
+const copy = section('layout.messenger');
+
+const errorText = computed(() => (props.error === 'messenger-conversation-load-failed' ? copy.value.conversationLoadFailed : props.error));
 
 const threadBody = ref(null);
 
@@ -47,7 +44,7 @@ const formatTooltipTime = (value) => {
     const date = new Date(value);
     if (Number.isNaN(date.getTime())) return '';
 
-    return new Intl.DateTimeFormat('en-GB', {
+    return new Intl.DateTimeFormat(locale.value === 'zh' ? 'zh-CN' : 'en-GB', {
         day: '2-digit',
         month: '2-digit',
         year: 'numeric',
@@ -102,7 +99,7 @@ watch(
         </div>
 
         <div v-else-if="error" class="messenger-thread-state messenger-thread-error">
-            {{ error }}
+            {{ errorText }}
         </div>
 
         <div v-else-if="!conversation" class="messenger-thread-state">

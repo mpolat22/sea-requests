@@ -1,5 +1,6 @@
 <script setup>
-import { nextTick, ref, watch } from 'vue';
+import { computed, nextTick, ref, watch } from 'vue';
+import { useI18n } from '../lib/i18n';
 
 const props = defineProps({
     canSend: {
@@ -20,12 +21,10 @@ const props = defineProps({
     },
 });
 
-const copy = {
-    composerHint: 'Write your message here...',
-    attach: 'Attach File',
-    locked: 'This order is completed. Chat is now view only.',
-    removeFile: 'Remove',
-};
+const { section } = useI18n();
+const copy = section('layout.messenger');
+
+const errorText = computed(() => (props.error === 'messenger-send-failed' ? copy.value.sendFailed : props.error));
 
 const body = ref('');
 const attachment = ref(null);
@@ -139,7 +138,7 @@ watch(body, () => {
         </div>
 
         <p v-if="error" class="messenger-composer-error">
-            {{ error }}
+            {{ errorText }}
         </p>
     </div>
 </template>

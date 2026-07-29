@@ -102,7 +102,7 @@ const loadConversations = async ({ preserveSelection = true, silent = false } = 
         }
     } catch (error) {
         if (!silent) {
-            state.listError = error?.message || 'Conversation list could not be loaded right now.';
+            state.listError = error?.message || 'messenger-list-load-failed';
         }
     } finally {
         if (!silent) {
@@ -152,7 +152,7 @@ const loadConversation = async (offerId, { silent = false, markRead = true } = {
         }
     } catch (error) {
         if (!silent) {
-            state.conversationError = error?.message || 'Conversation could not be loaded right now.';
+            state.conversationError = error?.message || 'messenger-conversation-load-failed';
         }
         state.activeConversation = null;
     } finally {
@@ -263,7 +263,7 @@ const sendMessage = async ({ body = '', attachment = null } = {}) => {
         const fieldError = error?.payload?.errors?.body?.[0]
             || error?.payload?.errors?.attachment?.[0]
             || error?.message
-            || 'Message could not be sent right now.';
+            || 'messenger-send-failed';
 
         state.composerError = fieldError;
 

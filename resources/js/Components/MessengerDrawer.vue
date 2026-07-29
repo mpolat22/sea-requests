@@ -1,13 +1,12 @@
 <script setup>
 import MessengerConversationList from './MessengerConversationList.vue';
 import MessengerThread from './MessengerThread.vue';
+import { useI18n } from '../lib/i18n';
 import { useMessengerStore } from '../lib/messengerStore';
 
 const messenger = useMessengerStore();
-
-const copy = {
-    close: 'Close',
-};
+const { section } = useI18n();
+const copy = section('layout.messenger');
 </script>
 
 <template>
