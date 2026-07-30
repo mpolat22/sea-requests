@@ -49,6 +49,20 @@ const baseCopy = {
         high: 'high',
         critical: 'urgent',
     },
+    statuses: {
+        open: 'Open',
+        award_in_progress: 'Award In Progress',
+        award_confirmed: 'Award Confirmed',
+        completed: 'Completed',
+        closed: 'Closed',
+        cancelled: 'Cancelled',
+        draft: 'Draft',
+    },
+    requestType: {
+        spare_parts: 'Spare Parts',
+        service_request: 'Service Request',
+    },
+    offersReceived: '{count} received',
     emptyTitle: 'No RFQs have been created yet.',
     emptyText: 'RFQs will appear here once buyers start opening requests.',
     emptySearchTitle: 'No RFQ matched your search.',
@@ -100,7 +114,8 @@ const copy = new Proxy(baseCopy, {
     get: (target, key) => mergedCopy.value[key] ?? target[key],
 });
 
-const offerText = (count) => copy.offersReceived.replace('{count}', Number(count ?? 0));
+const offerText = (count) => String(copy.offersReceived ?? baseCopy.offersReceived)
+    .replace('{count}', Number(count ?? 0));
 const rfqs = computed(() => props.rfqsTable.data ?? []);
 const meta = computed(() => props.rfqsTable.meta ?? {});
 const filters = computed(() => props.rfqsTable.filters ?? {});
