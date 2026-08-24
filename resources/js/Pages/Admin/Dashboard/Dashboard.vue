@@ -193,6 +193,7 @@ const baseCopy = {
     userSearchPlaceholder: 'Search by user, email or business name',
     businessSearchPlaceholder: 'Search by business, contact person, country or status',
     buyerSearchPlaceholder: 'Search by buyer company, user, email or country',
+    search: 'Search',
     sortLabel: 'Sort',
     sortLatest: 'Latest first',
     sortOldest: 'Oldest first',

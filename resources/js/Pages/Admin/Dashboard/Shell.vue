@@ -77,17 +77,17 @@ const onboardingTabLabel = computed(() => `${copy.value.onboardingTab}(${Number(
                     </Link>
                     <Link
                         class="dashboard-tab"
-                        :class="{ active: activeTab === 'users' }"
-                        :href="dashboard.navigation.users_url"
-                    >
-                        {{ usersTabLabel }}
-                    </Link>
-                    <Link
-                        class="dashboard-tab"
                         :class="{ active: activeTab === 'buyers' }"
                         :href="dashboard.navigation.buyers_url"
                     >
                         {{ buyersTabLabel }}
+                    </Link>
+                    <Link
+                        class="dashboard-tab"
+                        :class="{ active: activeTab === 'users' }"
+                        :href="dashboard.navigation.users_url"
+                    >
+                        {{ usersTabLabel }}
                     </Link>
                     <Link
                         class="dashboard-tab"
