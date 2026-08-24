@@ -32,6 +32,7 @@ const baseCopy = {
     subtitle: 'Monitor users, supplier verification, RFQs, and order workflow from one admin workspace.',
     usersTab: 'Users',
     businessesTab: 'Supplier Companies',
+    buyersTab: 'Buyer Companies',
     rfqsTab: 'RFQs',
     ordersTab: 'Orders',
     onboardingTab: 'Onboarding',
@@ -46,6 +47,7 @@ const copy = computed(() => ({
 
 const usersTabLabel = computed(() => `${copy.value.usersTab}(${Number(props.dashboard.navigation?.users_count ?? 0)})`);
 const businessesTabLabel = computed(() => `${copy.value.businessesTab}(${Number(props.dashboard.navigation?.businesses_count ?? 0)})`);
+const buyersTabLabel = computed(() => `${copy.value.buyersTab}(${Number(props.dashboard.navigation?.buyers_count ?? 0)})`);
 const rfqsTabLabel = computed(() => `${copy.value.rfqsTab}(${Number(props.dashboard.navigation?.rfqs_count ?? 0)})`);
 const ordersTabLabel = computed(() => `${copy.value.ordersTab}(${Number(props.dashboard.navigation?.orders_count ?? 0)})`);
 const onboardingTabLabel = computed(() => `${copy.value.onboardingTab}(${Number(props.dashboard.navigation?.onboarding_count ?? 0)})`);
@@ -79,6 +81,13 @@ const onboardingTabLabel = computed(() => `${copy.value.onboardingTab}(${Number(
                         :href="dashboard.navigation.users_url"
                     >
                         {{ usersTabLabel }}
+                    </Link>
+                    <Link
+                        class="dashboard-tab"
+                        :class="{ active: activeTab === 'buyers' }"
+                        :href="dashboard.navigation.buyers_url"
+                    >
+                        {{ buyersTabLabel }}
                     </Link>
                     <Link
                         class="dashboard-tab"

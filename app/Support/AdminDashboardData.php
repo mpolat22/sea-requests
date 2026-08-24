@@ -35,7 +35,9 @@ class AdminDashboardData
                 'users_url' => route('admin.dashboard', ['tab' => 'users']),
                 'users_count' => User::query()->where('role', '!=', 'admin')->count(),
                 'businesses_url' => route('admin.dashboard'),
-                'businesses_count' => User::query()->where('role', 'seller')->count(),
+                'businesses_count' => $this->supplierRegistrationQuery()->count(),
+                'buyers_url' => route('admin.dashboard', ['tab' => 'buyers']),
+                'buyers_count' => User::query()->where('role', 'buyer')->count(),
                 'rfqs_url' => route('admin.rfqs'),
                 'rfqs_count' => Rfq::query()->count(),
                 'orders_url' => route('admin.orders'),
@@ -51,6 +53,20 @@ class AdminDashboardData
         ];
     }
 
+    private function supplierRegistrationQuery(): Builder
+    {
+        return User::query()
+            ->where('role', 'seller')
+            ->where(function (Builder $builder) {
+                $builder
+                    ->whereNotNull('company_name')
+                    ->orWhereNotNull('seller_verification_onboarding_sent_at')
+                    ->orWhereNotNull('seller_verification_submitted_at')
+                    ->orWhere('approval_status', '!=', 'pending')
+                    ->orWhereNotNull('seller_update_request_status')
+                    ->orWhereNotNull('seller_removal_requested_at');
+            });
+    }
     public function rfqPage(array $filters = [], int $perPage = 10): LengthAwarePaginator
     {
         $search = trim((string) ($filters['search'] ?? ''));

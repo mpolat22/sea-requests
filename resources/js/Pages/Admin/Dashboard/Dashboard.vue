@@ -31,6 +31,10 @@ const props = defineProps({
         type: Object,
         required: true,
     },
+    buyerTable: {
+        type: Object,
+        required: true,
+    },
 });
 
 const modalType = ref(null);
@@ -77,8 +81,13 @@ const baseCopy = {
     subtitle: 'Manage users, businesses, submissions and feedback flows from this panel.',
     usersTab: 'Users',
     businessesTab: 'Supplier Company Registrations',
+    buyersTab: 'Buyer Companies',
     usersTitle: 'Users',
     businessesTitle: 'Supplier Company Registrations',
+    buyersTitle: 'Buyer Companies',
+    usersIntro: 'Review and manage buyer and supplier user accounts from one admin table.',
+    businessesIntro: 'Review supplier company registrations, verification progress, and approval status from one admin table.',
+    buyersIntro: 'Review and manage buyer company accounts from one dedicated admin table.',
     userName: 'User',
     company: 'Business',
     email: 'Email',
@@ -183,6 +192,7 @@ const baseCopy = {
     noValue: '-',
     userSearchPlaceholder: 'Search by user, email or business name',
     businessSearchPlaceholder: 'Search by business, contact person, country or status',
+    buyerSearchPlaceholder: 'Search by buyer company, user, email or country',
     sortLabel: 'Sort',
     sortLatest: 'Latest first',
     sortOldest: 'Oldest first',
@@ -771,6 +781,27 @@ const chooseBusinessStatus = (status) => {
                 :verification-label="verificationLabel"
                 :status-label="statusLabel"
                 :business-status-class="businessStatusClass"
+                @view="openUserView"
+                @edit="openUserEdit"
+                @delete="openDeleteModal($event, 'user')"
+            />
+
+            <UsersTab
+                v-else-if="activeTab === 'buyers'"
+                :records="buyerTable.data"
+                :meta="buyerTable.meta"
+                :filters="buyerTable.filters"
+                :copy="copy"
+                :role-label="roleLabel"
+                :verification-label="verificationLabel"
+                :status-label="statusLabel"
+                :business-status-class="businessStatusClass"
+                tab-key="buyers"
+                query-prefix="buyer"
+                company-mode
+                :table-title="copy.buyersTitle"
+                :table-intro="copy.buyersIntro"
+                :search-placeholder="copy.buyerSearchPlaceholder"
                 @view="openUserView"
                 @edit="openUserEdit"
                 @delete="openDeleteModal($event, 'user')"

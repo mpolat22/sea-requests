@@ -1,5 +1,6 @@
 <script setup>
 import { computed, ref, watch } from 'vue';
+import PaginationArrowIcon from './PaginationArrowIcon.vue';
 import { Link, router, usePage } from '@inertiajs/vue3';
 
 const props = defineProps({
@@ -144,7 +145,7 @@ watch(search, () => {
                     :placeholder="copy.businessSearchPlaceholder"
                 >
                 <button type="button" class="toolbar-button toolbar-button-primary" @click="refresh({ business_page: 1 })">
-                    Search
+                    {{ copy.search }}
                 </button>
             </div>
         </div>
@@ -277,12 +278,12 @@ watch(search, () => {
         <div class="table-footer">
             <p class="table-meta">{{ paginationLabel }}</p>
             <div class="pager">
-                <button type="button" class="pager-button" :disabled="pageNumber === 1" @click="changePage(pageNumber - 1)">
-                    {{ copy.prev }}
+                <button type="button" class="pager-button" :title="copy.prev || 'Previous page'" :aria-label="copy.prev || 'Previous page'" :disabled="pageNumber === 1" @click="changePage(pageNumber - 1)">
+                    <PaginationArrowIcon direction="previous" />
                 </button>
                 <span class="page-indicator">{{ pageNumber }} / {{ meta.last_page ?? 1 }}</span>
-                <button type="button" class="pager-button" :disabled="pageNumber >= (meta.last_page ?? 1)" @click="changePage(pageNumber + 1)">
-                    {{ copy.next }}
+                <button type="button" class="pager-button" :title="copy.next || 'Next page'" :aria-label="copy.next || 'Next page'" :disabled="pageNumber >= (meta.last_page ?? 1)" @click="changePage(pageNumber + 1)">
+                    <PaginationArrowIcon direction="next" />
                 </button>
             </div>
         </div>

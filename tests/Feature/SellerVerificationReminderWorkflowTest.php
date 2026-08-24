@@ -82,7 +82,7 @@ class SellerVerificationReminderWorkflowTest extends TestCase
         $fallbackOnboardingSeller = User::factory()->create([
             'role' => 'seller',
             'email' => 'seller-fallback@example.test',
-            'email_verified_at' => now()->subHours(2),
+            'email_verified_at' => now()->subHours(80),
             'approval_status' => 'pending',
             'approved_at' => null,
             'seller_verification_submitted_at' => null,

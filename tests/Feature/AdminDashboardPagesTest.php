@@ -35,6 +35,8 @@ class AdminDashboardPagesTest extends TestCase
             ->assertInertia(fn (AssertableInertia $page) => $page
                 ->component('Admin/Dashboard/Dashboard')
                 ->where('activeTab', 'businesses')
+                ->where('dashboard.navigation.businesses_count', 1)
+                ->where('dashboard.navigation.buyers_count', 1)
                 ->where('dashboard.navigation.rfqs_count', 1)
                 ->where('dashboard.navigation.orders_count', 1)
                 ->missing('dashboard.navigation.outreach_url')
@@ -47,6 +49,17 @@ class AdminDashboardPagesTest extends TestCase
             ->assertInertia(fn (AssertableInertia $page) => $page
                 ->component('Admin/Dashboard/Dashboard')
                 ->where('activeTab', 'users')
+            );
+        $this->actingAs($admin)
+            ->get(route('admin.dashboard', ['tab' => 'buyers']))
+            ->assertOk()
+            ->assertInertia(fn (AssertableInertia $page) => $page
+                ->component('Admin/Dashboard/Dashboard')
+                ->where('activeTab', 'buyers')
+                ->where('buyerTable.meta.total', 1)
+                ->where('buyerTable.data.0.role', 'buyer')
+                ->where('buyerTable.data.0.company_name', 'Northwind Buyer')
+                ->where('dashboard.navigation.buyers_count', 1)
             );
 
         $this->actingAs($admin)
@@ -590,6 +603,7 @@ class AdminDashboardPagesTest extends TestCase
             ->assertOk()
             ->assertInertia(fn (AssertableInertia $page) => $page
                 ->component('Admin/Dashboard/Dashboard')
+                ->where('dashboard.navigation.businesses_count', 0)
                 ->where('businessTable.counts.all', 0)
                 ->where('businessTable.data', [])
             );

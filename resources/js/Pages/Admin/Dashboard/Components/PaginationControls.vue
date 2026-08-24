@@ -1,4 +1,5 @@
 <script setup>
+import PaginationArrowIcon from './PaginationArrowIcon.vue';
 const props = defineProps({
     page: { type: Number, required: true },
     totalPages: { type: Number, required: true },
@@ -20,12 +21,12 @@ const goTo = (page) => {
     <div v-if="totalPages > 1" class="pagination-shell">
         <p class="pagination-label">{{ label }}</p>
         <div class="pagination-actions">
-            <button type="button" class="pagination-button" :disabled="page === 1" @click="goTo(page - 1)">
-                &lsaquo;
+            <button type="button" class="pagination-button" title="Previous page" aria-label="Previous page" :disabled="page === 1" @click="goTo(page - 1)">
+                <PaginationArrowIcon direction="previous" />
             </button>
             <span class="pagination-state">{{ page }} / {{ totalPages }}</span>
-            <button type="button" class="pagination-button" :disabled="page === totalPages" @click="goTo(page + 1)">
-                &rsaquo;
+            <button type="button" class="pagination-button" title="Next page" aria-label="Next page" :disabled="page === totalPages" @click="goTo(page + 1)">
+                <PaginationArrowIcon direction="next" />
             </button>
         </div>
     </div>

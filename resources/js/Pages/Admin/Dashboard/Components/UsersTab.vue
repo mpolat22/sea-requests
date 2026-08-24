@@ -1,5 +1,6 @@
 <script setup>
 import { computed, ref, watch } from 'vue';
+import PaginationArrowIcon from './PaginationArrowIcon.vue';
 import { router, usePage } from '@inertiajs/vue3';
 
 const props = defineProps({
@@ -11,6 +12,12 @@ const props = defineProps({
     verificationLabel: { type: Function, required: true },
     statusLabel: { type: Function, required: true },
     businessStatusClass: { type: Function, required: true },
+    tabKey: { type: String, default: 'users' },
+    queryPrefix: { type: String, default: 'user' },
+    companyMode: { type: Boolean, default: false },
+    tableTitle: { type: String, default: '' },
+    tableIntro: { type: String, default: '' },
+    searchPlaceholder: { type: String, default: '' },
 });
 
 const emit = defineEmits(['view', 'edit', 'delete']);
@@ -27,6 +34,11 @@ const currentQuery = computed(() => {
 });
 
 const totalRecords = computed(() => Number(props.meta.total ?? props.records.length ?? 0));
+const resolvedTitle = computed(() => props.tableTitle || props.copy.usersTitle);
+const resolvedIntro = computed(() => props.tableIntro || props.copy.usersIntro);
+const resolvedSearchPlaceholder = computed(() => props.searchPlaceholder || props.copy.userSearchPlaceholder);
+const searchParam = computed(() => props.queryPrefix + '_search');
+const pageParam = computed(() => props.queryPrefix + '_page');
 const paginationLabel = computed(() => {
     const start = props.meta.from ?? 0;
     const end = props.meta.to ?? 0;
@@ -55,15 +67,15 @@ const formatDate = (value) => {
 const refresh = (overrides = {}) => {
     router.get(currentPath.value, {
         ...currentQuery.value,
-        tab: 'users',
-        user_search: search.value,
-        user_page: pageNumber.value,
+        tab: props.tabKey,
+        [searchParam.value]: search.value,
+        [pageParam.value]: pageNumber.value,
         ...overrides,
     }, {
         preserveScroll: true,
         preserveState: true,
         replace: true,
-        only: ['activeTab', 'userTable', 'businessTable'],
+        only: ['activeTab', 'userTable', 'businessTable', 'buyerTable'],
     });
 };
 
@@ -73,7 +85,7 @@ const changePage = (value) => {
     }
 
     pageNumber.value = value;
-    refresh({ user_page: value });
+    refresh({ [pageParam.value]: value });
 };
 
 watch(() => props.filters, (value) => {
@@ -88,7 +100,7 @@ watch(search, () => {
     pageNumber.value = 1;
     clearTimeout(searchTimer);
     searchTimer = setTimeout(() => {
-        refresh({ user_page: 1 });
+        refresh({ [pageParam.value]: 1 });
     }, 250);
 });
 </script>
@@ -97,18 +109,18 @@ watch(search, () => {
     <section class="surface-panel table-panel">
         <div class="table-toolbar">
             <div class="table-intro">
-                <h2 class="directory-section-title">{{ copy.usersTitle }}</h2>
-                <p class="section-copy">{{ copy.usersIntro }}</p>
+                <h2 class="directory-section-title">{{ resolvedTitle }}</h2>
+                <p class="section-copy">{{ resolvedIntro }}</p>
             </div>
 
             <div class="toolbar-search">
                 <input
                     v-model="search"
                     type="search"
-                    :placeholder="copy.userSearchPlaceholder"
+                    :placeholder="resolvedSearchPlaceholder"
                 >
-                <button type="button" class="toolbar-button toolbar-button-primary" @click="refresh({ user_page: 1 })">
-                    Search
+                <button type="button" class="toolbar-button toolbar-button-primary" @click="refresh({ [pageParam]: 1 })">
+                    {{ copy.search }}
                 </button>
             </div>
         </div>
@@ -118,10 +130,10 @@ watch(search, () => {
                 <thead>
                     <tr>
                         <th>#</th>
-                        <th>{{ copy.userName }}</th>
+                        <th>{{ companyMode ? copy.company : copy.userName }}</th>
                         <th>{{ copy.email }}</th>
                         <th>{{ copy.registeredAt }}</th>
-                        <th>{{ copy.role }}</th>
+                        <th v-if="!companyMode">{{ copy.role }}</th>
                         <th>{{ copy.verification }}</th>
                         <th>{{ copy.status }}</th>
                         <th>{{ copy.action }}</th>
@@ -132,13 +144,14 @@ watch(search, () => {
                         <td class="order-index-cell">{{ rowNumber(index) }}</td>
                         <td>
                             <div class="identity-stack">
-                                <span class="identity-primary">{{ user.name }}</span>
-                                <span v-if="user.company_name && user.company_name !== user.name" class="identity-secondary">{{ user.company_name }}</span>
+                                <span class="identity-primary">{{ companyMode ? (user.company_name || user.name) : user.name }}</span>
+                                <span v-if="companyMode && user.company_name && user.company_name !== user.name" class="identity-secondary">{{ user.name }}</span>
+                                <span v-else-if="!companyMode && user.company_name && user.company_name !== user.name" class="identity-secondary">{{ user.company_name }}</span>
                             </div>
                         </td>
                         <td>{{ user.email }}</td>
                         <td>{{ formatDate(user.created_at) }}</td>
-                        <td>
+                        <td v-if="!companyMode">
                             <span class="soft-pill">{{ roleLabel(user.role) }}</span>
                         </td>
                         <td>
@@ -172,12 +185,12 @@ watch(search, () => {
         <div class="table-footer">
             <p class="table-meta">{{ paginationLabel }}</p>
             <div class="pager">
-                <button type="button" class="pager-button" :disabled="pageNumber === 1" @click="changePage(pageNumber - 1)">
-                    {{ copy.prev }}
+                <button type="button" class="pager-button" :title="copy.prev || 'Previous page'" :aria-label="copy.prev || 'Previous page'" :disabled="pageNumber === 1" @click="changePage(pageNumber - 1)">
+                    <PaginationArrowIcon direction="previous" />
                 </button>
                 <span class="page-indicator">{{ pageNumber }} / {{ meta.last_page ?? 1 }}</span>
-                <button type="button" class="pager-button" :disabled="pageNumber >= (meta.last_page ?? 1)" @click="changePage(pageNumber + 1)">
-                    {{ copy.next }}
+                <button type="button" class="pager-button" :title="copy.next || 'Next page'" :aria-label="copy.next || 'Next page'" :disabled="pageNumber >= (meta.last_page ?? 1)" @click="changePage(pageNumber + 1)">
+                    <PaginationArrowIcon direction="next" />
                 </button>
             </div>
         </div>

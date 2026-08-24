@@ -63,7 +63,7 @@ class SellerVerificationReminderService
         if (
             ! $this->canReceiveVerificationEmails($user)
             || $user->seller_verification_24h_reminder_sent_at !== null
-            || ! $user->email_verified_at?->lte(now()->subHours(24))
+            || ! $user->seller_verification_onboarding_sent_at?->lte(now()->subHours(24))
         ) {
             return false;
         }
@@ -83,7 +83,7 @@ class SellerVerificationReminderService
         if (
             ! $this->canReceiveVerificationEmails($user)
             || $user->seller_verification_72h_reminder_sent_at !== null
-            || ! $user->email_verified_at?->lte(now()->subHours(72))
+            || ! $user->seller_verification_24h_reminder_sent_at?->lte(now()->subHours(48))
         ) {
             return false;
         }
@@ -137,26 +137,26 @@ class SellerVerificationReminderService
             return null;
         }
 
-        if ($this->canAutoRejectAfterFinalReminder($user)) {
-            return 'auto_reject';
-        }
-
-        if (
-            $user->seller_verification_72h_reminder_sent_at === null
-            && $user->email_verified_at?->lte(now()->subHours(72))
-        ) {
-            return '72h';
+        if ($user->seller_verification_onboarding_sent_at === null) {
+            return 'onboarding';
         }
 
         if (
             $user->seller_verification_24h_reminder_sent_at === null
-            && $user->email_verified_at?->lte(now()->subHours(24))
+            && $user->seller_verification_onboarding_sent_at->lte(now()->subHours(24))
         ) {
             return '24h';
         }
 
-        if ($user->seller_verification_onboarding_sent_at === null) {
-            return 'onboarding';
+        if (
+            $user->seller_verification_72h_reminder_sent_at === null
+            && $user->seller_verification_24h_reminder_sent_at?->lte(now()->subHours(48))
+        ) {
+            return '72h';
+        }
+
+        if ($this->canAutoRejectAfterFinalReminder($user)) {
+            return 'auto_reject';
         }
 
         return null;

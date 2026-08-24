@@ -3,6 +3,7 @@ import { useI18n } from '../../../lib/i18n';
 import { computed, defineAsyncComponent, ref, watch } from 'vue';
 import { Link, router } from '@inertiajs/vue3';
 import AdminDashboardShell from './Shell.vue';
+import PaginationArrowIcon from './Components/PaginationArrowIcon.vue';
 
 const OrderInformationModal = defineAsyncComponent(() => import('../../Buyer/Dashboard/OrderInformationModal.vue'));
 const PaymentProofModal = defineAsyncComponent(() => import('../../Buyer/Dashboard/PaymentProofModal.vue'));
@@ -415,12 +416,12 @@ watch(() => props.ordersTable.filters, (value) => {
                 </div>
 
                 <div class="footer-right">
-                    <button type="button" class="pager-button" :disabled="currentPage === 1" @click="goPrev">
-                        {{ copy.prev }}
+                    <button type="button" class="pager-button" :title="copy.prev || 'Previous page'" :aria-label="copy.prev || 'Previous page'" :disabled="currentPage === 1" @click="goPrev">
+                        <PaginationArrowIcon direction="previous" />
                     </button>
                     <span class="page-indicator">{{ currentPage }} / {{ totalPages }}</span>
-                    <button type="button" class="pager-button" :disabled="currentPage === totalPages" @click="goNext">
-                        {{ copy.next }}
+                    <button type="button" class="pager-button" :title="copy.next || 'Next page'" :aria-label="copy.next || 'Next page'" :disabled="currentPage === totalPages" @click="goNext">
+                        <PaginationArrowIcon direction="next" />
                     </button>
                 </div>
             </div>

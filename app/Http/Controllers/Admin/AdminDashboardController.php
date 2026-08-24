@@ -20,7 +20,9 @@ class AdminDashboardController extends Controller
     {
         abort_unless($request->user()?->isAdmin(), 403);
 
-        $activeTab = $request->string('tab')->value() === 'users' ? 'users' : 'businesses';
+        $activeTab = in_array($request->string('tab')->value(), ['users', 'buyers'], true)
+            ? $request->string('tab')->value()
+            : 'businesses';
 
         $userFilters = [
             'search' => trim((string) $request->string('user_search')->value()),
@@ -35,10 +37,19 @@ class AdminDashboardController extends Controller
             'filter' => $request->string('business_filter')->value() ?: 'all',
         ];
 
+        $buyerFilters = [
+            'search' => trim((string) $request->string('buyer_search')->value()),
+            'sort' => $request->string('buyer_sort')->value() ?: 'latest',
+            'page' => max(1, (int) $request->integer('buyer_page', 1)),
+        ];
+
         $userPaginator = $this->buildUsersPaginator($userFilters);
         $businessPaginator = $this->buildBusinessesPaginator($businessFilters);
+        $buyerPaginator = $this->buildBuyerCompaniesPaginator($buyerFilters);
 
-        $allVisibleUsers = $userPaginator->getCollection()->concat($businessPaginator->getCollection());
+        $allVisibleUsers = $userPaginator->getCollection()
+            ->concat($businessPaginator->getCollection())
+            ->concat($buyerPaginator->getCollection());
         $this->decorateUsers($allVisibleUsers);
 
         return Inertia::render('Admin/Dashboard/Dashboard', [
@@ -54,6 +65,11 @@ class AdminDashboardController extends Controller
                 'meta' => $this->paginationMeta($businessPaginator),
                 'filters' => $businessFilters,
                 'counts' => $this->businessFilterCounts(),
+            ],
+            'buyerTable' => [
+                'data' => $buyerPaginator->items(),
+                'meta' => $this->paginationMeta($buyerPaginator),
+                'filters' => $buyerFilters,
             ],
         ]);
     }
@@ -112,6 +128,28 @@ class AdminDashboardController extends Controller
 
         return $query
             ->paginate(10, $this->selectColumns(), 'business_page', $filters['page'])
+            ->withQueryString();
+    }
+
+    private function buildBuyerCompaniesPaginator(array $filters): LengthAwarePaginator
+    {
+        $query = User::query()->where('role', 'buyer');
+
+        if ($filters['search'] !== '') {
+            $term = $filters['search'];
+            $query->where(function (Builder $builder) use ($term) {
+                $builder
+                    ->where('company_name', 'like', "%{$term}%")
+                    ->orWhere('name', 'like', "%{$term}%")
+                    ->orWhere('email', 'like', "%{$term}%")
+                    ->orWhere('country', 'like', "%{$term}%");
+            });
+        }
+
+        $this->applyBusinessSort($query, $filters['sort']);
+
+        return $query
+            ->paginate(10, $this->selectColumns(), 'buyer_page', $filters['page'])
             ->withQueryString();
     }
 
