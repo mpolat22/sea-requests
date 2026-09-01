@@ -241,9 +241,7 @@ class AdminDashboardController extends Controller
             ->where('role', 'seller')
             ->where(function (Builder $builder) {
                 $builder
-                    ->whereNotNull('company_name')
-                    ->orWhereNotNull('seller_verification_onboarding_sent_at')
-                    ->orWhereNotNull('seller_verification_submitted_at')
+                    ->whereNotNull('seller_verification_submitted_at')
                     ->orWhere('approval_status', '!=', 'pending')
                     ->orWhereNotNull('seller_update_request_status')
                     ->orWhereNotNull('seller_removal_requested_at');

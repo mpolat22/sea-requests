@@ -14,6 +14,12 @@ class DispatchOutreachEmailsCommand extends Command
 
     public function handle(OutreachScheduler $scheduler): int
     {
+        if (! config('features.admin_outreach')) {
+            $this->components->info('Supplier outreach is disabled.');
+
+            return self::SUCCESS;
+        }
+
         $now = CarbonImmutable::now('Europe/Istanbul');
         $queued = 0;
 

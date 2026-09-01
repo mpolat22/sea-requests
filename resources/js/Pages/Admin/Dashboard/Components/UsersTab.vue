@@ -48,6 +48,12 @@ const paginationLabel = computed(() => {
 
 const rowNumber = (index) => totalRecords.value - (((pageNumber.value - 1) * 10) + index);
 
+const whatsappUrl = (user) => {
+    const digits = String(user?.whatsapp_number ?? '').replace(/\D+/g, '');
+
+    return digits.length >= 7 ? `https://wa.me/${digits}` : null;
+};
+
 const formatDate = (value) => {
     if (!value) return '-';
 
@@ -166,6 +172,17 @@ watch(search, () => {
                         </td>
                         <td>
                             <div class="actions-cell">
+                                <a
+                                    v-if="whatsappUrl(user)"
+                                    class="action-button action-button-whatsapp"
+                                    :title="copy.whatsapp || 'WhatsApp'"
+                                    :aria-label="copy.whatsapp || 'WhatsApp'"
+                                    :href="whatsappUrl(user)"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                >
+                                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.5 11.7a8.4 8.4 0 0 1-12.4 7.4L3 20.5l1.4-4.9A8.4 8.4 0 1 1 20.5 11.7Z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M8.3 7.7c.3-.5.6-.5.9-.5h.5c.2 0 .4.1.5.5l.7 1.7c.1.3.1.5-.1.7l-.6.7c-.2.2-.2.4-.1.6.7 1.4 1.8 2.5 3.2 3.2.2.1.4.1.6-.1l.8-1c.2-.2.4-.3.7-.2l1.8.8c.3.2.4.3.4.6 0 .4-.2 1.3-.7 1.7-.5.5-1.3.8-2.2.6-1.1-.2-2.5-.7-4.2-2.2-1.4-1.2-2.4-2.8-2.7-3.8-.4-1.1 0-2.5.5-3.3Z" fill="currentColor"/></svg>
+                                </a>
                                 <button type="button" class="action-button" :title="copy.view" @click="emit('view', user)">
                                     <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6S2 12 2 12Z" fill="none" stroke="currentColor" stroke-width="1.8"/><circle cx="12" cy="12" r="3" fill="none" stroke="currentColor" stroke-width="1.8"/></svg>
                                 </button>
@@ -227,6 +244,7 @@ watch(search, () => {
 .action-button{display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;border:0;background:transparent;padding:0;color:#0f172a;flex:0 0 24px}
 .action-button svg{width:16px;height:16px;flex:0 0 16px}
 .action-button-danger{color:#ef4444}
+.action-button-whatsapp{color:#16a34a}
 .table-footer{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-top:18px}
 .table-meta{margin:0;color:#475569;font-size:.92rem}
 .pager{display:flex;align-items:center;gap:10px}

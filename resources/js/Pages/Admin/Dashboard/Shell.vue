@@ -36,6 +36,7 @@ const baseCopy = {
     rfqsTab: 'RFQs',
     ordersTab: 'Orders',
     onboardingTab: 'Onboarding',
+    outreachTab: 'Outreach',
 };
 
 const { section } = useI18n();
@@ -51,6 +52,7 @@ const buyersTabLabel = computed(() => `${copy.value.buyersTab}(${Number(props.da
 const rfqsTabLabel = computed(() => `${copy.value.rfqsTab}(${Number(props.dashboard.navigation?.rfqs_count ?? 0)})`);
 const ordersTabLabel = computed(() => `${copy.value.ordersTab}(${Number(props.dashboard.navigation?.orders_count ?? 0)})`);
 const onboardingTabLabel = computed(() => `${copy.value.onboardingTab}(${Number(props.dashboard.navigation?.onboarding_count ?? 0)})`);
+const outreachTabLabel = computed(() => `${copy.value.outreachTab}(${Number(props.dashboard.navigation?.outreach_count ?? 0)})`);
 </script>
 
 <template>
@@ -110,7 +112,14 @@ const onboardingTabLabel = computed(() => `${copy.value.onboardingTab}(${Number(
                     >
                         {{ onboardingTabLabel }}
                     </Link>
-
+                    <Link
+                        v-if="dashboard.navigation.outreach_url"
+                        class="dashboard-tab dashboard-tab-outreach"
+                        :class="{ active: activeTab === 'outreach' }"
+                        :href="dashboard.navigation.outreach_url"
+                    >
+                        {{ outreachTabLabel }}
+                    </Link>
                 </div>
             </section>
 
@@ -129,10 +138,12 @@ const onboardingTabLabel = computed(() => `${copy.value.onboardingTab}(${Number(
 .dashboard-tabs{display:flex;flex-wrap:wrap;gap:12px}
 .dashboard-tab{display:inline-flex;align-items:center;justify-content:center;min-height:42px;padding:0 16px;border:1px solid transparent;border-radius:8px;background:transparent;color:#64748b;font-size:.86rem;font-weight:600;cursor:pointer;text-decoration:none;min-width:0}
 .dashboard-tab.active{background:#0f172a;border-color:#0f172a;color:#fff;box-shadow:0 12px 24px rgba(15,23,42,.14)}
+.dashboard-tab-outreach{margin-left:auto}
 @media (max-width: 720px){
     .admin-dashboard-shell{padding:12px 0 40px}
     .dashboard-intro{padding:20px}
     .dashboard-tabs-shell{padding:10px 12px}
     .dashboard-tab{width:100%;justify-content:flex-start;white-space:normal;word-break:break-word}
+    .dashboard-tab-outreach{margin-left:0}
 }
 </style>

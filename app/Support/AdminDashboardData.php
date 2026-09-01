@@ -7,6 +7,7 @@ use App\Models\Category;
 use App\Models\Offer;
 use App\Models\OfferAward;
 use App\Models\OutreachContact;
+use App\Models\OutreachSegment;
 use App\Models\OfferItem;
 use App\Models\Port;
 use App\Models\Rfq;
@@ -49,6 +50,19 @@ class AdminDashboardData
                     ->whereIn('audience', ['seller', 'buyer'])
                     ->whereNotNull('source_payload->onboarding_status')
                     ->count(),
+                'outreach_url' => route('admin.outreach'),
+                'outreach_count' => OutreachSegment::query()
+                    ->where('audience', 'supplier')
+                    ->whereIn('name', [
+                        'SUPPLIER ASIA',
+                        'SUPPLIER EUROPE',
+                        'SUPPLIER AFRICA',
+                        'SUPPLIER NORTHAMERICA',
+                        'SUPPLIER SOUTHAMERICA',
+                        'SUPPLIER OCEANIA',
+                        'SUPPLIER GLOBAL',
+                    ])
+                    ->count(),
             ],
         ];
     }
@@ -59,9 +73,7 @@ class AdminDashboardData
             ->where('role', 'seller')
             ->where(function (Builder $builder) {
                 $builder
-                    ->whereNotNull('company_name')
-                    ->orWhereNotNull('seller_verification_onboarding_sent_at')
-                    ->orWhereNotNull('seller_verification_submitted_at')
+                    ->whereNotNull('seller_verification_submitted_at')
                     ->orWhere('approval_status', '!=', 'pending')
                     ->orWhereNotNull('seller_update_request_status')
                     ->orWhereNotNull('seller_removal_requested_at');

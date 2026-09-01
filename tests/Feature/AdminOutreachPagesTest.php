@@ -143,7 +143,7 @@ class AdminOutreachPagesTest extends TestCase
             ->assertInertia(fn (AssertableInertia $page) => $page
                 ->component('Admin/Outreach/Index')
                 ->where('activeTab', 'outreach')
-                ->missing('dashboard.navigation.outreach_count')
+                ->where('dashboard.navigation.outreach_count', 1)
                 ->where('summary.total_contacts', 1)
                 ->where('summary.active_contacts', 1)
                 ->where('senderAccounts.0.name', 'Primary Request Mailbox')

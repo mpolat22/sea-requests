@@ -1793,6 +1793,7 @@ const messages = {
                 rfqsTab: 'RFQ',
                 ordersTab: '订单',
                 onboardingTab: '预注册',
+                outreachTab: '推广邮件',
             },
             dashboard: {
                 title: '管理员仪表板',
@@ -4975,4 +4976,3 @@ export const useI18n = () => {
 };
 
 export const initializeLocale = () => setLocale(activeLocale.value);
-

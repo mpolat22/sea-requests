@@ -39,8 +39,8 @@ class AdminDashboardPagesTest extends TestCase
                 ->where('dashboard.navigation.buyers_count', 1)
                 ->where('dashboard.navigation.rfqs_count', 1)
                 ->where('dashboard.navigation.orders_count', 1)
-                ->missing('dashboard.navigation.outreach_url')
-                ->missing('dashboard.navigation.outreach_count')
+                ->where('dashboard.navigation.outreach_url', route('admin.outreach'))
+                ->where('dashboard.navigation.outreach_count', 0)
             );
 
         $this->actingAs($admin)
@@ -127,8 +127,10 @@ class AdminDashboardPagesTest extends TestCase
         $this->actingAs($seller)->get(route('admin.orders'))->assertForbidden();
     }
 
-    public function test_admin_outreach_routes_are_hidden_behind_feature_flag_by_default(): void
+    public function test_admin_outreach_routes_are_hidden_when_feature_flag_is_disabled(): void
     {
+        config()->set('features.admin_outreach', false);
+
         $admin = User::factory()->create(['role' => 'admin']);
 
         $this->actingAs($admin)
@@ -536,7 +538,7 @@ class AdminDashboardPagesTest extends TestCase
         $this->assertNull($user->fresh()->email_verified_at);
     }
 
-    public function test_admin_business_table_exposes_verification_mail_history_timestamps(): void
+    public function test_unsubmitted_supplier_stays_in_users_and_out_of_supplier_companies_while_reminders_continue(): void
     {
         $admin = User::factory()->create([
             'role' => 'admin',
@@ -560,10 +562,13 @@ class AdminDashboardPagesTest extends TestCase
             ->assertOk()
             ->assertInertia(fn (AssertableInertia $page) => $page
                 ->component('Admin/Dashboard/Dashboard')
-                ->where('businessTable.data.0.company_name', $seller->company_name)
-                ->where('businessTable.data.0.seller_verification_onboarding_sent_at', $seller->seller_verification_onboarding_sent_at?->toJSON())
-                ->where('businessTable.data.0.seller_verification_24h_reminder_sent_at', $seller->seller_verification_24h_reminder_sent_at?->toJSON())
-                ->where('businessTable.data.0.seller_verification_72h_reminder_sent_at', $seller->seller_verification_72h_reminder_sent_at?->toJSON())
+                ->where('dashboard.navigation.businesses_count', 0)
+                ->where('businessTable.counts.all', 0)
+                ->where('businessTable.data', [])
+                ->where('userTable.data.0.company_name', $seller->company_name)
+                ->where('userTable.data.0.seller_verification_onboarding_sent_at', $seller->seller_verification_onboarding_sent_at?->toJSON())
+                ->where('userTable.data.0.seller_verification_24h_reminder_sent_at', $seller->seller_verification_24h_reminder_sent_at?->toJSON())
+                ->where('userTable.data.0.seller_verification_72h_reminder_sent_at', $seller->seller_verification_72h_reminder_sent_at?->toJSON())
             );
     }
 
@@ -581,6 +586,7 @@ class AdminDashboardPagesTest extends TestCase
             'email' => 'supplier@example.test',
             'approval_status' => 'pending',
             'email_verified_at' => now(),
+            'seller_verification_submitted_at' => now(),
             'seller_verification_onboarding_sent_at' => now(),
             'phone' => '+90 5550000000',
             'country' => 'Turkey',
