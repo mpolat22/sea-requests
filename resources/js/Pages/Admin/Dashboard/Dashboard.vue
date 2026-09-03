@@ -785,6 +785,7 @@ const chooseBusinessStatus = (status) => {
                 @view="openUserView"
                 @edit="openUserEdit"
                 @delete="openDeleteModal($event, 'user')"
+                @open-mail-history="openVerificationMailHistoryModal"
             />
 
             <UsersTab

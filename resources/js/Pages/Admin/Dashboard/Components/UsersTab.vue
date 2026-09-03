@@ -20,7 +20,7 @@ const props = defineProps({
     searchPlaceholder: { type: String, default: '' },
 });
 
-const emit = defineEmits(['view', 'edit', 'delete']);
+const emit = defineEmits(['view', 'edit', 'delete', 'open-mail-history']);
 
 const pageContext = usePage();
 const search = ref(props.filters.search ?? '');
@@ -53,6 +53,11 @@ const whatsappUrl = (user) => {
 
     return digits.length >= 7 ? `https://wa.me/${digits}` : null;
 };
+
+const canShowVerificationMailHistory = (user) => (
+    user?.role === 'seller'
+    && user?.approval_status !== 'approved'
+);
 
 const formatDate = (value) => {
     if (!value) return '-';
@@ -183,6 +188,16 @@ watch(search, () => {
                                 >
                                     <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.5 11.7a8.4 8.4 0 0 1-12.4 7.4L3 20.5l1.4-4.9A8.4 8.4 0 1 1 20.5 11.7Z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M8.3 7.7c.3-.5.6-.5.9-.5h.5c.2 0 .4.1.5.5l.7 1.7c.1.3.1.5-.1.7l-.6.7c-.2.2-.2.4-.1.6.7 1.4 1.8 2.5 3.2 3.2.2.1.4.1.6-.1l.8-1c.2-.2.4-.3.7-.2l1.8.8c.3.2.4.3.4.6 0 .4-.2 1.3-.7 1.7-.5.5-1.3.8-2.2.6-1.1-.2-2.5-.7-4.2-2.2-1.4-1.2-2.4-2.8-2.7-3.8-.4-1.1 0-2.5.5-3.3Z" fill="currentColor"/></svg>
                                 </a>
+                                <button
+                                    v-if="canShowVerificationMailHistory(user)"
+                                    type="button"
+                                    class="action-button action-button-info"
+                                    :title="copy.reviewVerificationMailHistory"
+                                    :aria-label="copy.reviewVerificationMailHistory"
+                                    @click="emit('open-mail-history', user)"
+                                >
+                                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16v12H4z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="m4 7 8 6 8-6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M12 10v7" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path d="M12 7.5h.01" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>
+                                </button>
                                 <button type="button" class="action-button" :title="copy.view" @click="emit('view', user)">
                                     <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6S2 12 2 12Z" fill="none" stroke="currentColor" stroke-width="1.8"/><circle cx="12" cy="12" r="3" fill="none" stroke="currentColor" stroke-width="1.8"/></svg>
                                 </button>
@@ -245,6 +260,7 @@ watch(search, () => {
 .action-button svg{width:16px;height:16px;flex:0 0 16px}
 .action-button-danger{color:#ef4444}
 .action-button-whatsapp{color:#16a34a}
+.action-button-info{color:#4f46e5}
 .table-footer{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-top:18px}
 .table-meta{margin:0;color:#475569;font-size:.92rem}
 .pager{display:flex;align-items:center;gap:10px}
