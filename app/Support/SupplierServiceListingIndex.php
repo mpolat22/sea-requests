@@ -103,7 +103,7 @@ class SupplierServiceListingIndex
                     $listing->ports()->createMany($this->buildPortRows($ports));
                 }
             }
-        });
+        }, 5);
 
         if ($flushPublicCaches) {
             $this->forgetPublicCaches();
