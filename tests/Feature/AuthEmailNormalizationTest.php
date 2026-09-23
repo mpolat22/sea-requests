@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Models\Port;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Notification;
@@ -34,11 +35,18 @@ class AuthEmailNormalizationTest extends TestCase
     public function test_register_normalizes_hidden_turkish_dotted_i_variants_in_email(): void
     {
         Notification::fake();
+        Port::query()->firstOrCreate(['unlocode' => 'AHDXB'], [
+            'country_code' => 'AE',
+            'location_code' => 'DXB',
+            'country_name' => 'United Arab Emirates',
+            'port_name' => 'Dubai',
+            'is_active' => true,
+        ]);
 
         $response = $this->post(route('register'), [
             'account_type' => 'buyer',
             'name' => 'Buyer Demo',
-            'country' => 'Turkey',
+            'country' => 'United Arab Emirates',
             'phone_country_code' => '+90',
             'phone' => '5550000000',
             'email' => "admi\u{0307}n-register@searequests.ai\u{0307}",

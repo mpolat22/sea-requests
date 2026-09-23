@@ -54,7 +54,6 @@ const form = useForm({
     phone: '',
     whatsapp_country_code: '',
     whatsapp_number: '',
-    company_description: '',
     email: '',
     password: '',
     password_confirmation: '',
@@ -160,20 +159,22 @@ const validateForm = () => {
         }
     }
 
-    if (!/^\d{6,15}$/.test(form.phone)) {
-        errors.phone = ui.value.phone;
-    }
+    if (form.account_type === 'buyer') {
+        if (!/^\d{6,15}$/.test(form.phone)) {
+            errors.phone = ui.value.phone;
+        }
 
-    if (!form.phone_country_code) {
-        errors.phone_country_code = ui.value.countryCode;
-    }
+        if (!form.phone_country_code) {
+            errors.phone_country_code = ui.value.countryCode;
+        }
 
-    if (form.whatsapp_number && !/^\d{6,15}$/.test(form.whatsapp_number)) {
-        errors.whatsapp_number = ui.value.whatsapp;
-    }
+        if (form.whatsapp_number && !/^\d{6,15}$/.test(form.whatsapp_number)) {
+            errors.whatsapp_number = ui.value.whatsapp;
+        }
 
-    if (form.whatsapp_number && !form.whatsapp_country_code) {
-        errors.whatsapp_country_code = ui.value.countryCode;
+        if (form.whatsapp_number && !form.whatsapp_country_code) {
+            errors.whatsapp_country_code = ui.value.countryCode;
+        }
     }
 
     if (!passwordPattern.test(form.password)) {
@@ -303,7 +304,7 @@ const submit = () => {
                         </label>
                     </template>
 
-                    <label>
+                    <label v-if="form.account_type === 'buyer'">
                         <span v-html="formatRequiredLabel(copy.phone)"></span>
                         <div class="phone-group">
                             <select
@@ -329,7 +330,7 @@ const submit = () => {
                         <small v-if="form.errors.phone">{{ form.errors.phone }}</small>
                     </label>
 
-                    <label>
+                    <label v-if="form.account_type === 'buyer'">
                         <span v-html="formatRequiredLabel(copy.whatsApp)"></span>
                         <div class="phone-group">
                             <select
@@ -353,19 +354,6 @@ const submit = () => {
                         </div>
                         <small v-if="form.errors.whatsapp_country_code">{{ form.errors.whatsapp_country_code }}</small>
                         <small v-if="form.errors.whatsapp_number">{{ form.errors.whatsapp_number }}</small>
-                    </label>
-
-                    <label v-if="form.account_type === 'seller'">
-                        <span v-html="formatRequiredLabel(copy.companyDescription)"></span>
-                        <textarea
-                            :ref="setFieldRef('company_description')"
-                            v-model="form.company_description"
-                            :class="inputClass('company_description')"
-                            rows="4"
-                            :placeholder="copy.companyDescriptionPlaceholder"
-                            @input="clearFieldError('company_description')"
-                        />
-                        <small v-if="form.errors.company_description">{{ form.errors.company_description }}</small>
                     </label>
 
                     <div class="password-block">
@@ -428,7 +416,8 @@ const submit = () => {
                     </label>
                     <small v-if="form.errors.agree_to_terms" class="checkbox-error">{{ form.errors.agree_to_terms }}</small>
 
-                    <button type="submit" :disabled="form.processing">{{ copy.button }}</button>
+                    <p v-if="form.account_type === 'seller'" class="next-step-note">{{ copy.sellerNextStep }}</p>
+                    <button type="submit" :disabled="form.processing">{{ form.account_type === 'seller' ? copy.sellerButton : copy.button }}</button>
                 </form>
 
                 <p class="auth-footer">
@@ -709,6 +698,13 @@ const submit = () => {
     background: var(--color-ink);
     color: white;
     font-weight: 700;
+}
+
+.next-step-note {
+    margin: 4px 0 0;
+    color: rgba(4, 21, 31, 0.72);
+    font-size: 0.92rem;
+    line-height: 1.5;
 }
 
 .checkbox-error,

@@ -13,6 +13,7 @@ const emit = defineEmits(['close', 'saved']);
 
 const { locale, section } = useI18n();
 const copy = section('admin.onboardingForm');
+const verificationCopy = section('auth.supplierVerification');
 const displayLocale = computed(() => locale.value === 'zh' ? 'zh-CN' : 'en');
 const t = (key, fallback) => copy.value[key] ?? fallback;
 
@@ -55,6 +56,7 @@ const form = useForm({
 });
 
 const ui = computed(() => ({
+    ...verificationCopy.value.form,
     title: form.audience === 'buyer' ? t('buyerTitle', 'Buyer Onboarding Profile | Sea Requests') : t('supplierTitle', 'Supplier Onboarding Profile | Sea Requests'),
     eyebrow: t('eyebrow', 'Pre-registration'),
     heading: form.audience === 'buyer' ? t('buyerHeading', 'Create a buyer onboarding profile') : t('supplierHeading', 'Create a supplier onboarding profile'),
@@ -67,6 +69,9 @@ const ui = computed(() => ({
     contactHeading: t('contactHeading', 'Contact'),
     officialHeading: t('officialHeading', 'Official Details and Documents'),
     businessName: t('businessName', 'Business Name *'),
+    companyOverview: t('companyOverview', 'Company Overview'),
+    categoryLabel: t('categoryLabel', 'Category and Subcategory'),
+    serviceCoverageLabel: t('serviceCoverageHeading', 'Service Countries and Ports'),
     primaryCategory: t('primaryCategory', 'Business Primary Category'),
     subcategory: t('subcategory', 'Business Subcategory'),
     brands: t('brands', 'Brands'),

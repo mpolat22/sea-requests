@@ -42,17 +42,18 @@ class RegisterController extends Controller
         ]);
 
         $allowedCountries = AuthCountryCatalog::countryNames();
+        $isSeller = $request->input('account_type') === 'seller';
 
         $validated = $request->validate([
             'account_type' => ['required', 'in:buyer,seller'],
             'name' => ['required', 'string', 'min:2', 'max:255'],
             'company_name' => [Rule::requiredIf($request->input('account_type') === 'seller'), 'nullable', 'string', 'min:2', 'max:255'],
             'country' => ['required', 'string', 'max:255', Rule::in($allowedCountries)],
-            'phone_country_code' => ['required', 'string', 'regex:/^\+\d{1,4}$/'],
-            'phone' => ['required', 'string', 'regex:/^[0-9]{6,15}$/'],
-            'whatsapp_country_code' => [Rule::requiredIf(filled($request->input('whatsapp_number'))), 'nullable', 'string', 'regex:/^\+\d{1,4}$/'],
-            'whatsapp_number' => ['nullable', 'string', 'regex:/^[0-9]{6,15}$/'],
-            'company_description' => ['nullable', 'string', 'max:2000'],
+            'phone_country_code' => [Rule::excludeIf($isSeller), 'required', 'string', 'regex:/^\+\d{1,4}$/'],
+            'phone' => [Rule::excludeIf($isSeller), 'required', 'string', 'regex:/^[0-9]{6,15}$/'],
+            'whatsapp_country_code' => [Rule::excludeIf($isSeller), Rule::requiredIf(filled($request->input('whatsapp_number'))), 'nullable', 'string', 'regex:/^\+\d{1,4}$/'],
+            'whatsapp_number' => [Rule::excludeIf($isSeller), 'nullable', 'string', 'regex:/^[0-9]{6,15}$/'],
+            'company_description' => [Rule::excludeIf($isSeller), 'nullable', 'string', 'max:2000'],
             'email' => ['required', 'string', 'lowercase', 'email:rfc', 'regex:/^[^\s@]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/', 'max:255', 'unique:'.User::class],
             'password' => ['required', 'confirmed', Password::min(8)->letters()->numbers()],
             'agree_to_terms' => ['accepted'],
@@ -66,7 +67,7 @@ class RegisterController extends Controller
             'password' => $validated['password'],
             'role' => $validated['account_type'],
             'company_name' => $validated['company_name'] ?? null,
-            'phone' => trim($validated['phone_country_code'].' '.$validated['phone']),
+            'phone' => $isSeller ? null : trim($validated['phone_country_code'].' '.$validated['phone']),
             'country' => $validated['country'],
             'countries' => $validated['country'],
             'whatsapp_number' => filled($validated['whatsapp_number'] ?? null)

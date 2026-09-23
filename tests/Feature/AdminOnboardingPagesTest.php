@@ -180,7 +180,17 @@ Izmir / Turkey",
                 'file' => $file,
             ])
             ->assertRedirect()
-            ->assertSessionHas('success', 'Import completed. New accounts created: 1. Existing onboarding records updated: 0. Completion emails queued: 1. Emails will be sent one by one every 2 minutes. Existing platform accounts skipped: 1. Duplicate rows skipped: 0. Invalid rows skipped: 0.');
+            ->assertSessionHas('success', [
+                'code' => 'onboarding-import-completed',
+                'params' => [
+                    'created' => 1,
+                    'updated' => 0,
+                    'queued' => 1,
+                    'existing' => 1,
+                    'duplicates' => 0,
+                    'invalid' => 0,
+                ],
+            ]);
 
         $this->assertSame(1, User::query()->where('email', 'old@example.test')->count());
         $newUser = User::query()->where('email', 'new@example.test')->firstOrFail();
@@ -216,7 +226,14 @@ Izmir / Turkey",
                 'file' => $file,
             ])
             ->assertRedirect()
-            ->assertSessionHas('success', 'Import completed. No new accounts were created because all valid rows were already in the system. Existing accounts skipped: 1. Duplicate rows skipped: 0. Invalid rows skipped: 0.');
+            ->assertSessionHas('success', [
+                'code' => 'onboarding-import-all-existing',
+                'params' => [
+                    'existing' => 1,
+                    'duplicates' => 0,
+                    'invalid' => 0,
+                ],
+            ]);
 
         $this->assertSame(1, User::query()->where('email', 'old@example.test')->count());
         $this->assertDatabaseMissing('outreach_contacts', ['email' => 'old@example.test']);

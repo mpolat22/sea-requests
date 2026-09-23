@@ -1,10 +1,13 @@
 <script setup>
-import { Head, Link, useForm } from '@inertiajs/vue3';
+import { computed } from 'vue';
+import { Head, Link, useForm, usePage } from '@inertiajs/vue3';
 import MainLayout from '../../Layouts/MainLayout.vue';
 import { useI18n } from '../../lib/i18n';
 
 const { section } = useI18n();
 const copy = section('auth.verifyEmail');
+const page = usePage();
+const isSeller = computed(() => page.props.auth?.user?.role === 'seller');
 
 const form = useForm({});
 
@@ -22,6 +25,7 @@ const resend = () => {
                 <p class="eyebrow">{{ copy.eyebrow }}</p>
                 <h1>{{ copy.title }}</h1>
                 <p>{{ copy.text }}</p>
+                <p v-if="isSeller">{{ copy.sellerNextStep }}</p>
 
                 <div class="notice-actions">
                     <button type="button" :disabled="form.processing" @click="resend">

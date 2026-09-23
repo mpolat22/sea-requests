@@ -2,11 +2,8 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Category;
 use App\Models\Rfq;
-use App\Models\Subcategory;
 use App\Models\SupplierServiceListing;
-use App\Models\User;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Collection;
 use Inertia\Inertia;
@@ -74,34 +71,6 @@ class HomeController extends Controller
                 ->values();
         });
 
-        $heroStats = Cache::remember('home:hero-stats:v3', now()->addMinutes(5), function () {
-            return [
-                [
-                    'key' => 'sellers',
-                    'label' => 'Suppliers',
-                    'value' => SupplierServiceListing::query()
-                        ->visible()
-                        ->distinct('seller_id')
-                        ->count('seller_id'),
-                ],
-                [
-                    'key' => 'buyers',
-                    'label' => 'Buyers',
-                    'value' => User::query()->where('role', 'buyer')->count(),
-                ],
-                [
-                    'key' => 'rfqs',
-                    'label' => "RFQ's",
-                    'value' => Rfq::query()->published()->publicMarketplace()->count(),
-                ],
-                [
-                    'key' => 'categories',
-                    'label' => 'Categories',
-                    'value' => Category::query()->where('is_active', true)->count() + Subcategory::query()->count(),
-                ],
-            ];
-        });
-
         return Inertia::render('Home', [
             'meta' => [
                 'title' => 'Sea Requests | Marine supplier marketplace',
@@ -112,7 +81,6 @@ class HomeController extends Controller
                 'twitterCard' => 'summary_large_image',
             ],
             'hero' => [
-                'stats' => $heroStats,
                 'latest_requests' => $latestRequests,
                 'requests_url' => route('requests.index'),
                 'register_url' => route('register'),

@@ -669,6 +669,7 @@ const messages = {
         "eyebrow": "Verify Email",
         "title": "Confirm your email address",
         "text": "Please verify your email address before continuing.",
+        "sellerNextStep": "After verification, you will continue to Supplier Verification to complete your company profile.",
         "sending": "Sending...",
         "resend": "Resend Verification Email",
         "logout": "Log Out"
@@ -892,6 +893,8 @@ const messages = {
             agreementPrivacy: 'Privacy Policy',
             agreementTail: '.',
             button: 'Create Account',
+            sellerButton: 'Create Supplier Account and Continue',
+            sellerNextStep: 'Next, verify your email and complete Supplier Verification to submit your company for approval.',
             loginPrompt: 'Already have an account?',
             loginLink: 'Sign In',
             required: 'This field is required.',
@@ -3974,6 +3977,7 @@ const messages = {
         "eyebrow": "\u9a8c\u8bc1\u90ae\u7bb1",
         "title": "\u786e\u8ba4\u60a8\u7684\u90ae\u7bb1\u5730\u5740",
         "text": "\u7ee7\u7eed\u64cd\u4f5c\u524d\uff0c\u8bf7\u5148\u9a8c\u8bc1\u60a8\u7684\u90ae\u7bb1\u5730\u5740\u3002",
+        "sellerNextStep": "\u9a8c\u8bc1\u90ae\u7bb1\u540e\uff0c\u60a8\u5c06\u8fdb\u5165\u4f9b\u5e94\u5546\u8ba4\u8bc1\u9875\u9762\u5b8c\u5584\u516c\u53f8\u8d44\u6599\u3002",
         "sending": "\u6b63\u5728\u53d1\u9001...",
         "resend": "\u91cd\u65b0\u53d1\u9001\u9a8c\u8bc1\u90ae\u4ef6",
         "logout": "\u9000\u51fa\u767b\u5f55"
@@ -4197,6 +4201,8 @@ const messages = {
             agreementPrivacy: '\u9690\u79c1\u653f\u7b56',
             agreementTail: '\u3002',
             button: '\u521b\u5efa\u8d26\u6237',
+            sellerButton: '\u521b\u5efa\u4f9b\u5e94\u5546\u8d26\u6237\u5e76\u7ee7\u7eed',
+            sellerNextStep: '\u63a5\u4e0b\u6765\uff0c\u8bf7\u9a8c\u8bc1\u90ae\u7bb1\u5e76\u5b8c\u6210\u4f9b\u5e94\u5546\u8ba4\u8bc1\uff0c\u7136\u540e\u63d0\u4ea4\u516c\u53f8\u4fe1\u606f\u4f9b\u5ba1\u6838\u3002',
             loginPrompt: '\u5df2\u7ecf\u6709\u8d26\u6237\uff1f',
             loginLink: '\u767b\u5f55',
             required: '\u6b64\u5b57\u6bb5\u4e3a\u5fc5\u586b\u9879\u3002',

@@ -45,7 +45,7 @@ const props = defineProps({
     },
 });
 
-const { locale, section, t: translate } = useI18n();
+const { locale, section } = useI18n();
 const baseRegisterUrl = computed(() => props.home_links?.register_url ?? props.hero?.register_url ?? '/register');
 const sellerRegisterUrl = computed(() => `${baseRegisterUrl.value}?role=seller`);
 const buyerRegisterUrl = computed(() => `${baseRegisterUrl.value}?role=buyer`);
@@ -60,12 +60,6 @@ const featuredSuppliers = computed(() => Array.isArray(props.featured_suppliers)
 
 const heroCopy = section('home.hero');
 const homeCopy = section('home.sections');
-
-const formattedStats = computed(() => (props.hero?.stats ?? []).map((item) => ({
-    ...item,
-    label: translate(`home.stats.${item.key}`, item.label ?? item.label_en ?? ''),
-    valueText: new Intl.NumberFormat('en-US').format(Number(item.value ?? 0)),
-})));
 
 const tickerRequests = computed(() => {
     const items = props.hero?.latest_requests ?? [];
@@ -138,45 +132,6 @@ const relativeTime = (value) => {
                         <Link class="secondary-button ghost-button" :href="buyerRegisterUrl">{{ heroCopy.buyerCta }}</Link>
                     </div>
 
-                    <div class="summary-panel">
-                        <div class="summary-head">
-                            <span>{{ heroCopy.marketSummary }}</span>
-                        </div>
-
-                        <div class="hero-stats">
-                            <article v-for="item in formattedStats" :key="item.key" class="stat-card">
-                                <div class="stat-icon-box">
-                                    <svg v-if="item.key === 'sellers'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                                        <path d="M7 20v-2a3 3 0 0 1 3-3h4a3 3 0 0 1 3 3v2" />
-                                        <circle cx="12" cy="8" r="3" />
-                                        <path d="M4 20v-1a2.5 2.5 0 0 1 2-2.45" />
-                                        <path d="M20 20v-1a2.5 2.5 0 0 0-2-2.45" />
-                                    </svg>
-                                    <svg v-else-if="item.key === 'buyers'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                                        <circle cx="9" cy="9" r="2.5" />
-                                        <circle cx="16" cy="8" r="2" />
-                                        <path d="M5 18a4 4 0 0 1 8 0" />
-                                        <path d="M14 18a3.5 3.5 0 0 1 5 0" />
-                                    </svg>
-                                    <svg v-else-if="item.key === 'rfqs'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                                        <path d="M7 4.5h7l3 3V19a1.5 1.5 0 0 1-1.5 1.5h-8A1.5 1.5 0 0 1 6 19V6a1.5 1.5 0 0 1 1-1.5Z" />
-                                        <path d="M14 4.5V8h3" />
-                                        <path d="M9 12h6" />
-                                        <path d="M9 15.5h6" />
-                                    </svg>
-                                    <svg v-else viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                                        <rect x="4" y="4" width="6" height="6" rx="1.5" />
-                                        <rect x="14" y="4" width="6" height="6" rx="1.5" />
-                                        <rect x="4" y="14" width="6" height="6" rx="1.5" />
-                                        <rect x="14" y="14" width="6" height="6" rx="1.5" />
-                                    </svg>
-                                </div>
-
-                                <span class="stat-label">{{ item.label }}</span>
-                                <strong class="stat-value">{{ item.valueText }}</strong>
-                            </article>
-                        </div>
-                    </div>
                 </div>
 
                 <div class="hero-stream">
@@ -389,83 +344,6 @@ const relativeTime = (value) => {
 .ghost-button {
     background: rgba(14, 116, 144, 0.1);
     color: #0e7490;
-}
-
-.summary-panel {
-    margin-top: 34px;
-    border-radius: 10px;
-    padding: 0;
-    border: none;
-    background: transparent;
-}
-
-.summary-head {
-    display: flex;
-    align-items: center;
-    justify-content: flex-start;
-    margin-bottom: 18px;
-    color: var(--color-ocean);
-    font-size: 0.84rem;
-    font-weight: 700;
-    letter-spacing: 0.14em;
-    text-transform: uppercase;
-}
-
-.hero-stats {
-    display: grid;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-    gap: 18px;
-}
-
-.stat-card {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 14px;
-    aspect-ratio: 1 / 1;
-    min-height: 0;
-    padding: 18px 16px;
-    border-radius: 10px;
-    background: rgba(255, 255, 255, 0.92);
-    border: 1px solid rgba(219, 234, 254, 0.9);
-    box-shadow: 0 18px 36px rgba(37, 99, 235, 0.08);
-}
-
-.stat-icon-box {
-    width: 42px;
-    height: 42px;
-    border-radius: 10px;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    background: rgba(219, 234, 254, 0.72);
-    color: #2563eb;
-}
-
-.stat-icon-box svg {
-    width: 18px;
-    height: 18px;
-}
-
-.stat-label {
-    color: #0f172a;
-    font-size: 0.82rem;
-    line-height: 1.2;
-    font-weight: 700;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    text-align: center;
-}
-
-.stat-value {
-    display: block;
-    font-size: 2rem;
-    line-height: 1.05;
-    margin: 0;
-    color: #0f172a;
-    text-align: center;
-    font-weight: 700;
 }
 
 .hero-stream {
@@ -723,10 +601,6 @@ const relativeTime = (value) => {
         padding-top: 0;
     }
 
-    .hero-stats {
-        grid-template-columns: repeat(3, minmax(0, 1fr));
-    }
-
     .ticker-shell {
         min-height: 520px;
         max-height: 520px;
@@ -737,10 +611,6 @@ const relativeTime = (value) => {
     .hero-copy,
     .hero-stream {
         padding: 24px;
-    }
-
-    .hero-stats {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
     }
 
     .hero-card-head {
@@ -780,18 +650,6 @@ const relativeTime = (value) => {
     .primary-button,
     .secondary-button {
         width: 100%;
-    }
-
-    .hero-stats {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-        gap: 12px;
-    }
-
-    .stat-card {
-        aspect-ratio: auto;
-        min-height: 132px;
-        padding: 16px 14px;
-        gap: 10px;
     }
 
     .rfq-item-meta {
