@@ -4,7 +4,6 @@ import { Head, Link, useForm } from '@inertiajs/vue3';
 import { useI18n } from '../../lib/i18n';
 import AuthPasswordInput from '../../Components/AuthPasswordInput.vue';
 import MainLayout from '../../Layouts/MainLayout.vue';
-import { dialCodes } from '../../lib/accountContactOptions';
 import { normalizeEmailInput } from '../../lib/normalizeEmailInput';
 
 const props = defineProps({
@@ -20,10 +19,6 @@ const props = defineProps({
         type: Array,
         default: () => [],
     },
-    dialCodeOptions: {
-        type: Array,
-        default: () => [],
-    },
 });
 
 const { section } = useI18n();
@@ -31,9 +26,6 @@ const copy = section('register');
 const ui = computed(() => ({
     required: copy.value.required,
     email: copy.value.emailError,
-    phone: copy.value.phoneError,
-    whatsapp: copy.value.whatsappError,
-    countryCode: copy.value.countryCodeError,
     password: copy.value.passwordError,
     passwordConfirmation: copy.value.passwordConfirmationError,
     terms: copy.value.termsError,
@@ -50,10 +42,6 @@ const form = useForm({
     name: '',
     company_name: '',
     country: '',
-    phone_country_code: '',
-    phone: '',
-    whatsapp_country_code: '',
-    whatsapp_number: '',
     email: '',
     password: '',
     password_confirmation: '',
@@ -64,9 +52,7 @@ const form = useForm({
 const fieldRefs = ref({});
 const emailPattern = /^[^\s@]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/;
 const passwordPattern = /^(?=.*[A-Za-z])(?=.*\d).{8,}$/;
-const sanitizePhoneValue = (value) => value.replace(/\D+/g, '').slice(0, 15);
 const countrySelectOptions = computed(() => Array.isArray(props.countryOptions) ? props.countryOptions : []);
-const registerDialCodeOptions = computed(() => Array.isArray(props.dialCodeOptions) ? props.dialCodeOptions : []);
 const passwordChecks = computed(() => ({
     length: form.password.length >= 8,
     letter: /[A-Za-z]/.test(form.password),
@@ -78,11 +64,6 @@ const setFieldRef = (field) => (element) => {
 };
 
 const clearFieldError = (field) => form.clearErrors(field);
-
-const handlePhoneInput = (field, value) => {
-    form[field] = sanitizePhoneValue(value);
-    clearFieldError(field);
-};
 
 const handleEmailInput = (value) => {
     form.email = normalizeEmailInput(value);
@@ -145,36 +126,12 @@ const validateForm = () => {
         errors.email = ui.value.email;
     }
 
-    if (form.account_type === 'buyer' && !form.country) {
+    if (!form.company_name || form.company_name.trim().length < 2) {
+        errors.company_name = ui.value.required;
+    }
+
+    if (!form.country) {
         errors.country = ui.value.required;
-    }
-
-    if (form.account_type === 'seller') {
-        if (!form.company_name || form.company_name.trim().length < 2) {
-            errors.company_name = ui.value.required;
-        }
-        
-        if (!form.country) {
-            errors.country = ui.value.required;
-        }
-    }
-
-    if (form.account_type === 'buyer') {
-        if (!/^\d{6,15}$/.test(form.phone)) {
-            errors.phone = ui.value.phone;
-        }
-
-        if (!form.phone_country_code) {
-            errors.phone_country_code = ui.value.countryCode;
-        }
-
-        if (form.whatsapp_number && !/^\d{6,15}$/.test(form.whatsapp_number)) {
-            errors.whatsapp_number = ui.value.whatsapp;
-        }
-
-        if (form.whatsapp_number && !form.whatsapp_country_code) {
-            errors.whatsapp_country_code = ui.value.countryCode;
-        }
     }
 
     if (!passwordPattern.test(form.password)) {
@@ -261,7 +218,20 @@ const submit = () => {
                         </label>
                     </div>
 
-                    <label v-if="form.account_type === 'buyer'">
+                    <label>
+                        <span v-html="formatRequiredLabel(copy.companyName)"></span>
+                        <input
+                            :ref="setFieldRef('company_name')"
+                            v-model="form.company_name"
+                            :class="inputClass('company_name')"
+                            type="text"
+                            :placeholder="copy.companyNamePlaceholder"
+                            @input="clearFieldError('company_name')"
+                        />
+                        <small v-if="form.errors.company_name">{{ form.errors.company_name }}</small>
+                    </label>
+
+                    <label>
                         <span v-html="formatRequiredLabel(copy.country)"></span>
                         <select
                             :ref="setFieldRef('country')"
@@ -273,87 +243,6 @@ const submit = () => {
                             <option v-for="item in countrySelectOptions" :key="item.value" :value="item.value">{{ item.label }}</option>
                         </select>
                         <small v-if="form.errors.country">{{ form.errors.country }}</small>
-                    </label>
-
-                    <template v-else>
-                        <label>
-                            <span v-html="formatRequiredLabel(copy.companyName)"></span>
-                            <input
-                                :ref="setFieldRef('company_name')"
-                                v-model="form.company_name"
-                                :class="inputClass('company_name')"
-                                type="text"
-                                :placeholder="copy.companyNamePlaceholder"
-                                @input="clearFieldError('company_name')"
-                            />
-                            <small v-if="form.errors.company_name">{{ form.errors.company_name }}</small>
-                        </label>
-
-                        <label>
-                            <span v-html="formatRequiredLabel(copy.country)"></span>
-                            <select
-                                :ref="setFieldRef('country')"
-                                v-model="form.country"
-                                :class="inputClass('country')"
-                                @change="clearFieldError('country')"
-                            >
-                                <option value="" disabled>{{ copy.selectCountry }}</option>
-                                <option v-for="item in countrySelectOptions" :key="item.value" :value="item.value">{{ item.label }}</option>
-                            </select>
-                            <small v-if="form.errors.country">{{ form.errors.country }}</small>
-                        </label>
-                    </template>
-
-                    <label v-if="form.account_type === 'buyer'">
-                        <span v-html="formatRequiredLabel(copy.phone)"></span>
-                        <div class="phone-group">
-                            <select
-                                :ref="setFieldRef('phone_country_code')"
-                                v-model="form.phone_country_code"
-                                :class="inputClass('phone_country_code')"
-                                @change="clearFieldError('phone_country_code')"
-                            >
-                                <option value="" disabled>{{ copy.selectCode }}</option>
-                                <option v-for="item in registerDialCodeOptions" :key="`phone-${item.label}`" :value="item.value">{{ item.label }}</option>
-                            </select>
-                            <input
-                                :ref="setFieldRef('phone')"
-                                :value="form.phone"
-                                :class="inputClass('phone')"
-                                type="tel"
-                                inputmode="numeric"
-                                :placeholder="copy.phonePlaceholder"
-                                @input="handlePhoneInput('phone', $event.target.value)"
-                            />
-                        </div>
-                        <small v-if="form.errors.phone_country_code">{{ form.errors.phone_country_code }}</small>
-                        <small v-if="form.errors.phone">{{ form.errors.phone }}</small>
-                    </label>
-
-                    <label v-if="form.account_type === 'buyer'">
-                        <span v-html="formatRequiredLabel(copy.whatsApp)"></span>
-                        <div class="phone-group">
-                            <select
-                                :ref="setFieldRef('whatsapp_country_code')"
-                                v-model="form.whatsapp_country_code"
-                                :class="inputClass('whatsapp_country_code')"
-                                @change="clearFieldError('whatsapp_country_code')"
-                            >
-                                <option value="" disabled>{{ copy.selectCode }}</option>
-                                <option v-for="item in registerDialCodeOptions" :key="`wa-${item.label}`" :value="item.value">{{ item.label }}</option>
-                            </select>
-                            <input
-                                :ref="setFieldRef('whatsapp_number')"
-                                :value="form.whatsapp_number"
-                                :class="inputClass('whatsapp_number')"
-                                type="tel"
-                                inputmode="numeric"
-                                :placeholder="copy.whatsappPlaceholder"
-                                @input="handlePhoneInput('whatsapp_number', $event.target.value)"
-                            />
-                        </div>
-                        <small v-if="form.errors.whatsapp_country_code">{{ form.errors.whatsapp_country_code }}</small>
-                        <small v-if="form.errors.whatsapp_number">{{ form.errors.whatsapp_number }}</small>
                     </label>
 
                     <div class="password-block">
@@ -560,13 +449,6 @@ const submit = () => {
     background: rgba(255, 245, 245, 0.95);
 }
 
-.phone-group {
-    display: grid;
-    grid-template-columns: minmax(0, 210px) minmax(0, 1fr);
-    gap: 10px;
-    align-items: start;
-}
-
 .country-stack {
     display: grid;
     gap: 10px;
@@ -739,10 +621,6 @@ const submit = () => {
 
     .auth-card h1 {
         max-width: none;
-    }
-
-    .phone-group {
-        grid-template-columns: minmax(0, 145px) minmax(0, 1fr);
     }
 
     .country-row {

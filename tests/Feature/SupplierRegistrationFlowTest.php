@@ -60,7 +60,31 @@ class SupplierRegistrationFlowTest extends TestCase
         $this->assertNull($seller->company_description);
     }
 
-    public function test_buyer_registration_still_requires_phone_and_saves_contact_fields(): void
+    public function test_buyer_registration_requires_company_name_but_not_contact_fields(): void
+    {
+        Notification::fake();
+        $this->seedCountry();
+
+        $buyerData = $this->registrationData('buyer');
+        $buyerData['email'] = 'buyer@example.test';
+        unset($buyerData['company_name']);
+
+        $this->post(route('register'), $buyerData)
+            ->assertSessionHasErrors(['company_name']);
+
+        $buyerData['company_name'] = 'Example Buyer Company';
+
+        $this->post(route('register'), $buyerData)
+            ->assertSessionHasNoErrors()
+            ->assertRedirect(route('verification.notice'));
+
+        $buyer = User::query()->where('email', 'buyer@example.test')->firstOrFail();
+        $this->assertSame('Example Buyer Company', $buyer->company_name);
+        $this->assertNull($buyer->phone);
+        $this->assertNull($buyer->whatsapp_number);
+    }
+
+    public function test_buyer_registration_ignores_contact_fields_sent_outside_the_form(): void
     {
         Notification::fake();
         $this->seedCountry();
@@ -68,21 +92,16 @@ class SupplierRegistrationFlowTest extends TestCase
         $buyerData = $this->registrationData('buyer');
         $buyerData['email'] = 'buyer@example.test';
 
-        $this->post(route('register'), $buyerData)
-            ->assertSessionHasErrors(['phone_country_code', 'phone']);
-
-        $buyerData['phone_country_code'] = '+90';
-        $buyerData['phone'] = '5550000000';
-        $buyerData['whatsapp_country_code'] = '+90';
-        $buyerData['whatsapp_number'] = '5550000001';
-
-        $this->post(route('register'), $buyerData)
-            ->assertSessionHasNoErrors()
-            ->assertRedirect(route('verification.notice'));
+        $this->post(route('register'), array_merge($buyerData, [
+            'phone_country_code' => '+90',
+            'phone' => '5550000000',
+            'whatsapp_country_code' => '+90',
+            'whatsapp_number' => '5550000001',
+        ]))->assertSessionHasNoErrors();
 
         $buyer = User::query()->where('email', 'buyer@example.test')->firstOrFail();
-        $this->assertSame('+90 5550000000', $buyer->phone);
-        $this->assertSame('+90 5550000001', $buyer->whatsapp_number);
+        $this->assertNull($buyer->phone);
+        $this->assertNull($buyer->whatsapp_number);
     }
 
     private function registrationData(string $role): array

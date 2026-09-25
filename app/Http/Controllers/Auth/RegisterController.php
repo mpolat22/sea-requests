@@ -26,7 +26,6 @@ class RegisterController extends Controller
                 ? $request->query('role')
                 : null,
             'countryOptions' => AuthCountryCatalog::countryOptions(),
-            'dialCodeOptions' => AuthCountryCatalog::dialCodeOptions(),
         ]);
     }
 
@@ -34,26 +33,17 @@ class RegisterController extends Controller
     {
         $request->merge([
             'email' => $this->normalizeEmail($request->input('email')),
-            'phone' => $this->normalizePhoneNumber($request->input('phone')),
-            'whatsapp_number' => $this->normalizePhoneNumber($request->input('whatsapp_number')),
             'name' => trim((string) $request->input('name')),
             'company_name' => trim((string) $request->input('company_name')),
-            'company_description' => trim((string) $request->input('company_description')),
         ]);
 
         $allowedCountries = AuthCountryCatalog::countryNames();
-        $isSeller = $request->input('account_type') === 'seller';
 
         $validated = $request->validate([
             'account_type' => ['required', 'in:buyer,seller'],
             'name' => ['required', 'string', 'min:2', 'max:255'],
-            'company_name' => [Rule::requiredIf($request->input('account_type') === 'seller'), 'nullable', 'string', 'min:2', 'max:255'],
+            'company_name' => ['required', 'string', 'min:2', 'max:255'],
             'country' => ['required', 'string', 'max:255', Rule::in($allowedCountries)],
-            'phone_country_code' => [Rule::excludeIf($isSeller), 'required', 'string', 'regex:/^\+\d{1,4}$/'],
-            'phone' => [Rule::excludeIf($isSeller), 'required', 'string', 'regex:/^[0-9]{6,15}$/'],
-            'whatsapp_country_code' => [Rule::excludeIf($isSeller), Rule::requiredIf(filled($request->input('whatsapp_number'))), 'nullable', 'string', 'regex:/^\+\d{1,4}$/'],
-            'whatsapp_number' => [Rule::excludeIf($isSeller), 'nullable', 'string', 'regex:/^[0-9]{6,15}$/'],
-            'company_description' => [Rule::excludeIf($isSeller), 'nullable', 'string', 'max:2000'],
             'email' => ['required', 'string', 'lowercase', 'email:rfc', 'regex:/^[^\s@]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/', 'max:255', 'unique:'.User::class],
             'password' => ['required', 'confirmed', Password::min(8)->letters()->numbers()],
             'agree_to_terms' => ['accepted'],
@@ -66,14 +56,9 @@ class RegisterController extends Controller
             'locale' => 'en',
             'password' => $validated['password'],
             'role' => $validated['account_type'],
-            'company_name' => $validated['company_name'] ?? null,
-            'phone' => $isSeller ? null : trim($validated['phone_country_code'].' '.$validated['phone']),
+            'company_name' => $validated['company_name'],
             'country' => $validated['country'],
             'countries' => $validated['country'],
-            'whatsapp_number' => filled($validated['whatsapp_number'] ?? null)
-                ? trim($validated['whatsapp_country_code'].' '.$validated['whatsapp_number'])
-                : null,
-            'company_description' => $validated['company_description'] ?? null,
             'approval_status' => $validated['account_type'] === 'seller' ? 'pending' : 'approved',
             'approved_at' => $validated['account_type'] === 'seller' ? null : now(),
         ]);
@@ -96,17 +81,6 @@ class RegisterController extends Controller
         return $redirect;
     }
 
-    private function normalizePhoneNumber(?string $value): ?string
-    {
-        if ($value === null) {
-            return null;
-        }
-
-        $digits = preg_replace('/\D+/', '', $value);
-
-        return $digits === '' ? null : $digits;
-    }
-
     private function normalizeEmail(?string $value): ?string
     {
         return EmailInputNormalizer::normalize($value);
@@ -121,13 +95,6 @@ class RegisterController extends Controller
             'company_name.min' => 'Company Name must be at least 2 characters.',
             'country.required' => 'Country is required.',
             'country.in' => 'Please select a valid country.',
-            'phone_country_code.required' => 'Please select a country code.',
-            'phone_country_code.regex' => 'Please select a valid country code.',
-            'phone.required' => 'Phone Number is required.',
-            'phone.regex' => 'Phone Number must be between 6 and 15 digits.',
-            'whatsapp_country_code.required' => 'Please select a country code.',
-            'whatsapp_country_code.regex' => 'Please select a valid country code.',
-            'whatsapp_number.regex' => 'WhatsApp Number must be between 6 and 15 digits.',
             'email.required' => 'Email is required.',
             'email.email' => 'Please enter a valid email address.',
             'email.regex' => 'Please enter a valid email address.',
@@ -147,11 +114,6 @@ class RegisterController extends Controller
             'name' => 'Full Name',
             'company_name' => 'Company Name',
             'country' => 'Country',
-            'phone_country_code' => 'phone country code',
-            'phone' => 'Phone Number',
-            'whatsapp_country_code' => 'WhatsApp country code',
-            'whatsapp_number' => 'WhatsApp Number',
-            'company_description' => 'Company Description',
             'email' => 'Email',
             'password' => 'Password',
             'agree_to_terms' => 'terms',

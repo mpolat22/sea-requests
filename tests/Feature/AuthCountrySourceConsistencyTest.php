@@ -12,7 +12,7 @@ class AuthCountrySourceConsistencyTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_register_page_uses_active_port_countries_for_country_and_dial_code_dropdowns(): void
+    public function test_register_page_uses_active_port_countries_for_country_dropdown(): void
     {
         Port::query()->create([
             'country_code' => 'GH',
@@ -37,7 +37,7 @@ class AuthCountrySourceConsistencyTest extends TestCase
             ->assertInertia(fn (AssertableInertia $page) => $page
                 ->component('Auth/Register')
                 ->where('countryOptions', fn ($options) => collect($options)->pluck('value')->all() === ['Ghana', 'Panama'])
-                ->where('dialCodeOptions', fn ($options) => collect($options)->pluck('label')->all() === ['Ghana (+233)', 'Panama (+507)'])
+                ->missing('dialCodeOptions')
             );
     }
 

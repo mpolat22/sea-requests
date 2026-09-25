@@ -22,12 +22,8 @@ class UserFacingMailFailureTest extends TestCase
         $response = $this->post('/register', [
             'account_type' => 'buyer',
             'name' => 'Mustafa Polat',
+            'company_name' => 'Test Buyer Company',
             'country' => $country,
-            'phone_country_code' => '+90',
-            'phone' => '5413342219',
-            'whatsapp_country_code' => '+90',
-            'whatsapp_number' => '5413342219',
-            'company_description' => 'Buyer profile',
             'email' => 'register-mail-failure@example.test',
             'password' => 'Password123',
             'password_confirmation' => 'Password123',
@@ -40,7 +36,7 @@ class UserFacingMailFailureTest extends TestCase
 
         $response
             ->assertRedirect(route('verification.notice'))
-            ->assertSessionHas('error', 'Your account was created, but we could not send the verification email right now. Please use Resend Verification Email to try again shortly.');
+            ->assertSessionHas('error', 'registration-verification-email-failed');
 
         $this->assertAuthenticatedAs($user);
     }
@@ -59,7 +55,7 @@ class UserFacingMailFailureTest extends TestCase
 
         $response
             ->assertRedirect(route('password.request'))
-            ->assertSessionHas('error', 'We could not send the password reset email right now. Please try again shortly.');
+            ->assertSessionHas('error', 'password-reset-email-failed');
     }
 
     public function test_resend_verification_shows_friendly_error_when_mail_cannot_be_sent(): void
@@ -78,7 +74,7 @@ class UserFacingMailFailureTest extends TestCase
 
         $response
             ->assertRedirect(route('verification.notice'))
-            ->assertSessionHas('error', 'We could not send the verification email right now. Please try again shortly.');
+            ->assertSessionHas('error', 'verification-email-send-failed');
     }
 
     public function test_buyer_profile_email_change_shows_friendly_error_when_verification_mail_cannot_be_sent(): void
@@ -106,7 +102,7 @@ class UserFacingMailFailureTest extends TestCase
         $response
             ->assertRedirect(route('verification.notice'))
             ->assertSessionHas('success', 'buyer-email-updated')
-            ->assertSessionHas('error', 'Your email address was updated, but we could not send the verification email right now. Please try again shortly.');
+            ->assertSessionHas('error', 'buyer-email-verification-send-failed');
 
         $buyer->refresh();
 
@@ -135,7 +131,7 @@ class UserFacingMailFailureTest extends TestCase
         $response
             ->assertRedirect(route('buyer.requests'))
             ->assertSessionHas('success')
-            ->assertSessionHas('error', 'Your password was reset, but we could not send the confirmation email right now.');
+            ->assertSessionHas('error', 'password-reset-confirmation-email-failed');
 
         $user->refresh();
 

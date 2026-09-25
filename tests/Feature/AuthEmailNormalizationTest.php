@@ -46,9 +46,8 @@ class AuthEmailNormalizationTest extends TestCase
         $response = $this->post(route('register'), [
             'account_type' => 'buyer',
             'name' => 'Buyer Demo',
+            'company_name' => 'Buyer Demo Company',
             'country' => 'United Arab Emirates',
-            'phone_country_code' => '+90',
-            'phone' => '5550000000',
             'email' => "admi\u{0307}n-register@searequests.ai\u{0307}",
             'password' => 'Password123',
             'password_confirmation' => 'Password123',
