@@ -34,7 +34,7 @@ const profileHref = computed(() => {
     }
 
     if (user.value.role === 'admin') {
-        return '/dashboard/admin';
+        return '/dashboard/admin/profile';
     }
 
     if (user.value.role === 'seller') {

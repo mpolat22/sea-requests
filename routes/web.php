@@ -3,6 +3,7 @@
 use App\Http\Controllers\Admin\AdminDashboardController;
 use App\Http\Controllers\Admin\AdminOnboardingController;
 use App\Http\Controllers\Admin\AdminOrderController;
+use App\Http\Controllers\Admin\AdminProfileController;
 use App\Http\Controllers\Admin\AdminOutreachController;
 use App\Http\Controllers\Admin\AdminRfqController;
 use App\Http\Controllers\Admin\AdminUserManagementController;
@@ -1951,6 +1952,10 @@ Route::middleware('auth')->group(function () {
     Route::get('/dashboard/buyer', BuyerDashboardController::class)->name('buyer.dashboard');
     Route::get('/dashboard/buyer/profile', [BuyerProfileController::class, 'edit'])->name('buyer.profile.edit');
     Route::patch('/dashboard/buyer/profile', [BuyerProfileController::class, 'update'])->name('buyer.profile.update');
+    Route::get('/dashboard/admin/profile', [AdminProfileController::class, 'edit'])->name('admin.profile.edit');
+    Route::patch('/dashboard/admin/profile/password', [AdminProfileController::class, 'updatePassword'])
+        ->middleware('throttle:6,1')
+        ->name('admin.profile.password.update');
     Route::get('/dashboard/buyer/requests', BuyerRequestsController::class)->name('buyer.requests');
     Route::get('/dashboard/buyer/orders', BuyerOrdersController::class)->name('buyer.orders');
     Route::get('/dashboard/buyer/orders/{offer}/modal', [BuyerOrdersController::class, 'modal'])->whereNumber('offer')->name('buyer.orders.modal');
